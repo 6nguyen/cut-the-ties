@@ -138,6 +138,8 @@ export interface Action {
   standard_template: string | null;
   /** leader-call-scripts §1: JSON of `data/script_blocks/<name>.yaml`; when set the standard script is composed from it. */
   script_blocks: string | null;
+  /** email-button §2.1: subject line of the email step; required while the goal is active, `{city}` is the only placeholder. */
+  email_subject: string | null;
 }
 
 export interface Position {
@@ -176,7 +178,12 @@ export interface GenerationRow {
 /** generation-cost §1: per-(model, action, first-failure class) token sums since an instant; `costUsd` prices them. */
 export interface TokenSum { model: string; action_id: number; check_fail: string | null; input: number; output: number; count: number; redrafts: number }
 export type ReceiptKind = 'action' | 'captain-list'; // commitment-funnel §2.1: 'captain-list' rows have no action and no target
-export interface ReceiptRow { goal_id: number; action_id: number | null; target_id: string | null; state: string | null; district: number | null; created_at: string; device_hash: string; kind: ReceiptKind; ip_hash: string | null }
+/** email-button §2.2: how an 'action' receipt was delivered; a captain list is always 'call'. */
+export type ReceiptChannel = 'call' | 'email';
+export const RECEIPT_CHANNELS: readonly ReceiptChannel[] = ['call', 'email'];
+export interface ReceiptRow { goal_id: number; action_id: number | null; target_id: string | null; state: string | null; district: number | null; created_at: string; device_hash: string; kind: ReceiptKind; channel: ReceiptChannel; ip_hash: string | null }
+/** email-button §1.6: receipts per goal since an instant for the digest; `calls`/`emails` are 'action' rows by channel. */
+export interface ReceiptTotal { goal_id: number; calls: number; emails: number; captain_lists: number }
 /** district-counters §1: one COUNT per bucket; `calls|letters|comments` follow the action `type`, `captain_lists` the receipt kind. */
 export interface ReceiptBuckets { calls: number; letters: number; comments: number; captain_lists: number }
 /** district-counters §3: the receipt limits read; windows are [now − 24 h, now] and [now − 10 min, now]. */
@@ -229,7 +236,9 @@ export interface Repo {
   latestReport(bioguideId: string, goalId: number): Promise<LatestReport | null>;
   // district-counters §1/§3 (worker/src/counts.ts and POST /api/receipt are the only callers).
   countReceipts(goalId: number, state: string, district: number | null, sinceIso: string): Promise<{ district: ReceiptBuckets; state: ReceiptBuckets }>;
-  receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, now: Date): Promise<ReceiptLimitCounts>;
+  receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts>;
+  // email-button §1.6: the digest's receipts block (worker/src/digest.ts is the only caller).
+  receiptTotalsSince(since: Date): Promise<ReceiptTotal[]>;
   // primary-2028 §1.2: every goal the site tracked (active or closed, never upcoming) for the electoral record.
   trackedGoals(): Promise<Goal[]>;
   // office-visits (worker/src/index.ts and digest.ts are the only callers). Requests are counted by code.

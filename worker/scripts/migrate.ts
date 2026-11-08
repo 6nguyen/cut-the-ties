@@ -7,6 +7,10 @@ export const MIGRATIONS: ColumnMigration[] = [
   // urgency-and-readability §4
   { table: 'goals', column: 'decision_at', ddl: 'ALTER TABLE goals ADD COLUMN decision_at TEXT;' },
   { table: 'goals', column: 'decision_date_confirmed', ddl: 'ALTER TABLE goals ADD COLUMN decision_date_confirmed INTEGER NOT NULL DEFAULT 0;' },
+  // email-button §2.1
+  { table: 'actions', column: 'email_subject', ddl: 'ALTER TABLE actions ADD COLUMN email_subject TEXT;' },
+  // email-button §2.2 (the receipts_kind_goal index change is an owner step: DROP INDEX + CREATE INDEX on production).
+  { table: 'receipts', column: 'channel', ddl: "ALTER TABLE receipts ADD COLUMN channel TEXT NOT NULL DEFAULT 'call' CHECK (channel = 'call' OR channel = 'email');" },
 ];
 
 /** The column names a `PRAGMA table_info(<table>)` --json result lists; [] when the table is missing or the output is not JSON. */

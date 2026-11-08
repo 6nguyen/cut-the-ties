@@ -88,6 +88,13 @@ jobs:
           npm run import-members -w worker -- upstream/legislators-current.yaml $xml | tee import-members.log
           npm run import-offices -w worker -- upstream/legislators-district-offices.yaml | tee import-offices.log
           npm run check-data -w worker
+          # email-button §2.3: a HEAD on every distinct contact_form_url; an answer outside 2xx/3xx is listed for a human, the row is never edited.
+          : > contact-links.log
+          while IFS= read -r u; do
+            code=$(curl -sS -o /dev/null -I -A 'Mozilla/5.0 (roster workflow)' --max-time 20 -w '%{http_code}' "$u" || echo 000)
+            case "$code" in 2*|3*) ;; *) echo "$code $u" >> contact-links.log;; esac
+          done < <(python3 -c 'import csv; [print(r["contact_form_url"]) for r in csv.DictReader(open("data/members.csv")) if r["contact_form_url"]]' | sort -u)
+          echo "contact links to check: $(wc -l < contact-links.log | tr -d ' ')"
           if git diff --quiet -- data/; then echo "diff=false" >> "$GITHUB_OUTPUT"; echo "no data change";
           else echo "diff=true" >> "$GITHUB_OUTPUT"; git diff --stat -- data/; fi
       - name: PR body
@@ -98,6 +105,8 @@ jobs:
             echo; echo "## import-members"; echo '```'; grep -v '^changed:' import-members.log; echo '```'
             n=$(grep -c '^changed:' import-members.log || true); echo "Changed rows: $n"; echo '```'; grep '^changed:' import-members.log | head -80; echo '```'
             echo; echo "## import-offices"; echo '```'; cat import-offices.log; echo '```'
+            echo; echo "## Contact links to check"
+            if [ -s contact-links.log ]; then echo "HEAD answered outside 2xx/3xx (email-button §2.3). Open each by hand; the row is unchanged."; echo '```'; cat contact-links.log; echo '```'; else echo "none: every \`contact_form_url\` answered 2xx/3xx to a HEAD."; fi
             echo; echo "Review \`stale:\` and \`left:\` lines before merging (roster-freshness §4). This PR never auto-merges."
           } > pr-body.md
       - name: existing roster PR

@@ -16,7 +16,9 @@ updates.
    (`since` is now − 7 days, ISO). `calls`, `letters` and `comments`
    follow the receipt's action `type` (`call`, `letter`,
    `public_comment`); `captain_lists` counts receipts with `kind
-   'captain-list'`. The `district` buckets cover receipts whose `state`
+   'captain-list'`. Action receipts with `channel 'email'`
+   (`personalised-documents.md` §4 email step) are left out of every
+   bucket: the counters and the echo line count calls. The `district` buckets cover receipts whose `state`
    and `district` match; the `state` buckets cover every receipt in the
    state, the district included. `district` is optional (a senator's page
    sends none) and then the district buckets are all 0.
@@ -48,8 +50,9 @@ updates.
    leaves the page as it was (`echo` excepted: "Counted.").
 8. **Receipt limits.** `POST /api/receipt` refuses, with 429 and without
    storing the row: the 11th receipt from one device hash in 24 h
-   (`limit_day`), a second receipt for the same device, goal and action
-   (or captain list) within 10 minutes (`limit_repeat`), and the 51st
+   (`limit_day`), a second receipt for the same device, goal, action and
+   channel (or captain list) within 10 minutes (`limit_repeat`; a call
+   then an email for one office both count), and the 51st
    receipt from one IP hash in 24 h (`limit_ip`). Both windows are closed
    on the older edge (a row exactly 24 h or 10 min old still counts). The
    generation limits in `personalised-documents.md` are unchanged.
@@ -68,14 +71,20 @@ updates.
   `receiptIpHash(ip, salt, now)`.
 - `Repo.countReceipts(goalId, state, district, sinceIso)` → `{district,
   state}` raw buckets. D1 runs one `SELECT … COUNT(*) … GROUP BY
-  in_district, kind, type` joined to `actions`; `foldBuckets` sums the
+  in_district, kind, type` joined to `actions` with `(kind <> 'action'
+  OR channel = 'call')`; `foldBuckets` sums the
   rows. The in-memory repo filters the array the same way.
 - `Repo.receiptLimitCounts(deviceHash, ipHash, goalId, actionId, kind,
-  now)` → `{device_day, repeat, ip_day}` in one read.
+  channel, now)` → `{device_day, repeat, ip_day}` in one read; only
+  `repeat` is keyed on the channel.
 - `receipts` (`worker/schema.sql`): `ip_hash TEXT` nullable (old rows
-  null); indexes `receipts_goal_place (goal_id, state, district,
+  null); `channel TEXT NOT NULL DEFAULT 'call' CHECK (channel = 'call'
+  OR channel = 'email')` (captain lists keep the default and are never
+  read by channel; reaches production through `migrate.ts`); indexes
+  `receipts_goal_place (goal_id, state, district,
   created_at)`, `receipts_device (device_hash, created_at)`,
-  `receipts_ip (ip_hash, created_at)`.
+  `receipts_ip (ip_hash, created_at)`, `receipts_kind_goal (kind,
+  channel, goal_id, state, district)`.
 - Config: `COUNT_THRESHOLD` (Worker var, `wrangler.jsonc`), `IP_SALT`
   (Worker secret); both in `.env.example` and `deployment.md`.
 - Client: `web/src/components/Counts.tsx` exports `counterLine(response,

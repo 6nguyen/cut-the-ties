@@ -57,6 +57,8 @@ CREATE TABLE actions (
   prompt_template TEXT,
   doc_format TEXT NOT NULL,
   standard_template TEXT,
+  -- email-button §2.1: subject of the "Send it in writing" step; required on a call action while its goal is active.
+  email_subject TEXT,
   script_blocks TEXT
 );
 
@@ -160,12 +162,14 @@ CREATE TABLE receipts (
   -- commitment-funnel §2.1: a completed captain list is a receipt of kind 'captain-list' with no
   -- action and no target (names never reach the server); 'action' rows keep both and the FK.
   kind TEXT NOT NULL DEFAULT 'action' CHECK (kind IN ('action','captain-list')),
+  -- email-button §2.2: how an 'action' receipt was delivered; counters and the echo count 'call' only.
+  channel TEXT NOT NULL DEFAULT 'call' CHECK (channel = 'call' OR channel = 'email'),
   -- district-counters §3.2: SHA-256(ip | daily salt | UTC date); rotates daily so days cannot be joined. NULL on old rows.
   ip_hash TEXT,
   CHECK (CASE kind WHEN 'action' THEN action_id IS NOT NULL AND target_id IS NOT NULL ELSE action_id IS NULL AND target_id IS NULL END)
 );
 CREATE INDEX receipts_created ON receipts(created_at);
-CREATE INDEX receipts_kind_goal ON receipts(kind, goal_id, state, district);
+CREATE INDEX receipts_kind_goal ON receipts(kind, channel, goal_id, state, district);
 -- district-counters: §1 count window and §3 limits.
 CREATE INDEX receipts_goal_place ON receipts(goal_id, state, district, created_at);
 CREATE INDEX receipts_device ON receipts(device_hash, created_at);

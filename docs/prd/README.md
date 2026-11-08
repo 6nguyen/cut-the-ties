@@ -58,11 +58,10 @@ no `Needs` entry can run in parallel with the row above it. Rules:
 |---|---|---|---|---|
 | 1 | [deploy.md](deploy.md) | BUILDING (§3 owner checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
 | 2 | [social-sharing.md](social-sharing.md) | APPROVED | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; §1 is a half-day owner device test |
-| 3 | [email-button.md](email-button.md) | APPROVED | — | "I can't call" / closed-offices / `no_answer` → email step: greeting + generated body + name, copy, member's own contact form, `channel: email` receipt counted apart from calls; five `email_subject` lines |
-| 4 | [site-imagery.md](site-imagery.md) | APPROVED | — | `web/src/assets/img/` + manifest, `Photo.astro`, landing/results/goal heroes, portraits on targets and member pages, share-card photo; §1–§5 buildable now |
-| 5 | [state-holdings-sweep.md](state-holdings-sweep.md) | BUILDING (§2 research) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
-| 6 | [primary-2028.md](primary-2028.md) | BUILDING (§2 blocked) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
-| 7 | [district-vintage-rollover.md](district-vintage-rollover.md) | BUILDING (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 shipped (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
+| 3 | [site-imagery.md](site-imagery.md) | APPROVED | — | `web/src/assets/img/` + manifest, `Photo.astro`, landing/results/goal heroes, portraits on targets and member pages, share-card photo; §1–§5 buildable now |
+| 4 | [state-holdings-sweep.md](state-holdings-sweep.md) | BUILDING (§2 research) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
+| 5 | [primary-2028.md](primary-2028.md) | BUILDING (§2 blocked) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
+| 6 | [district-vintage-rollover.md](district-vintage-rollover.md) | BUILDING (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 shipped (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
 
 ## Next (ideas without a PRD, in intended order; ≤10)
 Targets is an existing spec stem or `new`. Writing the PRD deletes its row

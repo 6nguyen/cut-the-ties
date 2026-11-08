@@ -1,6 +1,8 @@
 import type {
   Action, BlockRow, Delegation, GenerationCounts, GenerationRow, Goal, Incoming, IncomingSeat, Member, MemberElect, Office, Position, ReceiptRow, Repo, ReportRow, ScreenClass, ScreeningRow, StateRow, UncalledSeat,
-  LatestReport, ReceiptBuckets, ReceiptKind, ReceiptLimitCounts, TokenSum, Visit, VisitRequestRow, VisitRow, VisitStatus,
+  LatestReport, ReceiptBuckets, ReceiptChannel,
+  ReceiptKind,
+  ReceiptTotal, ReceiptLimitCounts, TokenSum, Visit, VisitRequestRow, VisitRow, VisitStatus,
 } from './types';
 
 /** generation-cost §1: group rows by (model, action, first-failure class); the MemoryRepo's `tokensSince` and tests share it. */
@@ -179,8 +181,8 @@ export class D1Repo implements Repo {
   }
   async insertReceipt(row: ReceiptRow): Promise<number> {
     const r = await this.db
-      .prepare(`INSERT INTO receipts (goal_id, action_id, target_id, state, district, created_at, device_hash, kind, ip_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(row.goal_id, row.action_id, row.target_id, row.state, row.district, row.created_at, row.device_hash, row.kind, row.ip_hash)
+      .prepare(`INSERT INTO receipts (goal_id, action_id, target_id, state, district, created_at, device_hash, kind, channel, ip_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(row.goal_id, row.action_id, row.target_id, row.state, row.district, row.created_at, row.device_hash, row.kind, row.channel, row.ip_hash)
       .run();
     return Number(r.meta.last_row_id);
   }
@@ -282,6 +284,7 @@ export class D1Repo implements Repo {
         `SELECT (r.district = ?3) AS in_district, r.kind, a.type, COUNT(*) AS n
          FROM receipts r LEFT JOIN actions a ON a.id = r.action_id
          WHERE r.goal_id = ?1 AND r.state = ?2 AND r.created_at >= ?4
+           AND (r.kind <> 'action' OR r.channel = 'call')
          GROUP BY in_district, r.kind, a.type`,
       )
       .bind(goalId, state, district, sinceIso)
@@ -289,20 +292,34 @@ export class D1Repo implements Repo {
     return foldBuckets(results.map((r) => ({ inDistrict: r.in_district === 1, kind: r.kind, type: r.type, n: Number(r.n) })));
   }
   // district-counters §3: the three receipt limits in one read.
-  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, now: Date): Promise<ReceiptLimitCounts> {
+  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts> {
     const dayAgo = iso(new Date(now.getTime() - DAY));
     const tenAgo = iso(new Date(now.getTime() - 10 * 60_000));
     const row = await this.db
       .prepare(
         `SELECT
            SUM(device_hash = ?1) AS device_day,
-           SUM(device_hash = ?1 AND goal_id = ?3 AND kind = ?5 AND action_id IS ?4 AND created_at >= ?6) AS repeat,
+           SUM(device_hash = ?1 AND goal_id = ?3 AND kind = ?5 AND channel = ?8 AND action_id IS ?4 AND created_at >= ?6) AS repeat,
            SUM(ip_hash = ?2) AS ip_day
          FROM receipts WHERE created_at >= ?7`,
       )
-      .bind(deviceHash, ipHash, goalId, actionId, kind, tenAgo, dayAgo)
+      .bind(deviceHash, ipHash, goalId, actionId, kind, tenAgo, dayAgo, channel)
       .first<Record<keyof ReceiptLimitCounts, number | null>>();
     return { device_day: row?.device_day ?? 0, repeat: row?.repeat ?? 0, ip_day: row?.ip_day ?? 0 };
+  }
+  // email-button §1.6: receipts per goal for the digest, calls and emails apart.
+  async receiptTotalsSince(since: Date): Promise<ReceiptTotal[]> {
+    const { results } = await this.db
+      .prepare(
+        `SELECT goal_id,
+           SUM(kind = 'action' AND channel = 'call') AS calls,
+           SUM(kind = 'action' AND channel = 'email') AS emails,
+           SUM(kind = 'captain-list') AS captain_lists
+         FROM receipts WHERE created_at > ? GROUP BY goal_id ORDER BY goal_id`,
+      )
+      .bind(iso(since))
+      .all<ReceiptTotal>();
+    return results.map((r) => ({ goal_id: r.goal_id, calls: Number(r.calls), emails: Number(r.emails), captain_lists: Number(r.captain_lists) }));
   }
 }
 
@@ -439,19 +456,29 @@ export class MemoryRepo implements Repo {
     const type = (id: number | null) => this.rows.actions.find((a) => a.id === id)?.type ?? null;
     return foldBuckets(
       this.receipts
-        .filter((r) => r.goal_id === goalId && r.state === state && r.created_at >= sinceIso)
+        .filter((r) => r.goal_id === goalId && r.state === state && r.created_at >= sinceIso && (r.kind !== 'action' || r.channel === 'call'))
         .map((r) => ({ inDistrict: district !== null && r.district === district, kind: r.kind, type: type(r.action_id), n: 1 })),
     );
   }
-  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, now: Date): Promise<ReceiptLimitCounts> {
+  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts> {
     const dayAgo = iso(new Date(now.getTime() - DAY));
     const tenAgo = iso(new Date(now.getTime() - 10 * 60_000));
     const day = this.receipts.filter((r) => r.created_at >= dayAgo);
     return {
       device_day: day.filter((r) => r.device_hash === deviceHash).length,
-      repeat: day.filter((r) => r.device_hash === deviceHash && r.goal_id === goalId && r.kind === kind && r.action_id === actionId && r.created_at >= tenAgo).length,
+      repeat: day.filter((r) => r.device_hash === deviceHash && r.goal_id === goalId && r.kind === kind && r.channel === channel && r.action_id === actionId && r.created_at >= tenAgo).length,
       ip_day: day.filter((r) => r.ip_hash === ipHash).length,
     };
+  }
+  async receiptTotalsSince(since: Date): Promise<ReceiptTotal[]> {
+    const s = iso(since);
+    const by = new Map<number, ReceiptTotal>();
+    for (const r of this.receipts.filter((x) => x.created_at > s)) {
+      const t = by.get(r.goal_id) ?? { goal_id: r.goal_id, calls: 0, emails: 0, captain_lists: 0 };
+      if (r.kind === 'captain-list') t.captain_lists++; else if (r.channel === 'email') t.emails++; else t.calls++;
+      by.set(r.goal_id, t);
+    }
+    return [...by.values()].sort((a, b) => a.goal_id - b.goal_id);
   }
   async trackedGoals(): Promise<Goal[]> {
     return this.rows.goals.filter((g) => g.status !== 'upcoming').sort((a, b) => b.priority - a.priority || a.slug.localeCompare(b.slug));
