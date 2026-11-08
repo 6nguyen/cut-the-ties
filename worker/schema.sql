@@ -57,7 +57,9 @@ CREATE TABLE actions (
   prompt_template TEXT,
   doc_format TEXT NOT NULL,
   standard_template TEXT,
-  script_blocks TEXT
+  script_blocks TEXT,
+  -- email-button §2.1: subject of the "Send it in writing" step; required on a call action while its goal is active.
+  email_subject TEXT
 );
 
 CREATE TABLE members (

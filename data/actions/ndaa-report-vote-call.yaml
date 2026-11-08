@@ -5,6 +5,7 @@ type: call
 target_scope: both
 order: 1
 ask_text: Ask your member to vote no on the final military bill because the Israel integration section is still in it.
+email_subject: 'Constituent in {city}: vote no on the final NDAA while section 1217 stays in'
 form_schema:
   fields:
     - {name: first_name, label: First name, max: 40, required: true}

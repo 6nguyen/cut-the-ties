@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { appendFileSync, cpSync, mkdtempSync, readdirSync } from 'node:fs';
+import { appendFileSync, cpSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadRows, parseCsv } from '../src/load';
+import { checkEmailSubject, loadRows, parseCsv } from '../src/load';
 
 const rows = loadRows(join(__dirname, '..', '..', 'data'), '2026-11-04T00:00:00Z');
 
@@ -32,6 +32,30 @@ describe('data/ files', () => {
     const file = readdirSync(join(copy, 'positions')).find((f) => f.endsWith('.csv'))!;
     appendFileSync(join(copy, 'positions', file), 'C001110,for,,,hand\n');
     expect(() => loadRows(copy, '2026-11-04T00:00:00Z')).toThrow(/has no source/);
+  });
+  // email-button §2.1
+  it('email_subject: every active call action has one, ≤80 chars, {city} only; the loader refuses a missing or bad one', () => {
+    const active = new Set(rows.goals.filter((g) => g.status === 'active').map((g) => g.id));
+    for (const a of rows.actions.filter((a) => a.type === 'call' && active.has(a.goal_id))) {
+      expect(a.email_subject, a.slug).toBeTruthy();
+      expect(a.email_subject!.length).toBeLessThanOrEqual(80);
+      expect(() => checkEmailSubject(a, { slug: 'g', status: 'active' })).not.toThrow();
+    }
+    const goal = { slug: 'g', status: 'active' as const };
+    const call = (email_subject: string | null) => ({ slug: 'x-call', type: 'call' as const, email_subject });
+    expect(() => checkEmailSubject(call(null), goal)).toThrow(/email_subject is required/);
+    expect(() => checkEmailSubject(call(null), { ...goal, status: 'upcoming' })).not.toThrow();
+    expect(() => checkEmailSubject({ ...call(null), type: 'letter' }, goal)).not.toThrow();
+    expect(() => checkEmailSubject(call('x'.repeat(81)), goal)).toThrow(/max 80/);
+    expect(() => checkEmailSubject(call('See https://example.org now'), goal)).toThrow(/URL, email or phone/);
+    expect(() => checkEmailSubject(call('Write me at a@b.org'), goal)).toThrow(/URL, email or phone/);
+    expect(() => checkEmailSubject(call('Call 202-224-3553'), goal)).toThrow(/URL, email or phone/);
+    expect(() => checkEmailSubject(call('Constituent {name} in {city}'), goal)).toThrow(/only \{city\}, not \{name\}/);
+    expect(() => checkEmailSubject(call('Constituent in {city}: section 1217'), goal)).not.toThrow();
+    const copy = mkdtempSync(join(tmpdir(), 'cut-ties-data-'));
+    cpSync(join(__dirname, '..', '..', 'data'), copy, { recursive: true });
+    writeFileSync(join(copy, 'actions', 'ndaa-1217-call.yaml'), readFileSync(join(copy, 'actions', 'ndaa-1217-call.yaml'), 'utf8').replace(/^email_subject: .*\n/m, ''));
+    expect(() => loadRows(copy, '2026-11-04T00:00:00Z')).toThrow(/ndaa-1217-call: email_subject is required/);
   });
   it('parseCsv rejects ragged rows', () => {
     expect(() => parseCsv('a,b\n1,2,3')).toThrow(/expected 2/);

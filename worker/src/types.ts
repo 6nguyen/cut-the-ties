@@ -138,6 +138,8 @@ export interface Action {
   standard_template: string | null;
   /** leader-call-scripts §1: JSON of `data/script_blocks/<name>.yaml`; when set the standard script is composed from it. */
   script_blocks: string | null;
+  /** email-button §2.1: subject line of the email step; required while the goal is active, `{city}` is the only placeholder. */
+  email_subject: string | null;
 }
 
 export interface Position {

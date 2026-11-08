@@ -115,7 +115,7 @@ export function checkElectoral(goals: Goal[], actions: Action[], members: Member
     if (bad.length) throw new Error(`goal ${g.slug}: electoral copy must not say ${bad.join(', ')} (primary-2028 Open question 1)`);
     if (JSON.parse(g.our_picks).length) throw new Error(`goal ${g.slug}: our_picks must stay empty until primary-2028 §2 is unblocked`);
     for (const a of actions.filter((x) => x.goal_id === g.id)) {
-      const abad = forbiddenPhrases([a.ask_text, a.prompt_template ?? '', a.doc_format, a.standard_template ?? ''].join('\n'));
+      const abad = forbiddenPhrases([a.ask_text, a.prompt_template ?? '', a.doc_format, a.standard_template ?? '', a.email_subject ?? ''].join('\n'));
       if (abad.length) throw new Error(`action ${a.slug}: electoral copy must not say ${abad.join(', ')} (primary-2028 Open question 1)`);
     }
   }
@@ -192,6 +192,8 @@ export function goalYaml(id: number, m: Member, e: ElectionRow, rollCallUrl?: st
 }
 
 export const ELECTORAL_ASK = "Ask the office who is running against them in the 2028 primary and say why you're asking.";
+/** email-button §2.1: the subject of the email step; `{city}` is the only placeholder. */
+export const ELECTORAL_EMAIL_SUBJECT = 'Constituent in {city}: who is running against you in the 2028 primary?';
 
 export function actionYaml(id: number, m: Member): string {
   const slug = primarySlug(m.state, m.district ?? 0);
@@ -203,6 +205,7 @@ export function actionYaml(id: number, m: Member): string {
     'target_scope: house',
     'order: 1',
     `ask_text: ${q(ELECTORAL_ASK)}`,
+    `email_subject: ${q(ELECTORAL_EMAIL_SUBJECT)}`,
     'form_schema:',
     '  fields:',
     '    - {name: first_name, label: First name, max: 40, required: true}',
