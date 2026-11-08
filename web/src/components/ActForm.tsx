@@ -275,29 +275,27 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
       <div ref={ts.mount} class="empty:hidden" />
       {error && <p role="alert" class="card border-crimson bg-newsprint text-ink px-4 py-3 text-sm font-semibold max-w-2xl">{error}</p>}
 
+      {/* Output layout: script (and its copy/download/regenerate row) on the left, call buttons and the receipt card beside it from 1024 px. */}
       {(generating || phase.kind === 'output') && (
-        <div class="card p-4 max-w-2xl">
+        <div class={`flex flex-col gap-4 ${phase.kind === 'output' ? 'lg:grid lg:grid-cols-[minmax(0,42rem)_minmax(18rem,26rem)] lg:gap-8 lg:items-start' : 'max-w-2xl'}`} data-output-layout>
+        <div class="flex flex-col gap-4">
+        <div class="card p-4">
           <p class="label-code" aria-live="polite">{generating ? phase.stage : phase.kind === 'output' && phase.doc.standard ? `Standard script — not personalised today · ${phase.doc.words} words` : `Your ${kind} · ${phase.kind === 'output' ? phase.doc.words : 0} words`}</p>
           {phase.kind === 'output' && phase.doc.standard && <p class="text-xs text-ink/70 mt-1">{STANDARD_WHY[phase.doc.reason ?? 'capacity'] ?? STANDARD_WHY.capacity}</p>}
           {phase.kind === 'output' && phase.doc.subject && <p class="font-condensed uppercase tracking-wide text-xl leading-tight mt-3">{phase.doc.subject}</p>}
           <pre class="whitespace-pre-wrap font-sans text-base leading-relaxed mt-3 min-h-[8rem]">{text}{generating && <span class="animate-pulse">▍</span>}</pre>
         </div>
-      )}
-
-      {phase.kind === 'refused' && (
-        <div class="card p-4 max-w-2xl" role="alert">
-          <p class="font-semibold">{phase.message}</p>
-          <button type="button" class="btn btn-ghost mt-4" onClick={() => setPhase({ kind: 'form' })}>Edit my lines</button>
-        </div>
-      )}
-
-      {phase.kind === 'output' && (
-        <div class="flex flex-col gap-4 max-w-2xl">
+        {phase.kind === 'output' && (
           <div class="flex flex-wrap gap-2">
             <button type="button" class="btn btn-ghost" onClick={() => { void navigator.clipboard?.writeText(text); setCopied(true); }}>{copied ? 'Copied' : 'Copy'}</button>
             <button type="button" class="btn btn-ghost" onClick={() => download(phase.doc)}>Download .txt</button>
             <button type="button" class="btn btn-ghost" onClick={() => void generate()}>{phase.doc.standard && phase.doc.variant ? 'Another version' : 'Regenerate'}</button>
           </div>
+        )}
+        </div>
+
+      {phase.kind === 'output' && (
+        <div class="flex flex-col gap-4" data-output-side>
           <div class="flex flex-wrap gap-2 items-center">
             {phoneOrder(phase.doc.target.phones).map(({ phone, district, label }) => (
               <span class="flex items-center gap-2">
@@ -351,6 +349,15 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               </>
             )}
           </div>
+        </div>
+      )}
+        </div>
+      )}
+
+      {phase.kind === 'refused' && (
+        <div class="card p-4 max-w-2xl" role="alert">
+          <p class="font-semibold">{phase.message}</p>
+          <button type="button" class="btn btn-ghost mt-4" onClick={() => setPhase({ kind: 'form' })}>Edit my lines</button>
         </div>
       )}
     </div>
