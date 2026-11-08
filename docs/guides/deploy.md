@@ -5,8 +5,9 @@ does afterwards, and the checklist ticked on first launch. Current
 behavior lives in `docs/specs/deployment.md`; variables in `.env.example`.
 
 ## 1. One-time provisioning (in order)
-Run from the repo root unless noted. `<domain>` is the apex domain
-(open question 1 of `docs/prd/deploy.md`).
+Run from the repo root unless noted. `<domain>` is the apex domain,
+`cutthetiesmovement.org` (decided 2026-11-08, `docs/prd/deploy.md` open
+question 1). Steps 1–12 are done; §5 is what remains.
 
 1. Log in: `npx wrangler login` (any directory; opens the browser).
 2. Create the database: `cd worker && npx wrangler d1 create cut_ties`.
@@ -50,8 +51,8 @@ Run from the repo root unless noted. `<domain>` is the apex domain
     Secrets: `CLOUDFLARE_API_TOKEN` (API Tokens → Create → Edit
     Cloudflare Workers template, plus D1:Edit and Pages:Edit),
     `CLOUDFLARE_ACCOUNT_ID`, `D1_DATABASE_ID`. Variables:
-    `SITE_DOMAIN` (`<domain>`, no scheme), `MONTHLY_COST_USD`,
-    `STRIPE_LINKS` (JSON, four Stripe payment links),
+    `SITE_DOMAIN` (`<domain>`, no scheme), `STRIPE_LINKS` (JSON, three
+    Stripe payment links: `once_5`, `monthly_1`, `custom`),
     `PUBLIC_TURNSTILE_SITE_KEY`, optionally `PAGES_PROJECT`.
 12. Merge any PR to `main` (or re-run the last `deploy` workflow from
     the Actions tab). The `production` job deploys the Worker with the
@@ -99,8 +100,8 @@ revert the data PR instead; the merge redeploys.
 ## 5. Go-live checklist (tick on first launch, commit the numbers)
 - [ ] `/` routes the three fixture addresses (CA-46, TX-35, PA-1) to
       their delegations.
-- [ ] `/donate` shows four working Stripe links and the real
-      `MONTHLY_COST_USD`.
+- [ ] `/donate` shows three working Stripe links ($5 once, $1 monthly,
+      custom amount); `STRIPE_LINKS` set in GitHub Actions variables.
 - [ ] A generation streams end to end with the real `ANTHROPIC_API_KEY`.
 - [ ] The digest ran once by manual trigger (dashboard → Worker →
       Triggers → Cron → "Trigger") and the email arrived at
@@ -114,7 +115,7 @@ revert the data PR instead; the merge redeploys.
 - [ ] `/api/route` p95 ≤2 s over 20 requests: ___ ms.
 - [ ] First streamed token ≤3 s p95 and generation complete ≤10 s p95:
       ___ s / ___ s.
-- [ ] `README.md` carries the live URL.
+- [x] `README.md` carries the live URL (2026-11-08).
 - [ ] After one week: Cloudflare billing shows $0 for Pages, Workers, D1,
       Turnstile and Email Routing.
 

@@ -87,7 +87,7 @@ reach production through `seed-remote`'s add-column step (Behavior 3).
 | Name | Set in | Read by | Without it |
 |---|---|---|---|
 | `SITE_URL` | Pages build env (from `SITE_DOMAIN`) | `web/astro.config.mjs` | relative share-image URLs |
-| `MONTHLY_COST_USD`, `STRIPE_LINKS` | GitHub Actions variables → build env | `web/src/lib/donate.ts` | `/donate` shows $0 / "link not configured" |
+| `STRIPE_LINKS` | GitHub Actions variable → build env | `web/src/lib/donate.ts` | `/donate` buttons read "link not configured" |
 | `PUBLIC_TURNSTILE_SITE_KEY` | GitHub Actions variable → build env | landing and act pages | no widget; `/api/route` refused once the secret is set |
 | `PUBLIC_SUGGEST_PROVIDER`, `PUBLIC_SUGGEST_TOKEN` | GitHub Actions variable + secret → build env (`docs/guides/deploy.md` step 13; the token is URL-restricted to the site and preview domains) | `web/src/lib/suggest.ts` (landing combobox, `/privacy`) | plain address field, no suggestions; build warns when only one is set |
 | `API_ORIGIN` | dev shell; Pages Preview variable | dev proxy; `web/functions/api/[[path]].ts` | dev → `localhost:8787`; previews answer 503 on `/api/*` |

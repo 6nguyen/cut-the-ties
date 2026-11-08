@@ -18,7 +18,7 @@ export const STANDARD_MODEL = 'standard';
 /** Blended cost per document while fewer than MIN_SAMPLE generations exist (research §3 working figure). */
 export const DEFAULT_BLENDED_USD = 0.025;
 export const MIN_SAMPLE = 20;
-/** `LLM_MONTHLY_BUDGET_USD` default; the same figure as `MONTHLY_COST_USD` on /donate. */
+/** `LLM_MONTHLY_BUDGET_USD` default. Internal only: /donate shows no running cost. */
 export const DEFAULT_BUDGET_USD = 15;
 /** No day serves fewer personalised documents than this while the budget is above zero. */
 export const CAP_FLOOR = 20;

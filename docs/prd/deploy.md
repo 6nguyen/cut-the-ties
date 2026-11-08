@@ -1,12 +1,12 @@
 # Production deployment — PRD
-Status: BUILDING · Owner: George Nguyen · Last updated: 2026-11-05
+Status: BUILDING · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The action-router shipped (archive/2026-11-action-router.md) as code that
 builds and passes 99 tests, but nothing runs outside `localhost`: no
 Cloudflare account resources exist, `worker/wrangler.jsonc` carries a
 placeholder D1 id, no secrets are set, CI has no deploy step, there is no
-domain, and the four Stripe links render "link not configured". Every
+domain, and the Stripe links render "link not configured". Every
 queued feature is invisible until this lands.
 
 ## Goals / Non-goals
@@ -39,7 +39,7 @@ exists and that donate links work.
    `TURNSTILE_SECRET` and `ANTHROPIC_API_KEY`, create the Pages project
    from the GitHub repo (build command `npm run build -w web`, output
    `web/dist`, Node 22), set the Pages build variables (`SITE_URL`,
-   `MONTHLY_COST_USD`, `STRIPE_LINKS`), add the custom domain, enable
+   `STRIPE_LINKS`), add the custom domain, enable
    Email Routing with `MAINTAINER_EMAIL` as a verified destination, create
    a Turnstile widget for the domain and put its site key in the web env.
 2. `worker/wrangler.jsonc` keeps the placeholder D1 id and no route;
@@ -71,7 +71,8 @@ exists and that donate links work.
 ### 3. Go-live checklist
 1. `docs/guides/deploy.md` ends with a checklist the maintainer ticks on
    first launch: address routes for the three fixture states, `/donate`
-   shows four working Stripe links and the real monthly cost, a
+   shows three working Stripe links ($5 once, $1 monthly, custom amount;
+   no running cost is shown, spend is internal reporting only), a
    generation streams with a real `ANTHROPIC_API_KEY`, the digest cron
    fires once by `wrangler deploy --dry-run`-free manual trigger and the
    email arrives, Turnstile blocks a request without a token, the landing
@@ -89,7 +90,7 @@ exists and that donate links work.
   `web/functions/api/[[path]].ts` proxies preview `/api/*` to `API_ORIGIN`.
 - GitHub Actions secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
   `D1_DATABASE_ID`; variables `SITE_DOMAIN`, `PAGES_PROJECT`,
-  `MONTHLY_COST_USD`, `STRIPE_LINKS`, `PUBLIC_TURNSTILE_SITE_KEY`. No new
+  `STRIPE_LINKS`, `PUBLIC_TURNSTILE_SITE_KEY`. No new
   Worker endpoints or tables.
 
 ## Spec delta
@@ -122,38 +123,52 @@ No flag: the first deploy is the rollout. Metrics: deploy workflow
 duration, Cloudflare request counts and error rate for `/api/*`, the
 measured budget numbers above.
 
-## State (updated 2026-11-04)
+## State (updated 2026-11-08)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [x] 1. Provisioning runbook and config · PR #29
   - [x] 2. CI deploy on merge · PR #29
-  - [!] 3. Go-live checklist · blocked: owner must provision Cloudflare, register the domain and run the checklist (text written, unticked)
-- Completed: §1–2 merged to main via PR #29 (integration of feat/deploy, PR #21); deploy steps skip until the Cloudflare secrets exist.
+  - [~] 3. Go-live checklist · `feat/deploy-donate-tiers` · owner ticks `docs/guides/deploy.md` §5 by hand; no code waits on it
+- Completed: §1–2 merged via PR #29. Provisioning (runbook steps 1–12) done by the owner: production job (deploy worker → seed remote D1 → deploy web) green on every merge to `main` since 2026-11-06; PR previews on `*.cut-ties.pages.dev`; `https://cutthetiesmovement.org/` live. `README.md` carries the live URL. `/donate` tiers set to $5 once / $1 monthly / custom, no cost line (this branch).
 - Folded: docs/specs/deployment.md (ADDED), docs/specs/README.md index row,
-  docs/specs/maintainer-tooling.md §Behavior 4 (seed:remote / schema:remote).
-- Branch / open PRs: none (PR #21 superseded by PR #29).
-- Files changed: .github/workflows/deploy.yml (new); .env.example (new);
-  docs/guides/deploy.md (new); docs/specs/deployment.md (new);
-  worker/scripts/render-deploy-config.ts (new);
-  web/functions/api/[[path]].ts (new); worker/test/env-example.test.ts
-  (new); worker/package.json:8-14 (deploy, deploy:config, seed:remote,
-  schema:remote); worker/scripts/seed.ts:16-19 (defer FKs);
-  worker/wrangler.jsonc:13-22 (comments only); scripts/quiet-check.sh:19-22
-  (deploy targets); .gitignore:33; README.md:3-7.
-- Tests run: quiet-check prd-lint, doc-lint, tsc, test (107 passed, 8 new),
-  test-web, build — all PASS; `wrangler deploy --dry-run` on the rendered
-  config passes. Not run: anything against Cloudflare (no account).
-- Remaining: §3 (owner); docs/specs/action-router.md §Performance budget
-  production numbers.
-- Next action: owner runs docs/guides/deploy.md §1, then ticks §5 and
-  records the numbers in action-router.md; a PR flips §1–§2 to `[x]`.
+  docs/specs/maintainer-tooling.md §Behavior 4 (seed:remote / schema:remote);
+  2026-11-08: goal-pages.md Behavior 5 + config, deployment.md env table (donate tiers, `MONTHLY_COST_USD` removed).
+- Branch / open PRs: `feat/deploy-donate-tiers`.
+- Files changed: .github/workflows/deploy.yml; .env.example; docs/guides/deploy.md;
+  docs/specs/deployment.md; worker/scripts/render-deploy-config.ts;
+  web/functions/api/[[path]].ts; worker/test/env-example.test.ts;
+  worker/package.json:8-14; worker/scripts/seed.ts:16-19; worker/wrangler.jsonc vars;
+  scripts/quiet-check.sh:19-22; README.md:3; web/src/lib/donate.ts (+ donate.test.ts);
+  web/src/pages/donate.astro; worker/src/cost.ts:21 (comment).
+- Tests run: quiet-check prd-lint, doc-lint, tsc, test, test-web, build (see PR for counts).
+  Not run: anything against Cloudflare from this session beyond reading the deploy workflow runs.
+- Remaining (all owner, manual; tick in `docs/guides/deploy.md` §5 and commit the numbers):
+  1. Three fixture addresses (CA-46, TX-35, PA-1) route on the live site.
+  2. Set `STRIPE_LINKS` (`once_5`, `monthly_1`, `custom`) in GitHub Actions variables and check the three buttons.
+  3. One generation streams end to end with the real `ANTHROPIC_API_KEY`.
+  4. Digest manual trigger delivers one email.
+  5. `POST /api/route` without a Turnstile token is refused.
+  6. Measure and record in `docs/specs/action-router.md` §Performance budget: landing KB, LCP, `/api/route` p95, first token / complete p95.
+  7. After one week live: Cloudflare billing $0 for Pages, Workers, D1, Turnstile, Email Routing.
+  Internal only (not on the site): actual monthly spend vs `LLM_MONTHLY_BUDGET_USD`.
+- Next action: merge this PR; owner works through Remaining 1–7, then a docs PR ticks §5, records the numbers and archives this PRD.
 ## Open questions
 1. Domain name. Proposal: the owner registers one `.org` before §3; the
    runbook uses `<domain>` until then. Not blocking: nothing in §1–§2
-   depends on the name.
+   depends on the name. Decided 2026-11-08: `cutthetiesmovement.org`,
+   live on Cloudflare.
 2. Deploy on every merge or on tags? Proposal: every merge; `data/`
    changes are the most frequent deploys and should not wait for a tag.
 
 ## Changes
+- 2026-11-08 — provisioning is done: production deploys (Worker, D1
+  seed, Pages) succeed on every merge to `main`, PR previews publish to
+  `*.cut-ties.pages.dev`, and `https://cutthetiesmovement.org/` serves
+  the site. §3 moves from blocked to in progress; what is left is the
+  owner's manual checklist (`docs/guides/deploy.md` §5). Owner decision:
+  `/donate` offers $5 once, $1 monthly and a custom amount, and shows no
+  running cost (`MONTHLY_COST_USD` removed from the build env, the
+  workflow, `wrangler.jsonc` and `.env.example`; actual spend and the LLM
+  budget are internal reporting only). `README.md` carries the live URL.
 - 2026-11-04 — §1–§2 built (feat/deploy). Mechanism change: wrangler
   does not interpolate env vars inside `wrangler.jsonc`, so instead of an
   env block the deploy renders `wrangler.deploy.json` from it
