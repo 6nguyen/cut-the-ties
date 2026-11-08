@@ -79,7 +79,7 @@ function checkJsonList(slug: string, field: string, raw: string, required: strin
   });
 }
 
-/** personalised-documents §1: `reasons` is ≤6 angles, each a non-empty `angle` with 1–5 `points` of ≤160 chars, no digits (numbers come from sourced rows, never from a framing). */
+/** personalised-documents §1: `reasons` is ≤6 angles, each a non-empty `angle` with 1–5 `points` of ≤130 chars, no digits (numbers come from sourced rows, never from a framing). */
 function checkReasons(slug: string, raw: string): void {
   const list = JSON.parse(raw) as unknown;
   if (!Array.isArray(list)) throw new Error(`goal ${slug}: reasons must be a list`);
@@ -89,7 +89,7 @@ function checkReasons(slug: string, raw: string): void {
     if (typeof e?.angle !== 'string' || e.angle === '') throw new Error(`goal ${slug}: reasons[${i}] needs angle`);
     if (!Array.isArray(e.points) || e.points.length < 1 || e.points.length > 5) throw new Error(`goal ${slug}: reasons[${i}] needs 1–5 points`);
     e.points.forEach((p, j) => {
-      if (typeof p !== 'string' || p.trim() === '' || p.length > 160) throw new Error(`goal ${slug}: reasons[${i}].points[${j}] must be 1–160 chars`);
+      if (typeof p !== 'string' || p.trim() === '' || p.length > 130) throw new Error(`goal ${slug}: reasons[${i}].points[${j}] must be 1–130 chars`);
       if (/\d/.test(p)) throw new Error(`goal ${slug}: reasons[${i}].points[${j}] holds a number; framings carry no figures`);
     });
   });
