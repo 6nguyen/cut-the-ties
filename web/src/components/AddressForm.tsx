@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { route } from '../lib/api';
+import { route, validVia } from '../lib/api';
 import { STATES, cacheRoute, loadPlace, savePlace } from '../lib/store';
 import { hasOpenItems } from '../lib/commitments';
 import { ATTRIBUTION, stepHighlight, suggest, suggestLoop } from '../lib/suggest';
@@ -89,7 +89,8 @@ export default function AddressForm({ siteKey, provider = 'none', suggester, tim
     setBusy(true); setError(null);
     try {
       const turnstile = await ts.nextToken();
-      const r = await route({ ...body, turnstile });
+      const via = validVia(); // social-sharing §5: the landing's ?via= rides on the route call and nowhere else
+      const r = await route({ ...body, turnstile, ...(via ? { via } : {}) });
       savePlace({ state: r.state, district: r.district });
       cacheRoute(r);
       location.assign('/results');

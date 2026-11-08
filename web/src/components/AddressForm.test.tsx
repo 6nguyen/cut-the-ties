@@ -158,6 +158,23 @@ describe('picking (§3) and the unresolved copy (§4)', () => {
     expect(root.querySelector('[role="alert"]')).toBeNull();
   });
 
+  it('social-sharing §5: a valid ?via= on the landing rides on the route body; a malformed one is dropped', async () => {
+    const submit = () => act(() => { (root.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    fetchMock = serve(); vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('location', { assign, replace: vi.fn(), pathname: '/', search: '?via=share' });
+    await act(() => { render(h(AddressForm, {}), root); });
+    await type('1000 N Main St, Santa Ana, CA'); await submit(); await wait(20);
+    expect(bodies()).toEqual([['/api/route', { address: '1000 N Main St, Santa Ana, CA', via: 'share' }]]);
+    expect(assign).toHaveBeenCalledWith('/results');
+
+    render(null, root);
+    fetchMock = serve(); vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('location', { assign, replace: vi.fn(), pathname: '/', search: '?via=Bad%20Tag%3Cscript%3E' });
+    await act(() => { render(h(AddressForm, {}), root); });
+    await type('1000 N Main St, Santa Ana, CA'); await submit(); await wait(20);
+    expect(bodies()).toEqual([['/api/route', { address: '1000 N Main St, Santa Ana, CA' }]]);
+  });
+
   it('a suggestion whose point lies in no district of its state falls through to the Census path with the label', async () => {
     fetchMock = serve(); vi.stubGlobal('fetch', fetchMock);
     const offshore: Suggestion = { label: '1 Pier Rd, Nowhere, CA 90000', state: 'CA', lon: -130, lat: 30 };
