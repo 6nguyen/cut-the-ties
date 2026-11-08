@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
-import type { DocFormat, FormField, GenerateDone } from '@worker/generate';
+import type { DocFormat, FormField, GenerateDone, TargetContact } from '@worker/generate';
+import type { ContactKind } from '@worker/types';
 import type { TargetCard } from '../lib/api';
 import { deviceId, loadPlace } from '../lib/store';
 import { commitmentFor, fmtDue, logReceipt } from '../lib/commitments';
@@ -22,6 +23,8 @@ interface Props {
   decision?: string | null;
   /** Goal `reasons`: first-person starting points offered as one radio group beside the form, grouped by angle. */
   reasons?: Reason[];
+  /** email-button §1.4: the action's maintainer-authored subject line; absent on letter and comment actions. */
+  emailSubject?: string | null;
 }
 
 interface Choice { id: string; label: string }
@@ -33,6 +36,27 @@ const STANDARD_WHY: Record<string, string> = {
   unconfigured: 'Drafting is not configured on this server, so this one is built from our template with your lines dropped in.',
   upstream: 'The drafting service is not answering, so this one is built from our template with your lines dropped in.',
 };
+/** email-button §1.4: the contact link's label by `contact_kind`, as on member pages. */
+export const CONTACT_LABEL: Record<ContactKind, string> = {
+  form: 'Open the contact form ↗',
+  zip_gate: 'Open the contact form (asks for your ZIP first) ↗',
+  homepage: 'Open the office website, then Contact ↗',
+};
+/** email-button §1.4: one line on what the office's form asks for; a treasurer (no chamber) has a comment box. */
+export function fieldHint(chamber: TargetContact['chamber']): string {
+  if (chamber === 'house') return 'The form asks for your name, address and ZIP, then a topic and a message box: paste the message there. If the form refuses your ZIP, use your ZIP+4 from usps.com.';
+  if (chamber === 'senate') return 'The form asks for your name, address and email, a topic and a message box: paste the message there.';
+  return 'Paste the message into the comment box.';
+}
+/** email-button §1.4: greeting, the body exactly as shown, then the user's own first name and city; nothing else, no model. */
+export function emailMessage(target: Pick<TargetContact, 'role' | 'name'>, body: string, values: Record<string, string>): string {
+  const sign = [values.first_name, values.city].map((v) => (v ?? '').trim()).filter(Boolean).join(', ');
+  return `Dear ${target.role} ${target.name.trim().split(/\s+/).pop()},\n\n${body}\n\n${sign}`;
+}
+/** email-button §1.2: every office on file closed (DC hours for the DC or lone number, the state's for the district office). */
+export function allClosed(phones: string[], state: string | undefined, now: Date = new Date()): boolean {
+  return phones.length > 0 && phoneOrder(phones, now).every((p) => !isOpen(now, p.district ? { state } : undefined));
+}
 const OUTCOMES: [string, string][] = [['will_support', 'Will support'], ['undecided', 'Undecided'], ['opposed', 'Opposed'], ['no_answer', 'No answer'], ['other', 'Other']];
 
 /**
@@ -71,7 +95,7 @@ async function readSse(body: ReadableStream<Uint8Array>, on: (event: string, dat
 }
 
 /** §4.1–4.6: the form, the streamed document, receipt, share and the office-response report. */
-export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons }: Props) {
+export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons, emailSubject }: Props) {
   const [choices, setChoices] = useState<Choice[] | null>(null);
   const [target, setTarget] = useState<string>('');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -86,6 +110,8 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const [funnelDone, setFunnelDone] = useState(false);
   const [promised, setPromised] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null); // the reasons panel's selected starting point
+  const [writing, setWriting] = useState(false); // email-button §1.4: the email step stands in for the call row
+  const [channel, setChannel] = useState<'call' | 'email'>('call'); // the channel of the receipt on screen
   const ts = useTurnstile(siteKey);
   const place = loadPlace();
   const [extras, setExtras] = useState<typeof import('./ReceiptExtras') | null>(null); // call-follow-through: loaded once a receipt exists
@@ -117,7 +143,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   });
 
   async function generate() {
-    setError(null); setText(''); setReceipt(null); setReported(false); setOutcome(''); setNote(''); setFunnelDone(false);
+    setError(null); setText(''); setReceipt(null); setReported(false); setOutcome(''); setNote(''); setFunnelDone(false); setWriting(false); setChannel('call');
     setPhase({ kind: 'generating', stage: 'Drafting…' });
     // leader-call-scripts §2: a fresh seed per request, so "Another version" composes a different standard script.
     const variant = Math.floor(Math.random() * 2 ** 31);
@@ -155,12 +181,15 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     }
   }
 
-  async function didIt() {
-    const res = await fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, action, target, state: place?.state, district: place?.district, device: deviceId() }) });
+  /** email-button §1.5: an emailed receipt is the call receipt's shape plus `channel: 'email'`; a call receipt is unchanged. */
+  async function didIt(via: 'call' | 'email' = 'call') {
+    const res = await fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, action, target, state: place?.state, district: place?.district, device: deviceId(), ...(via === 'email' ? { channel: via } : {}) }) });
     const data = (await res.json().catch(() => ({}))) as { id?: number; message?: string };
     if (!res.ok || !data.id) { setError(data.message ?? 'Could not record that.'); return; }
     logReceipt({ goal, action, target }); // call-follow-through §3
+    if (receipt === null) setChannel(via);
     setReceipt(data.id);
+    setWriting(false);
   }
 
   async function share() {
@@ -296,6 +325,26 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
 
       {phase.kind === 'output' && (
         <div class="flex flex-col gap-4" data-output-side>
+          {writing && emailSubject ? (
+            <div class="card p-4 flex flex-col gap-3" data-email-step>
+              <p class="font-condensed uppercase tracking-wide text-xl leading-tight">Send it in writing</p>
+              <p class="label-code">Subject</p>
+              <p class="font-semibold" data-email-subject>{emailSubject.replace('{city}', (values.city ?? '').trim() || 'your city')}</p>
+              <p class="label-code">Message</p>
+              <pre class="whitespace-pre-wrap font-sans text-sm leading-relaxed" data-email-message>{emailMessage(phase.doc.target, text, values)}</pre>
+              <div class="flex flex-wrap gap-2 items-center">
+                <button type="button" class="btn btn-ghost" onClick={() => { void navigator.clipboard?.writeText(`${emailSubject.replace('{city}', (values.city ?? '').trim() || 'your city')}\n\n${emailMessage(phase.doc.target, text, values)}`); setCopied(true); }}>{copied ? 'Copied' : 'Copy subject and message'}</button>
+                {phase.doc.target.contact_form_url ? (
+                  <a href={phase.doc.target.contact_form_url} class="btn btn-primary" rel="noopener" target="_blank" data-contact-link>{CONTACT_LABEL[phase.doc.target.contact_kind ?? 'homepage']}</a>
+                ) : <p class="text-sm w-full" data-no-form>This office lists no contact form; the DC number is the only channel.</p>}
+              </div>
+              {phase.doc.target.contact_form_url && <p class="text-sm" data-field-hint>{fieldHint(phase.doc.target.chamber)}</p>}
+              <div class="flex flex-wrap gap-2">
+                {phase.doc.target.contact_form_url && <button type="button" class="btn btn-primary" onClick={() => void didIt('email')} data-sent>I sent it</button>}
+                <button type="button" class="btn btn-ghost" onClick={() => setWriting(false)}>Back to calling</button>
+              </div>
+            </div>
+          ) : (
           <div class="flex flex-wrap gap-2 items-center">
             {phoneOrder(phase.doc.target.phones).map(({ phone, district, label }) => (
               <span class="flex items-center gap-2">
@@ -303,19 +352,24 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
                 <OpenChip state={district ? place?.state : undefined} />
               </span>
             ))}
+            {/* email-button §1.2: the one email affordance sits under the call buttons; closed offices promote it to a primary button. */}
+            {emailSubject && (allClosed(phase.doc.target.phones, place?.state)
+              ? <button type="button" class="btn btn-primary w-full sm:w-auto" onClick={() => setWriting(true)} data-email-closed>{phase.doc.target.phones.length > 1 ? 'Both offices are closed. Email instead' : 'The office is closed. Email instead'}</button>
+              : <button type="button" class="text-sm underline w-full text-left" onClick={() => setWriting(true)} data-email-link>I can't call right now</button>)}
             {phoneOrder(phase.doc.target.phones)[0]?.district && <p class="text-sm w-full" data-dc-closed>DC office closed; district office answers in office hours.</p>}
             {phase.doc.target.phones.length > 1 && <p class="text-sm w-full" data-two-offices>Either number works and both log your call. The DC office is where the legislative staff sit; the district office is the local one.</p>}
             {type !== 'call' && phase.doc.target.contact_form_url && (
               <a href={phase.doc.target.contact_form_url} class="btn btn-primary" rel="noopener" target="_blank">Open the contact form ↗</a>
             )}
           </div>
-          <div class="card p-4 flex flex-col gap-3">
+          )}
+          {!(writing && receipt === null) && <div class="card p-4 flex flex-col gap-3">
             {receipt === null ? (
               <button type="button" class="btn btn-primary self-start" onClick={() => void didIt()}>I did it</button>
             ) : (
               <>
                 <p class="font-semibold"><span class="chip bg-acid text-ink mr-2">✓</span>Counted. No name, no address: just this goal, this office, today.</p>
-                <Funnel goal={goal} action={action} target={target} who={phase.doc.target.name.trim().split(/\s+/).pop()} title={title ?? goal} type={type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
+                <Funnel goal={goal} action={action} target={target} who={phase.doc.target.name.trim().split(/\s+/).pop()} title={title ?? goal} type={channel === 'email' ? 'letter' : type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
                 {funnelDone && (
                   <>
                     {extras && <extras.NextOffice goal={goal} action={action} choices={choices} />}
@@ -339,8 +393,19 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
                     {outcome === 'other' && <input type="text" maxLength={140} class="input-field text-sm" placeholder="In a few words (140 max)" value={note} onInput={(e) => setNote((e.target as HTMLInputElement).value)} />}
                     <button type="submit" class="btn btn-ghost self-start" disabled={!outcome}>Send</button>
                   </form>
-                ) : <p class="text-sm">Thanks. Reports go to the maintainer; they never change a listed position on their own.</p>}
-                {outcome === 'no_answer' && extras && <extras.Retry goal={goal} action={action} target={target} who={`${phase.doc.target.role} ${phase.doc.target.name}`} title={title ?? goal} />}
+                ) : (
+                  <>
+                    <p class="text-sm">Thanks. Reports go to the maintainer; they never change a listed position on their own.</p>
+                    {/* email-button §1.3: the private, related second ask after a reported call; a muted link, never a card. */}
+                    {emailSubject && outcome !== 'no_answer' && !writing && <button type="button" class="text-sm underline text-ink/70 self-start" onClick={() => setWriting(true)} data-put-in-writing>Put it in writing (2 min)</button>}
+                  </>
+                )}
+                {outcome === 'no_answer' && extras && (
+                  <div class="flex flex-wrap gap-2 items-end">
+                    <extras.Retry goal={goal} action={action} target={target} who={`${phase.doc.target.role} ${phase.doc.target.name}`} title={title ?? goal} />
+                    {emailSubject && !writing && <button type="button" class="btn btn-primary" onClick={() => setWriting(true)} data-email-instead>Email it instead</button>}
+                  </div>
+                )}
                 <div class="border-t-2 border-ink pt-3">
                   <label class="label-code block mb-1" for="reflection">One line for yourself: how did it feel? (stays on this page)</label>
                   <input id="reflection" type="text" class="input-field w-full text-sm" />
@@ -348,7 +413,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
                 <p class="text-sm">This site is one person's project. <a href="/donate" class="underline font-semibold">Chip in for the hosting and the drafts →</a></p>
               </>
             )}
-          </div>
+          </div>}
         </div>
       )}
         </div>
