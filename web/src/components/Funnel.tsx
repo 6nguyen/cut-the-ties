@@ -10,6 +10,8 @@ interface Props {
   target: string;
   /** The official's surname, for the §3.1 receipt line. */
   who?: string;
+  /** The office's role, kept on the captain list for the poster's target line. */
+  role?: string;
   title: string;
   type: 'call' | 'letter' | 'public_comment';
   decision: string | null;
@@ -20,7 +22,7 @@ interface Props {
 
 const BLANK = (): Person => ({ name: '', channel: 'text', done: false });
 
-export default function Funnel({ goal, action, target, who, title, type, decision, place, onFinished }: Props) {
+export default function Funnel({ goal, action, target, who, role, title, type, decision, place, onFinished }: Props) {
   const now = new Date();
   const [step, setStep] = useState<'commit' | 'captains' | 'done'>('commit');
   const [date, setDate] = useState(ymd(defaultDue(now, decision)));
@@ -44,7 +46,7 @@ export default function Funnel({ goal, action, target, who, title, type, decisio
   const allValid = people.every((p) => validName(p.name));
   function saveList() {
     if (!allValid) return;
-    saveCaptain({ v: 1, goal, due, people: people.map((p) => ({ name: p.name.trim(), channel: p.channel, done: false })), who });
+    saveCaptain({ v: 1, goal, due, people: people.map((p) => ({ name: p.name.trim(), channel: p.channel, done: false })), who, role });
     setSaved(true);
     finish();
   }

@@ -5,30 +5,9 @@ import { atDue, clearFunnel, fmtDay, fmtDue, isOverdue, keyOf, kindOf, loadCapta
 import { fmtWhen, withdrawVisit } from '../lib/visits';
 
 /** The build-time slice of every published goal the card needs (index.astro passes it). */
-export interface WeekGoal { slug: string; title: string; status: 'upcoming' | 'active' | 'completed' | 'expired'; decision_date: string | null; outcome_note: string | null }
+export interface WeekGoal { slug: string; title: string; status: 'upcoming' | 'active' | 'completed' | 'expired'; decision_date: string | null; outcome_note: string | null; what_we_want?: string }
 interface Props { goals: WeekGoal[] }
 
-const FONT = "'Bebas Neue', Impact, 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif";
-/** §3.2 share image: goal, district and date only, drawn on the device from the goal-card template. */
-export async function shareImage(title: string, district: string, due: string): Promise<File | null> {
-  if (typeof document === 'undefined') return null;
-  const c = document.createElement('canvas');
-  c.width = 1200; c.height = 630;
-  const g = c.getContext('2d');
-  if (!g) return null;
-  g.fillStyle = '#090A0F'; g.fillRect(0, 0, 1200, 630);
-  g.fillStyle = '#00E876'; g.fillRect(0, 0, 1200, 14);
-  g.fillStyle = '#FACC15'; g.font = "700 26px 'Space Mono', Menlo, monospace"; g.fillText(`${district.toUpperCase()} · CUT THE TIES`, 72, 118);
-  g.fillStyle = '#FAF7F0'; g.font = `700 84px ${FONT}`;
-  const words = title.toUpperCase().split(/\s+/); const lines: string[] = []; let line = '';
-  for (const w of words) { if (g.measureText(`${line} ${w}`.trim()).width > 1056 && line) { lines.push(line); line = w; } else line = `${line} ${w}`.trim(); }
-  if (line) lines.push(line);
-  lines.slice(0, 3).forEach((l, i) => g.fillText(l, 72, 250 + i * 88));
-  g.fillStyle = '#E11148'; g.fillRect(72, 520, 1056, 4);
-  g.fillStyle = '#FAF7F0'; g.font = "28px Inter, 'Helvetica Neue', Arial, sans-serif"; g.fillText(`Three of us are calling before ${fmtDay(due)}.`, 72, 572);
-  const blob = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/png'));
-  return blob ? new File([blob], 'cut-the-ties.png', { type: 'image/png' }) : null;
-}
 
 /** commitment-funnel §2: the return visitor's checklist above the address field; §3: share after a completed list. */
 export default function YourWeek({ goals }: Props) {
@@ -42,6 +21,7 @@ export default function YourWeek({ goals }: Props) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visits, setVisits] = useState<JoinedVisit[]>([]);
+  const [poster, setPoster] = useState<File | null>(null); // social-sharing §4: drawn once the list is receipted, shared synchronously on tap
   const goalOf = (slug: string) => goals.find((g) => g.slug === slug);
 
   useEffect(() => {
@@ -59,6 +39,17 @@ export default function YourWeek({ goals }: Props) {
     if (cap && (cap.receipted || closed(cap.goal))) saveCaptain(null); else setCaptain(cap);
     setDropped([...new Set(gone)]);
   }, []);
+
+  useEffect(() => {
+    if (!captain?.receipted) { setPoster(null); return; }
+    const g = goalOf(captain.goal);
+    const due = fmtDay(captain.due).toUpperCase();
+    const target = captain.who ? `${(captain.role ?? '').toUpperCase()} ${captain.who.toUpperCase()}'S OFFICE BEFORE ${due}`.trim() : `OUR OFFICES BEFORE ${due}`;
+    let live = true;
+    import('../lib/poster').then((m) => m.posterFile({ verb: 'THREE OF US ARE CALLING', target, title: g?.title ?? captain.goal, what: g?.what_we_want ?? '', date: m.posterDate() }, `cut-the-ties-${captain.goal}.png`))
+      .then((f) => { if (live) setPoster(f); }).catch(() => {});
+    return () => { live = false; };
+  }, [captain?.receipted, captain?.goal]);
 
   // office-visits: a joined visit shows even without a stored address (one can be joined from a member page).
   if (!place && visits.length === 0) return null;
@@ -87,15 +78,15 @@ export default function YourWeek({ goals }: Props) {
     if (!res.ok) { setError('Could not count that. Your list is still here.'); return; }
     setCap({ ...c, people: c.people.map((p) => ({ ...p, done: true })), receipted: true });
   }
-  async function share(c: Captain) {
+  /** social-sharing §4: the 9:16 poster ("THREE OF US ARE CALLING / <ROLE> <SURNAME>'S OFFICE BEFORE <MON D>", district off the image) is attached when the sheet takes files; text and link unchanged. */
+  function share(c: Captain) {
     const url = `${location.origin}/goals/${c.goal}`;
     const text = receiptLine(where, c.who, c.due);
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
     if (nav.share) {
-      const img = await shareImage(goalOf(c.goal)?.title ?? c.goal, where, c.due);
-      const data: ShareData = img && nav.canShare?.({ files: [img] }) ? { title: 'Cut the Ties', text, url, files: [img] } : { title: 'Cut the Ties', text, url };
-      try { await nav.share(data); } catch { /* dismissed */ }
-    } else { await navigator.clipboard?.writeText(`${text} ${url}`); setCopied(true); }
+      const data: ShareData = poster && nav.canShare?.({ files: [poster] }) ? { title: 'Cut the Ties', text, url, files: [poster] } : { title: 'Cut the Ties', text, url };
+      nav.share(data).catch(() => { /* dismissed */ });
+    } else { void navigator.clipboard?.writeText(`${text} ${url}`).then(() => setCopied(true)); }
   }
   function startOver() { clearFunnel(); clearPlace(); setItems([]); setCaptain(null); setDropped([]); setVisits([]); setPlace(null); }
   async function leave(id: number) { await withdrawVisit(id); setVisits(visits.filter((j) => j.id !== id)); }

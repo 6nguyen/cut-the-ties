@@ -16,8 +16,8 @@ export const kindOf = (c: Commitment): 'call' | 'retry' => c.kind ?? 'call';
 /** One list key per item: the call commitment is one per goal, a retry one per goal and target. */
 export const keyOf = (c: Commitment): string => (kindOf(c) === 'retry' ? `retry:${c.goal}:${c.target}` : `call:${c.goal}`);
 export interface Person { name: string; channel: Channel; done: boolean }
-/** `who` is the official's surname for the receipt line ("…calling Casar…"); `receipted` is set once the list posted its receipt. */
-export interface Captain { v: 1; goal: string; due: string; people: Person[]; who?: string; receipted?: boolean }
+/** `who` is the official's surname for the receipt line ("…calling Casar…"), `role` their "Rep."/"Sen." for the share poster (social-sharing §4); `receipted` is set once the list posted its receipt. */
+export interface Captain { v: 1; goal: string; due: string; people: Person[]; who?: string; role?: string; receipted?: boolean }
 export interface JoinedVisit { v: 1; id: number; member: string; name: string; city: string; starts_at: string; ends_at: string; contact_url: string }
 
 const read = <T>(key: string): T | null => { try { const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; } };

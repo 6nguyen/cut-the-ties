@@ -22,6 +22,8 @@ interface Props {
   decision?: string | null;
   /** Goal `reasons`: first-person starting points offered as one radio group beside the form, grouped by angle. */
   reasons?: Reason[];
+  /** Goal `what_we_want`, the poster's body line (social-sharing §2.2). */
+  what?: string;
 }
 
 interface Choice { id: string; label: string }
@@ -71,7 +73,7 @@ async function readSse(body: ReadableStream<Uint8Array>, on: (event: string, dat
 }
 
 /** §4.1–4.6: the form, the streamed document, receipt, share and the office-response report. */
-export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons }: Props) {
+export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons, what }: Props) {
   const [choices, setChoices] = useState<Choice[] | null>(null);
   const [target, setTarget] = useState<string>('');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -82,17 +84,32 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const [outcome, setOutcome] = useState('');
   const [note, setNote] = useState('');
   const [reported, setReported] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false); // the script's Copy button
   const [funnelDone, setFunnelDone] = useState(false);
   const [promised, setPromised] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null); // the reasons panel's selected starting point
   const ts = useTurnstile(siteKey);
   const place = loadPlace();
   const [extras, setExtras] = useState<typeof import('./ReceiptExtras') | null>(null); // call-follow-through: loaded once a receipt exists
+  const [shareMod, setShareMod] = useState<typeof import('./ShareRow') | null>(null); // social-sharing: the share row and its poster chunk
+  const [poster, setPoster] = useState<import('./ShareRow').Poster | null>(null);
 
   useEffect(() => {
     if (receipt === null || extras) return;
     import('./ReceiptExtras').then(setExtras).catch(() => {});
+  }, [receipt]);
+  // social-sharing §2.1: render the poster on receipt mount, so the File and canShare are cached before the funnel ends.
+  useEffect(() => {
+    if (receipt === null || phase.kind !== 'output') return;
+    const t = phase.doc.target;
+    let live = true;
+    import('./ShareRow').then(async (m) => {
+      if (!live) return;
+      setShareMod(m);
+      const p = await m.preparePoster(m.receiptSpec(type, t.role, t.name, place?.state, title ?? goal, what ?? ''), goal);
+      if (live) setPoster(p);
+    }).catch(() => {});
+    return () => { live = false; };
   }, [receipt]);
 
   useEffect(() => {
@@ -161,13 +178,6 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     if (!res.ok || !data.id) { setError(data.message ?? 'Could not record that.'); return; }
     logReceipt({ goal, action, target }); // call-follow-through §3
     setReceipt(data.id);
-  }
-
-  async function share() {
-    const url = `${location.origin}/goals/${goal}`;
-    const payload = { title: 'Cut the Ties', text: 'I just made my call. Yours takes two minutes:', url };
-    if (navigator.share) { try { await navigator.share(payload); } catch { /* dismissed */ } }
-    else { await navigator.clipboard?.writeText(url); setCopied(true); }
   }
 
   async function report() {
@@ -315,15 +325,16 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
             ) : (
               <>
                 <p class="font-semibold"><span class="chip bg-acid text-ink mr-2">✓</span>Counted. No name, no address: just this goal, this office, today.</p>
-                <Funnel goal={goal} action={action} target={target} who={phase.doc.target.name.trim().split(/\s+/).pop()} title={title ?? goal} type={type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
+                <Funnel goal={goal} action={action} target={target} who={phase.doc.target.name.trim().split(/\s+/).pop()} role={phase.doc.target.role} title={title ?? goal} type={type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
                 {funnelDone && (
                   <>
                     {extras && <extras.NextOffice goal={goal} action={action} choices={choices} />}
                     {extras && place && <extras.Counts goal={goal} state={place.state} district={scope === 'state' ? null : place.district} echo />}
-                    <div class="flex flex-wrap gap-2">
-                      <button type="button" class="btn btn-ghost" onClick={() => void share()}>{copied ? 'Link copied' : 'Share'}</button>
-                      <a href="/results" class="btn btn-ghost">Your other action</a>
-                    </div>
+                    {shareMod ? (
+                      <shareMod.default type={type} role={phase.doc.target.role} name={phase.doc.target.name} title={title ?? goal} slug={goal} poster={poster} other={<a href="/results" class="btn btn-ghost">Your other action</a>} />
+                    ) : (
+                      <div class="flex flex-wrap gap-2"><a href="/results" class="btn btn-ghost">Your other action</a></div>
+                    )}
                   </>
                 )}
                 {!reported ? (
