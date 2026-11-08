@@ -91,7 +91,10 @@ stores identifies them. Address routing, goals and ranking are in
    the uniqueness check never matched). Both attempts throwing on the
    model call gives `reset` and the standard script with
    `reason: upstream`. One "Regenerate" button.
-4. **Receipt, share, report.** The output screen offers copy, download
+4. **Receipt, share, report.** From 1024 px the output screen is two
+   columns: the script with its copy / download / regenerate row on the
+   left, the call buttons and the receipt card beside it on the right
+   (stacked in that order below). It offers copy, download
    `.txt`, `tel:` links for every phone on file (each with the open/closed
    chip of `web/src/lib/hours.ts`; with two numbers each button names its
    office, "DC office" / "District office", under a one-line note that
