@@ -505,9 +505,9 @@ export async function prepare(deps: GenerateDeps, input: GenerateInput): Promise
   if (until && until.getTime() > now.getTime()) return reject(403, 'blocked', 'Drafting is paused on this device for 24 hours after repeated misuse.');
 
   const counts = await repo.generationCounts(deviceHash, ipHash, action.id, now);
-  if (counts.device_hour >= LIMITS.device_hour) return reject(429, 'limit_hour', `You have drafted ${LIMITS.device_hour} times this hour. Use one of them, or try again later.`);
-  if (counts.device_day >= LIMITS.device_day) return reject(429, 'limit_day', `You have drafted ${LIMITS.device_day} times today. Come back tomorrow.`);
-  if (counts.device_action_day >= LIMITS.device_action_day) return reject(429, 'limit_action', `Three drafts per action per day. Use one of today's.`);
+  if (counts.device_hour >= LIMITS.device_hour) return reject(429, 'limit_hour', `You have drafted ${LIMITS.device_hour} times in the last hour, which is the limit. Try again in an hour.`);
+  if (counts.device_day >= LIMITS.device_day) return reject(429, 'limit_day', `You have drafted ${LIMITS.device_day} times in the last 24 hours, which is the limit. Try again tomorrow.`);
+  if (counts.device_action_day >= LIMITS.device_action_day) return reject(429, 'limit_action', `You have used all ${LIMITS.device_action_day} drafts for this action in the last 24 hours. Try again tomorrow.`);
   if (counts.ip_day >= LIMITS.ip_day) return reject(429, 'limit_ip', 'Too many drafts from this network today. Come back tomorrow.');
 
   const fmt = parseFormat(action);
