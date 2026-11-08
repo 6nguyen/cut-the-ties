@@ -194,6 +194,8 @@ export type ScreenClass = 'off_topic' | 'injection' | 'harmful';
 /** §7.2 digest reads: a screening row without content, an active block, the last digest run. */
 export interface ScreeningRow { device_hash: string; action_id: number; class: ScreenClass; created_at: string }
 export interface BlockRow { device_hash: string; until: string }
+/** social-sharing §5: one day's count of `/api/route` calls that carried a `via` tag; no request row exists. */
+export interface ViaCount { via: string; n: number }
 
 /** Counts the §4.7 limits read; every window is [since, now]. */
 export interface GenerationCounts { device_hour: number; device_day: number; device_action_day: number; ip_day: number; global_day: number }
@@ -232,6 +234,10 @@ export interface Repo {
   activeBlocks(now: Date): Promise<BlockRow[]>;
   lastDigestRun(): Promise<Date | null>;
   recordDigestRun(at: Date, reportCount: number): Promise<void>;
+  /** social-sharing §5: add one to the day's counter for `via` (a `meta` key, no row per request). */
+  bumpVia(via: string, day: string): Promise<void>;
+  /** Counts per `via` over the days from `sinceDay` (YYYY-MM-DD) on, summed, largest first. */
+  viaCountsSince(sinceDay: string): Promise<ViaCount[]>;
   // member-pages §2.2: the newest visible office response for one member and goal (GET /api/members/:id/reports).
   latestReport(bioguideId: string, goalId: number): Promise<LatestReport | null>;
   // district-counters §1/§3 (worker/src/counts.ts and POST /api/receipt are the only callers).

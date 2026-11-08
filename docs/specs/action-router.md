@@ -114,7 +114,8 @@ documents, receipts and reports are in `personalised-documents.md`.
 
 ## Data & contracts
 - `POST /api/route` body `{address, turnstile?}` or `{state, district,
-  by_location?, by_suggestion?, turnstile?}`. 200 `{state, district, house, senators, state_row, goals}`
+  by_location?, by_suggestion?, turnstile?}`, plus optional `via`
+  (`social-sharing.md` §7; malformed → 400 `bad_request`). 200 `{state, district, house, senators, state_row, goals}`
   where `goals` is at most two `GoalCard`s (`worker/src/route.ts`). A
   leadership `GoalCard` carries `chamber`, `uncalled: Chamber[]` (the
   Democratic-caucus seats with no called result) and, when both goals

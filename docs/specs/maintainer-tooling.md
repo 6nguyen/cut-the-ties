@@ -48,7 +48,10 @@ and nothing here writes to `data/` or to `positions`.
    report(s)[ · M visit listing(s) to review][ · LLM budget 80%] ·
    YYYY-MM-DD`; body = Haiku prose (3–6 sentences from the counts table)
    followed by `---` and the code-rendered table (member, goal × outcome
-   counts, screened-out classes, blocked devices, then the "LLM spend"
+   counts, screened-out classes, blocked devices, "Routes by via" — the
+   window's `/api/route` calls per `via` tag from the day counters in
+   `meta`, `none` when nothing carried one (`social-sharing.md` §7),
+   then the "LLM spend"
    block: since last run — documents, redrafts, standard scripts, $;
    month to date — $ of $budget and the per cent; today's cap; per
    action — documents, redraft share, output-check failure classes,

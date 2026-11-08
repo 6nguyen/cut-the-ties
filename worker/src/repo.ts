@@ -1,9 +1,6 @@
 import type {
   Action, BlockRow, Delegation, GenerationCounts, GenerationRow, Goal, Incoming, IncomingSeat, Member, MemberElect, Office, Position, ReceiptRow, Repo, ReportRow, ScreenClass, ScreeningRow, StateRow, UncalledSeat,
-  LatestReport, ReceiptBuckets, ReceiptChannel,
-  ReceiptKind,
-  ReceiptTotal, ReceiptLimitCounts, TokenSum, Visit, VisitRequestRow, VisitRow, VisitStatus,
-} from './types';
+  LatestReport, ReceiptBuckets, ReceiptChannel, ReceiptKind, ReceiptLimitCounts, ReceiptTotal, TokenSum, Visit, VisitRequestRow, VisitRow, VisitStatus, ViaCount } from './types';
 
 /** generation-cost §1: group rows by (model, action, first-failure class); the MemoryRepo's `tokensSince` and tests share it. */
 export function sumTokens(rows: GenerationRow[]): TokenSum[] {
@@ -217,6 +214,18 @@ export class D1Repo implements Repo {
   async recordDigestRun(at: Date, reportCount: number): Promise<void> {
     await this.db.prepare(`INSERT INTO digest_runs (ran_at, report_count) VALUES (?, ?)`).bind(iso(at), reportCount).run();
   }
+  // social-sharing §5: day buckets in `meta` (`via:<day>:<via>` → count). The request itself leaves no row.
+  async bumpVia(via: string, day: string): Promise<void> {
+    await this.db
+      .prepare(`INSERT INTO meta (key, value) VALUES (?, '1') ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)`)
+      .bind(`via:${day}:${via}`).run();
+  }
+  async viaCountsSince(sinceDay: string): Promise<ViaCount[]> {
+    const { results } = await this.db
+      .prepare(`SELECT substr(key, 16) AS via, SUM(CAST(value AS INTEGER)) AS n FROM meta WHERE key LIKE 'via:%' AND substr(key, 5, 10) >= ? GROUP BY via ORDER BY n DESC, via`)
+      .bind(sinceDay).all<ViaCount>();
+    return results;
+  }
 
   async latestReport(bioguideId: string, goalId: number): Promise<LatestReport | null> {
     return (await this.db
@@ -370,6 +379,7 @@ export class MemoryRepo implements Repo {
   receipts: ReceiptRow[] = [];
   reports: ReportRow[] = [];
   digestRuns: { ran_at: string; report_count: number }[] = [];
+  via = new Map<string, number>(); // `${day}|${via}` → count (social-sharing §5)
   visits: Visit[] = [];
   visitRequests: VisitRequestRow[] = [];
   private visitsDeleted = 0; // keeps ids unique after a delete, like AUTOINCREMENT would
@@ -448,6 +458,12 @@ export class MemoryRepo implements Repo {
     return last ? new Date(last) : null;
   }
   async recordDigestRun(at: Date, reportCount: number): Promise<void> { this.digestRuns.push({ ran_at: iso(at), report_count: reportCount }); }
+  async bumpVia(via: string, day: string): Promise<void> { const k = `${day}|${via}`; this.via.set(k, (this.via.get(k) ?? 0) + 1); }
+  async viaCountsSince(sinceDay: string): Promise<ViaCount[]> {
+    const sum = new Map<string, number>();
+    for (const [k, n] of this.via) { const [day, via] = k.split('|'); if (day >= sinceDay) sum.set(via, (sum.get(via) ?? 0) + n); }
+    return [...sum].map(([via, n]) => ({ via, n })).sort((a, b) => b.n - a.n || a.via.localeCompare(b.via));
+  }
   async latestReport(bioguideId: string, goalId: number): Promise<LatestReport | null> {
     const r = this.reports.filter((x) => x.bioguide_id === bioguideId && x.goal_id === goalId).at(-1);
     return r ? { outcome: r.outcome, note: r.note, created_at: r.created_at } : null;

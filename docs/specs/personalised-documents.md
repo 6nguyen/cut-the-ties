@@ -110,17 +110,17 @@ stores identifies them. Address routing, goals and ranking are in
    receipt, first the commitment line and the captain list
    (`commitment-funnel.md` §1–4; each skippable in one tap), and only
    once both are answered or skipped: the next-office buttons and the
-   "You're one of <N>" line (`commitment-funnel.md` §10), then "Share"
-   (device share sheet with the goal deep link, clipboard fallback), the
-   office-response picker
+   "You're one of <N>" line (`commitment-funnel.md` §10), then the share
+   row of `social-sharing.md` §3–5 (poster, link, fallback, intents),
+   the office-response picker
    (`will_support · undecided · opposed · no_answer · other` + note
    ≤140) → `POST /api/report` (`no_answer` also shows the voicemail line,
    "Try again", `commitment-funnel.md` §9, and the primary button "Email
    it instead"; any other reported outcome shows the muted link "Put it
    in writing (2 min)" under the thanks line), a reflection line that
-   never leaves the page, and a link to `/donate`. Share is offered after a receipt or a
-   completed captain list, never before. Reports never change a
-   position row.
+   never leaves the page, and a link to `/donate`. The share row comes
+   after a receipt or a completed captain list, never before. Reports
+   never change a position row.
    **Email step** (`email-button`): "I can't call right now", the
    closed-offices button, "Email it instead" and "Put it in writing" all
    open, in place of the call row, a card "Send it in writing" with the

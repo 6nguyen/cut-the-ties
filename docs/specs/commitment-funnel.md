@@ -37,9 +37,9 @@ who was on it. The receipt itself and the share sheet are in
    description. It holds no name. "Copy a message" puts on the clipboard
    one line naming the goal and the date plus the goal deep link, for
    the user's own groups.
-4. **Share waits.** "Share" and "Your other action" appear on the receipt
-   screen only after both steps are answered or skipped; the receipt
-   share text is unchanged.
+4. **Share waits.** The share row (`social-sharing.md` §3) and "Your
+   other action" appear on the receipt screen only after both steps are
+   answered or skipped.
 5. **Your week (`/`).** A visitor with a stored district and any open
    commitment or captain list sees a "Your week" card above the address
    field instead of being redirected to `/results`. Each open commitment
@@ -65,9 +65,10 @@ who was on it. The receipt itself and the share sheet are in
 8. **Share after a list.** The share after a completed list uses the
    device share sheet (clipboard fallback: line + link) with the text
    "Three of us in <STATE-NN> are calling <Surname> before <Mon D>. Who's
-   next?" and the goal deep link. When the browser can share files, a
-   1200×630 PNG drawn on the device from the goal-card template is
-   attached; it carries the goal title, the district and the date only.
+   next?" and the goal deep link. When the browser can share files, the
+   1080×1920 poster of `social-sharing.md` §6 is attached ("THREE OF US
+   ARE CALLING / <ROLE> <SURNAME>'S OFFICE BEFORE <MON D>"); the
+   district stays off the image and in the text.
 9. **Voicemail retry** (`call-follow-through` §1). Choosing `no_answer`
    in the office-response picker shows "Voicemail counts. Offices tally
    messages daily; say your street address so yours is logged." and one

@@ -19,6 +19,8 @@ export interface Deps {
 }
 
 const STATE = /^[A-Z]{2}$/;
+/** social-sharing §5: the optional `via` tag on `/api/route`, a short slug (`share`); anything else is a 400. */
+const VIA = /^[a-z0-9-]{1,16}$/;
 const BIOGUIDE = /^[A-Z]\d{6}$/;
 const OUTCOMES: ReportOutcome[] = ['will_support', 'undecided', 'opposed', 'no_answer', 'other'];
 
@@ -58,12 +60,15 @@ export function createApp(deps: Deps) {
   });
 
   app.post('/api/route', async (c) => {
-    let body: { address?: unknown; state?: unknown; district?: unknown; turnstile?: unknown };
+    let body: { address?: unknown; state?: unknown; district?: unknown; turnstile?: unknown; via?: unknown };
     try {
       body = await c.req.json();
     } catch {
       return c.json({ error: 'bad_json', message: 'Send a JSON body.' }, 400);
     }
+    // social-sharing §5: `via` is optional; when sent it must be a short slug. It is counted, never stored on a row.
+    const via = body.via === undefined || body.via === null ? null : typeof body.via === 'string' && VIA.test(body.via) ? body.via : undefined;
+    if (via === undefined) return c.json({ error: 'bad_request', message: '`via` must be 1–16 characters of a–z, 0–9 or hyphen.' }, 400);
     let state: string;
     let district: number;
     if (typeof body.address === 'string' && body.address.trim() !== '') {
@@ -105,6 +110,8 @@ export function createApp(deps: Deps) {
     if (!result.house && result.senators.length === 0) {
       return c.json({ error: 'no_delegation', message: `No members on file for ${state}-${district} yet.`, state, district }, 404);
     }
+    // The day's counter for the digest's "routes by via" line; a failed bump never fails the route.
+    if (via) { try { await deps.repo(c.env).bumpVia(via, deps.now().toISOString().slice(0, 10)); } catch { /* counted best-effort */ } }
     return c.json(result);
   });
 

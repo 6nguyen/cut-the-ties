@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { districtLabel, type TargetCard } from '../lib/api';
+import { districtLabel, viaQuery, type TargetCard } from '../lib/api';
 import { loadPlace, type Place } from '../lib/store';
 import { Target } from './Target';
 import Counts from './Counts';
@@ -27,7 +27,7 @@ export default function GoalTargets({ slug }: { slug: string }) {
   if (s.kind === 'no_place') return (
     <div class="card p-4">
       <p class="font-semibold">Enter your address to see who to call on this goal.</p>
-      <a href="/" class="btn btn-primary mt-4 self-start">Enter your address →</a>
+      <a href={`/${viaQuery()}`} class="btn btn-primary mt-4 self-start">Enter your address →</a>
     </div>
   );
   if (s.kind === 'error') return (

@@ -6,7 +6,7 @@ import { activeGoals, publishedGoals, CATEGORY } from '../lib/goals';
 import { configuredProvider } from '../lib/suggest';
 const goals = activeGoals();
 // commitment-funnel §2: the "Your week" card needs every published goal's status to drop closed items with their outcome.
-const weekGoals = publishedGoals().map((g) => ({ slug: g.slug, title: g.title, status: g.status, decision_date: g.decision_date, outcome_note: g.outcome_note }));
+const weekGoals = publishedGoals().map((g) => ({ slug: g.slug, title: g.title, status: g.status, decision_date: g.decision_date, outcome_note: g.outcome_note, what_we_want: g.what_we_want }));
 const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
 // address-autocomplete §1: `none` keeps today's field; the flag is read once at build so a missing token warns here.
 const suggestProvider = configuredProvider();

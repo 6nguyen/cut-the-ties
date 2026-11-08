@@ -213,8 +213,8 @@ describe('privacy: the address never reaches a log or a store (§1.2)', () => {
   it('the route path never calls a repo writer', async () => {
     const f = fakeFetch({});
     const repo = new MemoryRepo(rows);
-    const writers = Object.getOwnPropertyNames(Object.getPrototypeOf(repo)).filter((n) => /insert|write|save|record|put|set|^block$/i.test(n));
-    expect(writers.sort()).toEqual(['block', 'insertGeneration', 'insertReceipt', 'insertReport', 'insertScreening', 'insertVisit', 'insertVisitRequest', 'recordDigestRun', 'setVisitStatus']);
+    const writers = Object.getOwnPropertyNames(Object.getPrototypeOf(repo)).filter((n) => /insert|write|save|record|put|set|bump|^block$/i.test(n));
+    expect(writers.sort()).toEqual(['block', 'bumpVia', 'insertGeneration', 'insertReceipt', 'insertReport', 'insertScreening', 'insertVisit', 'insertVisitRequest', 'recordDigestRun', 'setVisitStatus']);
     const spies = writers.map((w) => vi.spyOn(repo as unknown as Record<string, (...a: unknown[]) => unknown>, w));
     const a = createApp({ repo: () => repo, fetch: f.impl, now: () => TODAY });
     for (const fx of FIXTURES) {
@@ -223,6 +223,37 @@ describe('privacy: the address never reaches a log or a store (§1.2)', () => {
     }
     for (const s of spies) expect(s).not.toHaveBeenCalled();
     expect(repo.generations.length + repo.receipts.length + repo.reports.length + repo.screenings.length + repo.blocks.size).toBe(0);
+  });
+});
+
+describe('POST /api/route — via tag (social-sharing §5)', () => {
+  it('a valid via routes as usual and adds one to the day\'s counter; no row is written', async () => {
+    const f = fakeFetch({});
+    const repo = new MemoryRepo(rows);
+    const a = createApp({ repo: () => repo, fetch: f.impl, now: () => TODAY });
+    const post = (body: unknown) => a.request('/api/route', { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }, ENV);
+    const res = await post({ state: 'CA', district: 46, via: 'share' });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as RouteResponse).state).toBe('CA');
+    expect((await post({ address: FIXTURES[0].address, via: 'share' })).status).toBe(200);
+    expect((await post({ state: 'CA', district: 46, via: 'qr-flyer' })).status).toBe(200);
+    expect(await repo.viaCountsSince('2026-11-04')).toEqual([{ via: 'share', n: 2 }, { via: 'qr-flyer', n: 1 }]);
+    expect(await repo.viaCountsSince('2026-11-05')).toEqual([]);
+    expect(repo.receipts.length + repo.reports.length + repo.generations.length + repo.screenings.length).toBe(0);
+    // the response carries nothing about the tag
+    expect(JSON.stringify(await (await post({ state: 'CA', district: 46, via: 'share' })).json())).not.toContain('via');
+  });
+
+  it('a malformed via is a 400 bad_request before any routing; absent or null is fine', async () => {
+    const { post, calls } = app();
+    for (const via of ['x'.repeat(17), 'A B', 'Share', 'a_b', '', 7, {}]) {
+      const res = await post({ address: FIXTURES[0].address, via });
+      expect(res.status, JSON.stringify(via)).toBe(400);
+      expect(await res.json()).toMatchObject({ error: 'bad_request' });
+    }
+    expect(calls).toHaveLength(0);
+    expect((await post({ state: 'CA', district: 46 })).status).toBe(200);
+    expect((await post({ state: 'CA', district: 46, via: null })).status).toBe(200);
   });
 });
 

@@ -24,7 +24,7 @@ const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
       <Countdown client:load at={goal.decision_at} date={goal.decision_date} confirmed={goal.decision_date_confirmed === 1} id={`act-${goal.slug}`} class="mt-6 md:mt-0 md:absolute md:right-2 md:-top-1 z-10" />
     </div>
     <div class="mt-8">
-      <ActForm client:load goal={goal.slug} action={action.slug} type={action.type} scope={action.target_scope} fields={fields} fmt={fmt} siteKey={siteKey} title={goal.title} decision={goal.decision_date} reasons={reasons(goal)} emailSubject={action.email_subject} />
+      <ActForm client:load goal={goal.slug} action={action.slug} type={action.type} scope={action.target_scope} fields={fields} fmt={fmt} siteKey={siteKey} title={goal.title} decision={goal.decision_date} reasons={reasons(goal)} what={goal.what_we_want} emailSubject={action.email_subject} />
     </div>
     <p class="mt-8 text-sm"><a href="/results" class="underline">Your two actions</a> · <a href="/privacy" class="underline">what is stored</a></p>
   </section>

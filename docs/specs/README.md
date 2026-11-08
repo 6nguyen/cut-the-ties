@@ -31,6 +31,7 @@ Rules:
 | [district-counters.md](district-counters.md) | This week's receipt counts per district and state on cards and member pages, hidden below a threshold; receipt abuse limits and `ip_hash` | `worker/src/counts.ts`, `web/src/components/Counts.tsx` |
 | [electoral-record.md](electoral-record.md) | One-seat sourced record before a 2028 primary: member's positions and votes, primary date and filing deadline, one ask | `worker/src/electoral.ts`, `worker/scripts/make-primary-goal.ts`, `data/elections.csv` |
 | [decision-feed.md](decision-feed.md) | Public `.ics` feed of decision dates, subscribe line on `/goals` and goal pages | `web/src/pages/feeds/decisions.ics.ts`, `web/src/components/SubscribeLine.astro`, `web/src/lib/ics.ts` |
+| [social-sharing.md](social-sharing.md) | On-device 1080×1920 poster after a receipt or a completed list, file-only to the OS sheet, "Share link", fallback download + caption + intent links, `?via=` counted in the digest | `web/src/lib/poster.ts`, `web/src/components/ShareRow.tsx`, `web/src/components/YourWeek.tsx` |
 | [office-visits.md](office-visits.md) | List a district-office visit, maintainer approval from the digest, "I'll come" with the contact handed only to joiners, personal-data screen | `worker/src/visits.ts`, `web/src/components/Visits.tsx`, `web/src/components/VisitForm.tsx`, `web/src/lib/visits.ts` |
 
 ## Template (copy for a new capability)
