@@ -127,12 +127,12 @@ measured budget numbers above.
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [x] 1. Provisioning runbook and config · PR #29
   - [x] 2. CI deploy on merge · PR #29
-  - [~] 3. Go-live checklist · `feat/deploy-donate-tiers` · owner ticks `docs/guides/deploy.md` §5 by hand; no code waits on it
+  - [~] 3. Go-live checklist · `feat/deploy-donate-tiers` · PR #60 · owner ticks `docs/guides/deploy.md` §5 by hand; no code waits on it
 - Completed: §1–2 merged via PR #29. Provisioning (runbook steps 1–12) done by the owner: production job (deploy worker → seed remote D1 → deploy web) green on every merge to `main` since 2026-11-06; PR previews on `*.cut-ties.pages.dev`; `https://cutthetiesmovement.org/` live. `README.md` carries the live URL. `/donate` tiers set to $5 once / $1 monthly / custom, no cost line (this branch).
 - Folded: docs/specs/deployment.md (ADDED), docs/specs/README.md index row,
   docs/specs/maintainer-tooling.md §Behavior 4 (seed:remote / schema:remote);
   2026-11-08: goal-pages.md Behavior 5 + config, deployment.md env table (donate tiers, `MONTHLY_COST_USD` removed).
-- Branch / open PRs: `feat/deploy-donate-tiers`.
+- Branch / open PRs: `feat/deploy-donate-tiers` (PR #60).
 - Files changed: .github/workflows/deploy.yml; .env.example; docs/guides/deploy.md;
   docs/specs/deployment.md; worker/scripts/render-deploy-config.ts;
   web/functions/api/[[path]].ts; worker/test/env-example.test.ts;
@@ -150,7 +150,7 @@ measured budget numbers above.
   6. Measure and record in `docs/specs/action-router.md` §Performance budget: landing KB, LCP, `/api/route` p95, first token / complete p95.
   7. After one week live: Cloudflare billing $0 for Pages, Workers, D1, Turnstile, Email Routing.
   Internal only (not on the site): actual monthly spend vs `LLM_MONTHLY_BUDGET_USD`.
-- Next action: merge this PR; owner works through Remaining 1–7, then a docs PR ticks §5, records the numbers and archives this PRD.
+- Next action: merge PR #60, set the `STRIPE_LINKS` variable with the three new keys; owner works through Remaining 1–7, then a docs PR ticks §5, records the numbers and archives this PRD.
 ## Open questions
 1. Domain name. Proposal: the owner registers one `.org` before §3; the
    runbook uses `<domain>` until then. Not blocking: nothing in §1–§2
