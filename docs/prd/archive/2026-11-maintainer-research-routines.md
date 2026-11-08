@@ -1,5 +1,5 @@
 # Maintainer research routines — PRD
-Status: APPROVED 2026-11-04 (auto) · Owner: George Nguyen · Last updated: 2026-11-06
+Status: SHIPPED 2026-11-08 (PR #59) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 Every number and date the site shows between now and 2026-12-19 comes from
@@ -217,32 +217,37 @@ rows merged per run, `## VERIFY` items per run (should fall as sources
 land), days between a decision and its date reaching `main` (target: one
 run). After 2026-12-19 the shipping PR records the counts and the spend.
 
-## State (updated 2026-11-06)
+## State (updated 2026-11-08)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [~] 1. Prompt files and the output contract · feat/maintainer-research-routines-prompt · PR #43
-  - [ ] 5. Roll-call import
-  - [ ] 2. Federal positions and dates
-  - [ ] 3. Senate leader candidate signals
-  - [ ] 4. State holdings batch
-- Completed: none merged.
-- Folded: §1 (routines parts of the delta: Behavior item 7, Data &
-  contracts, Invariants, Performance budget; `import-rollcall` parts wait
-  for §5).
-- Branch / open PRs: feat/maintainer-research-routines-prompt · PR #43.
-- Files changed (file:line map): `.claude/routines/federal-positions.md`,
-  `senate-leader-signals.md`, `state-holdings.md` (shared `## Output
-  contract`, then `## Steps`, `## Cadence`); `worker/test/routines.test.ts`
-  (contract identical across files, caps and PR sections present);
-  `docs/specs/maintainer-tooling.md` (item 7, contracts, invariant, budget).
-- Tests run + result: quiet-check test PASS (vitest, 4 new cases).
-- Remaining: §5 build; §2–§4 are the schedules plus their first runs.
-- Decisions since last update: contract `User-Agent` contact is the
-  repo's issues page (no public address exists); routines run `check-data`
-  before opening the PR; batch two of state holdings is CA, OH, GA, NJ, VA,
-  AZ, MA, TN, IN, MO (2020 Census order after batch one).
+  - [x] 1. Prompt files and the output contract · PR #43 merged
+  - [x] 5. Roll-call import · feat/maintainer-research-routines-rollcall
+  - [x] 2. Federal positions and dates · routine trig_01Swku5RWnn1i4W3b76L5ztk
+  - [x] 3. Senate leader candidate signals · routine trig_01BTvAAKEHFM457bHAt1WQZ7
+  - [x] 4. State holdings batch · routines trig_0174auoTYdkEq7nqdGrZPRhB (2026-11-12), trig_011XszfhDCgvT3tDA3bNyhM2 (2026-12-03)
+- Completed: §1 (PR #43); §5 code; §2–§4 schedules live as cloud routines.
+- Folded: §1 and §5 (whole spec delta applied to
+  `docs/specs/maintainer-tooling.md`: Behavior items 7–8, contracts,
+  invariants, budget).
+- Branch / open PRs: feat/maintainer-research-routines-rollcall.
+- Files changed (file:line map): `worker/src/import-rollcall.ts` (parse,
+  `rollCallRows`, `rollCallFlags`), `worker/scripts/import-rollcall.ts`
+  (CLI, exits 64/65/66), `worker/test/import-rollcall.test.ts` + fixture,
+  `worker/package.json` (`import-rollcall` script), `data/README.md`
+  (changed_by), `docs/specs/maintainer-tooling.md` (item 8, contract,
+  invariant), `docs/specs/README.md` (row text).
+- Tests run + result: quiet-check tsc PASS; quiet-check test PASS (348
+  tests). Live: 2026/roll243.xml → 437 flags set, 0 unknown, `check-data`
+  ok; rows mode 418 rows (104 for, 314 against); 404 → exit 66.
+- Remaining: none.
+- Decisions since last update: state-holdings batch two is a fourth
+  routine (one `run_once_at` per routine); routine API cannot scope branch
+  writes or hold an `ANTHROPIC_API_KEY` secret, so the output contract plus
+  PR-only merges are the gate and a keyless run lists candidates under
+  `## VERIFY`; routines cannot be deleted through the API.
 - Known failures / blockers: none.
-- Next action: merge PR #43, then /implement-prd-section
-  docs/prd/maintainer-research-routines.md (next: §5. Roll-call import).
+- Next action: after 2026-12-19 disable or delete the federal routine at
+  https://claude.ai/code/routines; apply the rc243 flag column in a data PR
+  (`npm run import-rollcall -w worker -- https://clerk.house.gov/evs/2026/roll243.xml ndaa-2027 --flag rc243`).
 ## Open questions
 1. Where the routine runs. Proposal: the account's Claude Code scheduled
    routines (cloud), because they already have repository access and a
@@ -269,3 +274,17 @@ run). After 2026-12-19 the shipping PR records the counts and the spend.
   `check-data` gate before the PR and names the repo's issues page as the
   `User-Agent` contact; §4 batch two is spelled out (CA, OH, GA, NJ, VA,
   AZ, MA, TN, IN, MO).
+- 2026-11-08 — §5 built and §2–§4 scheduled; PRD archived. `worker/src/
+  import-rollcall.ts` + CLI (`npm run import-rollcall -w worker`), 8 tests,
+  spec item 8. Four cloud routines created (`cut-ties/federal-positions`
+  Tue+Fri 14:00 UTC, `cut-ties/senate-leader-signals` Mon 14:00 UTC,
+  `cut-ties/state-holdings` 2026-11-12 and `-batch-2` 2026-12-03), no
+  connectors, model claude-sonnet-5-5, first federal run triggered.
+  Deviations: batch two is its own routine (one `run_once_at` each);
+  branch-scoped write access and an `ANTHROPIC_API_KEY` secret are not
+  settable through the routine API (OQ1/OQ2 fall back to the output
+  contract and `## VERIFY`); `rollCallRows` takes the source URL and the
+  CLI validates the goal; Not Voting / Present flag as `not voting` /
+  `present`; the routines and roll-call parts of the spec moved to
+  `docs/specs/research-routines.md` (maintainer-tooling hit the 16 KB
+  spec cap). QA: tsc PASS, test PASS (348), live roll243 import 437/0.
