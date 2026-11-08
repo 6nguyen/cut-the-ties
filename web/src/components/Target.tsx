@@ -16,7 +16,8 @@ export function fmtDate(d: string | null): string | null {
 }
 
 const ROLE: Record<string, string> = { 'Rep.': 'Representative', 'Sen.': 'Senator' };
-const PARTY_CLASS = (party: string | null) => (party === 'D' ? 'bg-acid' : party === 'R' ? 'bg-crimson text-paper' : 'bg-hazard');
+/** Party badge: D cobalt, R crimson, anyone else hazard (owner, 2026-11-08: the D was acid green). */
+const PARTY_CLASS = (party: string | null) => (party === 'D' ? 'bg-cobalt text-paper' : party === 'R' ? 'bg-crimson text-paper' : 'bg-hazard');
 
 /** urgency-and-readability §7.3: "Senator · VA", "Representative · KY-04", "Representative-elect · NY-10", "Treasurer · MD". */
 export function roleLine(t: Pick<TargetCard, 'role' | 'state' | 'district'>): string {

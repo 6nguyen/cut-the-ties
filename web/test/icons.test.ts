@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { ICO_SIZES, MANIFEST, PNGS, PUBLIC, renderIcons } from '../scripts/icons';
+import { ICO_SIZES, MANIFEST, MARK, MARK_SIZE, PNGS, PUBLIC, renderIcons } from '../scripts/icons';
 
 /** Mean absolute RGBA difference per channel between two PNGs of the same size (fails on a size mismatch). */
 async function pixelDiff(a: Buffer, b: Buffer): Promise<number> {
@@ -20,8 +20,8 @@ async function pixelDiff(a: Buffer, b: Buffer): Promise<number> {
 describe('icon set', () => {
   it('regenerates to the committed files: same names, sizes and pixels, identical manifest', async () => {
     const files = await renderIcons();
-    expect(Object.keys(files).sort()).toEqual(['apple-touch-icon.png', 'favicon-32.png', 'favicon.ico', 'icon-192.png', 'icon-512.png', 'mark-64.png', 'site.webmanifest']);
-    for (const [name, size] of Object.entries(PNGS)) {
+    expect(Object.keys(files).sort()).toEqual(['apple-touch-icon.png', 'favicon-32.png', 'favicon.ico', 'icon-192.png', 'icon-512.png', 'mark-96.png', 'site.webmanifest']);
+    for (const [name, size] of Object.entries({ ...PNGS, [MARK]: MARK_SIZE })) {
       const committed = readFileSync(join(PUBLIC, name));
       const meta = await sharp(committed).metadata();
       expect([meta.width, meta.height], name).toEqual([size, size]);
@@ -32,8 +32,18 @@ describe('icon set', () => {
     expect(ico.readUInt16LE(4)).toBe(files['favicon.ico'].readUInt16LE(4));
   }, 30_000);
   it('the header mark is at most 8 KB and the 32 px favicon at most 4 KB', () => {
-    expect(readFileSync(join(PUBLIC, 'mark-64.png')).length).toBeLessThanOrEqual(8 * 1024);
+    expect(readFileSync(join(PUBLIC, MARK)).length).toBeLessThanOrEqual(8 * 1024);
     expect(readFileSync(join(PUBLIC, 'favicon-32.png')).length).toBeLessThanOrEqual(4 * 1024);
+  });
+  it('the header mark has a transparent exterior, an opaque drawing and the circle filling the box', async () => {
+    const { data, info } = await sharp(readFileSync(join(PUBLIC, MARK))).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const alpha = (x: number, y: number) => data[(y * info.width + x) * 4 + 3];
+    expect(alpha(0, 0)).toBe(0);
+    expect(alpha(info.width - 1, info.height - 1)).toBe(0);
+    expect(alpha(Math.floor(info.width / 2), Math.floor(info.height / 2))).toBe(255);
+    const row = Math.floor(info.height * 0.6); // through the ring, below the fists
+    let first = 0; while (first < info.width && alpha(first, row) === 0) first++;
+    expect(first).toBeLessThan(info.width * 0.06);
   });
   it('favicon.ico holds 16, 32 and 48 px PNG images', () => {
     const b = readFileSync(join(PUBLIC, 'favicon.ico'));

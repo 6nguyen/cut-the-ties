@@ -12,7 +12,8 @@ presentation: who the targets are and what each line says come from
 ## Behavior
 1. **Card.** `web/src/components/Target.tsx` `Target`: a paper `<li>`
    with a 2 px ink border and the small shadow (`data-target`). Header
-   row: a 40 px party badge (D/R/I in Bebas Neue, party colour), the
+   row: a 40 px party badge (D/R/I in Bebas Neue; D cobalt, R crimson,
+   others hazard), the
    name in Bebas Neue uppercase (`text-2xl`), under it a Space Mono role
    line (`data-role-line`) "Representative · CA-46", "Senator · CA",
    "Representative · AK at large", "Treasurer · MD", or the role alone
