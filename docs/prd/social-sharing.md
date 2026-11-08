@@ -1,0 +1,230 @@
+# Social sharing: a poster for the action you just took — PRD
+Status: APPROVED 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+
+## Problem
+After a call the receipt screen offers one "Share" button that hands the
+device share sheet a line of text and the goal link. That reaches
+Messages and WhatsApp, but not the platform where this audience is:
+Instagram is used by 51 % of US adults and 79 % of 18–29-year-olds, is
+their top news source, and has no way to share a link from a web page.
+A Story or feed post needs an image, and the only image this site makes
+is a 1200×630 link card per goal, attached today only after a completed
+captain list. No surveyed civic tool (5 Calls, Resistbot, Change.org,
+Mobilize, Action Network) renders an image for the action a person just
+took; all share canned text and a link. The evidence on observed
+completed acts is strong (Bond 2012: ~340k extra votes through close
+friends; Gerber 2008: disclosed turnout +8.1 pp), and so is the warning
+that a public token act before the hard one lowers follow-through
+(Kristofferson 2014), which is why the poster is a receipt and comes
+after the call, never before (`docs/research/social-sharing.md`).
+
+## Goals / Non-goals
+- Goals: one poster per completed action, drawn on the device from the
+  goal and action copy, that a phone user shares to an Instagram Story,
+  feed post or DM in two taps; the same poster reaches every app in the
+  OS share sheet; a text-and-link share stays one tap for every other
+  platform; every path works without an account, without the Worker and
+  with nothing identifying on the image; $0 and no change to the landing
+  budget.
+- Non-goals: a native app or Meta App ID (the only way to open the
+  Story composer directly); server-side poster rendering (Workers Free
+  gives 10 ms CPU per request against ~90 ms for a Satori render, and
+  the URL would log what the user did); TikTok, Snapchat, LinkedIn,
+  Reddit buttons (no web path, or the wrong audience and format); share
+  counts per user or any identifier on the poster or in the link; a
+  share before the private commitment and captain steps
+  (`commitment-funnel.md` §4 stands); photos on the poster (text and
+  shapes only, like the goal card).
+
+## Research (what the best products do → adopt / adapt / reject)
+Relies on: `docs/research/social-sharing.md`,
+`docs/research/civic-action-levers/behavioral-science-and-virality.md`.
+Platform priority, from US reach for 18–49, news use and what a web page
+can hand each platform:
+| # | Platform | Mechanism | Effort | Why this rank |
+|---|---|---|---|---|
+| 1 | Instagram Story, feed, DM | `navigator.share({files: [poster]})` → OS sheet → Instagram | M | 79 % of 18–29; their top news source; image is the only way in |
+| 2 | The OS share sheet as a whole (Messages, WhatsApp, Signal, Telegram, Mail, Save Image) | the same call | S (ships with 1) | private channels match the funnel; one call, no per-platform work |
+| 3 | Facebook | `sharer.php?u=` + the goal's OG card | S | 70 % of adults, 78 % of 30–49 |
+| 4 | X, Threads, Bluesky | text + URL intents + OG card | S each | text-first; small US reach but high news use |
+| 5 | TikTok, Snapchat, LinkedIn, Reddit, Mastodon | none usable, or wrong audience | — | deferred; TikTok has no web share at all |
+
+| Pattern | Seen in | Verdict | Why |
+|---|---|---|---|
+| Canned line + link, per-platform intent buttons | 5 Calls (Bluesky, Threads, Facebook, Mastodon, X) | adopt for the desktop/fallback row | one link each, no state |
+| Per-issue server image shown above the buttons, not attached | 5 Calls | reject | not shareable to Instagram; needs a server render |
+| Bring-a-friend after sign-up (14 % of signups from invite links) | Mobilize | already adopted | the captain list is this site's version |
+| "I voted" social proof through close friends | Facebook 2010 (Bond 2012) | adapt | a receipt of a completed act, shared to the person's own circles |
+| Public badge before the act | petition sites | reject | lowers the sharer's own follow-through (Kristofferson 2014) |
+| Image shared file-only, URL drawn on the image | field reports on iOS share targets | adopt | iOS targets take the link and drop "Save Image" when text and url ride along; Instagram never renders links in captions |
+
+## Users
+- A phone user who just called (most receipts): wants the Instagram
+  Story in two taps; cannot be asked to pick a platform or edit text.
+- A phone user on Firefox, an in-app browser or an old OS: no file
+  sharing; needs the poster on screen, a download and a caption to
+  paste.
+- A desktop user: no Instagram target; needs the download plus the
+  Facebook, X, Threads and Bluesky links.
+- A person who finished a captain list on the landing page: the same
+  poster, with the "three of us" line, in place of today's 1200×630 image.
+
+## Expected behavior
+### 1. Device test matrix
+1. Before any copy says "Story", the owner runs the matrix from
+   `docs/research/social-sharing.md` §7 on an iPhone (current iOS, current
+   Instagram) and an Android phone (Chrome and Samsung Internet): file-only
+   share vs `title: ''` vs text + url + file; which Instagram composers the
+   sheet offers (Story, Feed, Message, Reels); whether Safari survives the
+   round trip; whether the OG card renders in iMessage, WhatsApp, Telegram
+   and Threads previews.
+2. Results go into this PRD's `## Changes` as one dated line per device,
+   and set two constants in `web/src/lib/poster.ts`: the share payload
+   shape (`files` only, or with `title: ''`) and the primary button label
+   ("Share to Instagram" when Story is offered on both platforms, else
+   "Share poster").
+
+### 2. Poster and share after a receipt
+1. When the receipt screen shows the share row (after the commitment and
+   captain steps, `commitment-funnel.md` §4), the island has already
+   drawn the poster: on receipt mount it loads the display font
+   (`document.fonts.load`), draws a 1080×1920 canvas and encodes it with
+   `toBlob('image/png')`, keeping the `File` and the
+   `navigator.canShare({files})` answer in state. A `null` blob or a
+   thrown canvas error falls back to §3 silently.
+2. The poster (`web/src/lib/poster.ts`, exported pure draw function over a
+   `CanvasRenderingContext2D`) carries, inside the central 1080×1350 band
+   (y 285–1635), top to bottom: the category chip line
+   ("CONSTITUENT ACTION · CUT THE TIES"), a verb line in the user's voice
+   set from the action type ("I JUST CALLED" / "I JUST WROTE TO" for an
+   email receipt), the target line ("REP. <SURNAME>'S OFFICE" /
+   "SEN. <SURNAME>'S OFFICE" / "THE <STATE> TREASURER"), the goal title
+   (≤3 lines, 96 px), the goal's one-line `what_we_want` (44 px, ≤2
+   lines), the date ("<Mon D, YYYY>") and the site URL
+   (`cutthetiesmovement.org`, 48 px). Colours and faces are the goal
+   card's (`web/src/pages/goals/[slug]/card.png.ts`). Never on the
+   poster: the user's name, city, district, phone, the generated text or
+   anything from the office response.
+3. The share row reads, in order: the primary poster button (label from
+   §1.2) when `canShare({files})` is true; "Share link" (today's text +
+   URL share, `ActForm.tsx` `share()`), and "Your other action". The
+   poster button calls `navigator.share` synchronously in the tap handler
+   with the cached file; `AbortError` is ignored, any other error shows
+   the §3 row in place of the button.
+4. "Share link" text becomes "I just called <Role Surname>'s office about
+   <goal title>. Yours takes two minutes:" with the goal deep link
+   `https://cutthetiesmovement.org/goals/<slug>?via=share`. An email
+   receipt reads "I just wrote to".
+5. Nothing is posted to the Worker by any share; the share row renders
+   only after a receipt, as today.
+
+### 3. Fallback and desktop row
+1. When `canShare({files})` is false, `navigator.share` is absent, or the
+   poster share threw: the poster renders inline (`<img>` from the blob
+   URL, 270 px wide, alt "Poster: <goal title>") with "Download poster"
+   (`<a download="cut-the-ties-<slug>.png">`; iOS opens it in a new tab
+   for long-press save, and the caption says so on iOS), "Copy caption"
+   (the §2.4 line plus the link) and "Open Instagram"
+   (`https://www.instagram.com/`, new tab).
+2. From 1024 px, or whenever `navigator.share` is absent, four intent
+   links follow: Facebook `sharer.php?u=<link>`, X
+   `x.com/intent/tweet?text=&url=`, Threads
+   `threads.com/intent/post?text=&url=`, Bluesky
+   `bsky.app/intent/compose?text=` (link inside the text). Each opens in
+   a new tab with `rel="noopener"`. The link preview on those platforms
+   is the existing build-time 1200×630 goal card, unchanged.
+
+### 4. Captain-list share uses the poster
+1. The share after a completed captain list (`commitment-funnel.md` §8,
+   `YourWeek.tsx` `shareImage`) switches from the 1200×630 canvas to the
+   same `poster.ts` draw with the verb line "THREE OF US ARE CALLING" and
+   the target line "<ROLE> <SURNAME>'S OFFICE BEFORE <MON D>"; the
+   district stays off the image (it remains in the share text, as
+   today). The payload follows §1.2; the text and link are unchanged.
+
+## Data & contracts
+- `web/src/lib/poster.ts`: `drawPoster(ctx, {verb, target, title, what,
+  date, url})` (pure, 1080×1920, all text within y 285–1635, greedy wrap
+  by `measureText`), `posterFile(spec): Promise<File | null>` (font load,
+  canvas, `toBlob`, guarded), `SHARE_PAYLOAD` and `POSTER_LABEL` constants
+  set by §1.2, `captionFor(type, role, surname, title, slug)`.
+- Goal deep links in share text and intents carry `?via=share`; the
+  landing and goal pages pass a `via` of at most 16 `[a-z0-9-]`
+  characters through to `POST /api/route` as an optional `via` field,
+  which the Worker stores on no row and counts in the weekly digest as
+  "routes by via" (`maintainer-tooling.md` §3). Any other value is
+  dropped client-side; the Worker rejects a malformed `via` with 400
+  `bad_request`. No identifier, no cookie, no per-share row.
+- No new endpoint, table or environment variable. The poster chunk loads
+  with the receipt screen, after the act page's own bundle.
+
+## Spec delta
+- ADDED `docs/specs/social-sharing.md`: the poster template and its
+  contents rule, the share row order, the file-only payload, the
+  fallback and intent row, the `via` parameter.
+- MODIFIED `docs/specs/personalised-documents.md` §Behavior 4: "Share"
+  (device share sheet with the goal deep link, clipboard fallback) → the
+  share row of `social-sharing.md` §2–3, still only after a receipt or a
+  completed captain list.
+- MODIFIED `docs/specs/commitment-funnel.md` §Behavior 8: the attached
+  image is the 1080×1920 poster from `social-sharing.md` with the "three
+  of us" verb line, district off the image; the payload follows
+  `social-sharing.md`.
+- MODIFIED `docs/specs/action-router.md` §Data & contracts: `POST
+  /api/route` accepts optional `via`.
+- MODIFIED `docs/specs/maintainer-tooling.md` §Behavior 3: digest gains
+  "routes by via".
+
+## Acceptance criteria
+- [ ] No share affordance renders before the receipt and before the
+      commitment and captain steps are answered or skipped (existing
+      `funnel.test.ts` invariant still passes).
+- [ ] On an iPhone and an Android phone with Instagram installed, the
+      primary button opens the OS share sheet with Instagram listed, and
+      choosing it offers at least the feed composer with the poster
+      loaded; the composers offered are logged in `## Changes`.
+- [ ] The poster is 1080×1920, every glyph lies within y 285–1635 and x
+      72–1008, headline ≥72 px, body ≥44 px, URL ≥40 px; it names the
+      goal, the office role and surname, the date and the site, and
+      contains none of: first name, city, district, phone, the generated
+      text (`poster.test.ts` renders with a stub context and checks the
+      text calls).
+- [ ] The poster share payload holds the file only (plus `title: ''` if
+      §1 says so); "Share link" holds text and URL only.
+- [ ] With `canShare` stubbed false the fallback row renders with a
+      working download (PNG, correct name), a caption copy that matches
+      §2.4 plus the link, and "Open Instagram"; at 1024 px the four
+      intent links carry the encoded caption and `?via=share` link.
+- [ ] The captain-list share attaches the 9:16 poster and its text is
+      unchanged.
+- [ ] `POST /api/route` with `via: 'share'` succeeds and the digest's
+      "routes by via" counts it; `via: 'x'.repeat(17)` or `via: 'A B'` is
+      400; no table gains a row for it.
+- [ ] No request leaves the page during drawing or sharing (network log
+      empty between receipt and share).
+- [ ] Performance: landing stays ≤100 KB transferred; the poster chunk ≤4
+      KB gzip and loaded only on the receipt screen; draw + encode ≤300
+      ms on a mid-range Android; the act page's LCP is unchanged.
+
+## Rollout & metrics
+No flag. §1 is a half-day owner task and gates the Instagram copy only;
+§2–3 ship together, §4 after. Measure in the weekly digest: `/api/route`
+calls with `via: share` per goal (the only server-visible trace), against
+receipts per goal. A second-week ratio under 2 % of receipts means the
+poster is not travelling and the caption and poster copy get one revision
+before any new platform is added.
+
+## Open questions
+1. Should the poster carry a QR code for the Story link? Proposal: not
+   now; the URL is seven syllables and a QR needs a ~5 KB library; add it
+   if §1 shows Story link stickers are rarely used by this audience
+   (unmeasurable today, so revisit with the first digest).
+2. Should the poster offer two sizes (9:16 and 4:5) in the fallback row?
+   Proposal: one 9:16 file; the feed composer crops to the central band
+   where all the text sits.
+3. Should the "N constituents in <STATE-NN> called this week" count go
+   on the poster? Proposal: no; it dates the image within hours and puts
+   the district on it.
+
+## Changes
+- 2026-11-08 — created; no blocking questions, APPROVED (auto).
