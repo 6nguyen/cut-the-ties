@@ -1,5 +1,5 @@
 # Maintainer research routines — PRD
-Status: SHIPPED 2026-11-08 · Owner: George Nguyen · Last updated: 2026-11-08
+Status: SHIPPED 2026-11-08 (PR #59) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 Every number and date the site shows between now and 2026-12-19 comes from
