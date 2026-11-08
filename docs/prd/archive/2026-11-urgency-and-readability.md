@@ -1,5 +1,5 @@
 # Urgency and readability — PRD
-Status: APPROVED 2026-11-06 (auto) · Owner: George Nguyen · Last updated: 2026-11-06
+Status: SHIPPED 2026-11-08 (PR #57) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 Seven owner findings from using the live site on 2026-11-06, in one
@@ -285,7 +285,7 @@ the weekly report digest for the generate refusal rate (`word_count`
 class) before and after §2, and the share of routes marked
 `by_suggestion` after §5.
 
-## State (updated 2026-11-06, PR #57)
+## State (updated 2026-11-08, PR #57 merged)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [x] 1. Readable headlines
   - [x] 6. Logo and tab icon
@@ -299,10 +299,10 @@ class) before and after §2, and the share of routes marked
 - Branch / open PRs: `docs/urgency-and-readability-prd` (PR #57, one commit per section)
 - Files changed (file:line map): `web/src/styles/global.css:16-46`, `web/src/layouts/Base.astro:27-41`, `web/src/assets/logo-1024.png`, `web/scripts/icons.ts`, `web/public/` icon set, `web/test/icons.test.ts`, `web/src/pages/goals/[slug]/card.png.ts` (`renderCard`), `web/src/pages/card.png.ts`, `web/src/pages/m/[id]/card.png.ts`, `data/actions/*.yaml` doc_format, `data/goals/*.yaml` `decision_at`/`decision_date_confirmed`, `worker/schema.sql`, `worker/scripts/migrate.ts`, `worker/scripts/seed-remote.ts:44-59`, `worker/src/generate.ts`, `worker/src/ranking.ts`, `worker/src/route.ts` (`decision_at`, `decision_date_confirmed`, TargetCard `state`/`district`), `web/src/components/Countdown.tsx`, `Results.tsx`, `Target.tsx`, `GoalTargets.tsx`, `Counts.tsx`, `web/src/pages/goals/[slug]/act/[action].astro`, `web/src/pages/goals/index.astro`, `web/vitest.config.ts`, `docs/guides/deploy.md`
 - Tests run + result: `prd-lint`, `doc-lint`, `tsc` 0 errors, `test` (worker) 341 passed / 24 files, `test-web` 130 passed / 20 files, `build` ok; visual checks of the act page, `/results` (desktop and 375 px) and `/goals/house-caucus` in the browser pane
-- Remaining: none in code; owner sets `PUBLIC_SUGGEST_PROVIDER` / `PUBLIC_SUGGEST_TOKEN`
+- Remaining: none; the owner sets `PUBLIC_SUGGEST_PROVIDER` / `PUBLIC_SUGGEST_TOKEN` per `docs/guides/deploy.md` step 13 (deploy config, not PRD work)
 - Decisions since last update: H2 face is Bebas Neue, not Inter 700 (owner, 2026-11-06); urgency is a continuous ramp, not a ≤7-day step (owner); countdown ticks DD HH MM SS with the style-guide stamp (owner); mockup B picked with a 5 px border, edge fade and grain (owner); canvas at https://claude.ai/artifact/DJS4hDyCq8fdBDz931JXNn
 - Known failures / blockers: none
-- Next action: owner merges PR #57; archive this PRD to `docs/prd/archive/` and drop the index row
+- Next action: none — PR #57 merged 2026-11-07; archived 2026-11-08
 
 ## Open questions
 1. Geoapify or Mapbox? Proposal: Geoapify (no card on file, 3 000/day
@@ -340,3 +340,5 @@ class) before and after §2, and the share of routes marked
 - 2026-11-07 — the icon test compares decoded pixels, not bytes: the
   Linux sharp binary quantises the palette differently from macOS, so
   the byte-equal check failed in CI (run 42330477243).
+- 2026-11-08 — PR #57 merged 2026-11-07; all seven sections shipped,
+  spec deltas folded; archived to `docs/prd/archive/`.
