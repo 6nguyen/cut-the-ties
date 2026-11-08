@@ -1,16 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
-import { DONATE_OPTIONS, formatUsd, monthlyCost, stripeLinks } from '../lib/donate';
-const cost = formatUsd(monthlyCost);
+import { DONATE_OPTIONS, stripeLinks } from '../lib/donate';
 ---
-<Base title="Donate — Cut the Ties" description="This site is built and paid for by one person. Donations cover the monthly running cost.">
+<Base title="Donate — Cut the Ties" description="This site is built and paid for by one person. Donations keep it running.">
   <section class="mx-auto px-4 lg:px-10 py-10 max-w-2xl">
     <h1 class="display-lg">Donate</h1>
     <div class="prose-cut mt-6">
       <p>This site is built and paid for by George Nguyen, one person, not a PAC or organisation. Donations are not tax-deductible and are not political contributions to any candidate.</p>
-      <p data-monthly-cost>Running it costs about <strong>{cost} a month</strong>. Donations cover that, and nothing else is funded.</p>
+      <p>Donations pay for hosting and the model that drafts your documents. Nothing else is funded.</p>
     </div>
-    <ul class="mt-8 grid grid-cols-2 gap-4">
+    <ul class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
       {DONATE_OPTIONS.map(({ key, label, note }) => {
         const href = stripeLinks[key];
         return (

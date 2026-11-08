@@ -67,9 +67,11 @@ there.
 5. **Donate (`/donate`).** States "This site is built and paid for by
     George Nguyen, one person, not a PAC or organisation. Donations are not
     tax-deductible and are not political contributions to any candidate.",
-    then "Running it costs about $N a month" (formatted by code from
-    `MONTHLY_COST_USD`, default $15) and four Stripe Payment Link buttons
-    (one-time $5 / $20 / $50, monthly $5) that open in a new tab with
+    then "Donations pay for hosting and the model that drafts your
+    documents. Nothing else is funded." No running cost is shown; actual
+    spend and the LLM budget are internal (`LLM_MONTHLY_BUDGET_USD`).
+    Three Stripe Payment Link buttons ($5 one time, $1 every month, "Any
+    amount" custom) open in a new tab with
     `rel="noopener noreferrer"`. A link that is unset or not `https://`
     renders a disabled button reading "link not configured". The header
     carries a Donate button and the footer the self-funding line with a
@@ -140,10 +142,9 @@ there.
   utility in Bebas Neue, body Inter 400/600, labels, chips and buttons
   Space Mono 700; `Base.astro` loads exactly those three families.
 - Donation config is read at build, not by the Worker (the pages are
-  static): `MONTHLY_COST_USD`
-  (number, default 15) and `STRIPE_LINKS` (JSON
-  `{once_5, once_20, once_50, monthly_5}` of Stripe Payment Link URLs,
-  default `{}`). Set both in the Pages build environment, like `SITE_URL`;
+  static): `STRIPE_LINKS` (JSON
+  `{once_5, monthly_1, custom}` of Stripe Payment Link URLs, default
+  `{}`). Set it in the Pages build environment, like `SITE_URL`;
   parsing is `web/src/lib/donate.ts`. Invalid values fall back to the
   defaults.
 

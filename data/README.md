@@ -27,7 +27,9 @@ Run `npm run draft-position -w worker -- <bioguide_id> <url> [goal-slug]`
 with `ANTHROPIC_API_KEY` set. It fetches the page, asks a Haiku-class
 model for the member's stated position with a verbatim quote and date,
 verifies the quote against the page by code, and prints one row in the
-`positions/<goal>.csv` column order (`changed_by` = `draft-position`).
+`positions/<goal>.csv` column order (`changed_by` = `draft-position`, or
+`import-rollcall` for rows `npm run import-rollcall -w worker` printed from a
+House Clerk roll-call XML).
 Read the quote it prints, then paste the row at the end of the file in a
 PR; the script never writes here. No row is printed when the quote is not
 verbatim on the page or the page shows no date — find a better source
