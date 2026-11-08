@@ -231,9 +231,9 @@ text link).
   owner step because MIGRATIONS only adds columns. The digest's receipts
   block is new (no per-goal receipts table existed before), so "emails"
   arrives with "calls" and "captain lists" in one block. Act island
-  6833 → 7682 B gzip (+849 B). Owner steps: (1) run the production
-  migration (`actions.email_subject`, `receipts.channel`) and reseed so
-  the five subjects land; (2) on production D1 `DROP INDEX IF EXISTS
+  6833 → 7682 B gzip (+849 B). Owner steps: (1) `npm run seed:remote -w worker`, which
+  applies the pending MIGRATIONS (`actions.email_subject`,
+  `receipts.channel`) and reseeds so the five subjects land; (2) on production D1 `DROP INDEX IF EXISTS
   receipts_kind_goal; CREATE INDEX receipts_kind_goal ON receipts(kind,
   channel, goal_id, state, district);`; (3) deploy the Worker before the
   site; (4) read the digest's emails column for two weeks and demote the
