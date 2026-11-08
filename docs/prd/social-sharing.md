@@ -1,5 +1,5 @@
 # Social sharing: a poster for the action you just took — PRD
-Status: APPROVED 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: BUILDING (§1 owner device test) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 After a call the receipt screen offers one "Share" button that hands the
@@ -228,3 +228,9 @@ before any new platform is added.
 
 ## Changes
 - 2026-11-08 — created; no blocking questions, APPROVED (auto).
+- 2026-11-08 — §2–5 built: `poster.ts` + `ShareRow.tsx` (poster, share
+  link, fallback, intents), `YourWeek.tsx` captain share on the poster,
+  `via` on `/api/route` counted per day in `meta` for the digest's
+  "Routes by via" line; spec delta folded into `docs/specs/`. §1 (the
+  owner's device matrix) remains: run it, log one dated line per device
+  here, and set `SHARE_PAYLOAD` / `POSTER_LABEL` in `poster.ts`.

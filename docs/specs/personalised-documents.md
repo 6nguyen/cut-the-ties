@@ -106,15 +106,16 @@ stores identifies them. Address routing, goals and ranking are in
    receipt, first the commitment line and the captain list
    (`commitment-funnel.md` §1–4; each skippable in one tap), and only
    once both are answered or skipped: the next-office buttons and the
-   "You're one of <N>" line (`commitment-funnel.md` §10), then "Share"
-   (device share sheet with the goal deep link, clipboard fallback), the
-   office-response picker
+   "You're one of <N>" line (`commitment-funnel.md` §10), then the share
+   row of `social-sharing.md` §3–5 (poster button when the sheet takes
+   files, "Share link" with the goal deep link, fallback and intent
+   links), the office-response picker
    (`will_support · undecided · opposed · no_answer · other` + note
    ≤140) → `POST /api/report` (`no_answer` also shows the voicemail line
    and "Try again", `commitment-funnel.md` §9), a reflection line that
-   never leaves the page, and a link to `/donate`. Share is offered after a receipt or a
-   completed captain list, never before. Reports never change a
-   position row.
+   never leaves the page, and a link to `/donate`. The share row is
+   offered after a receipt or a completed captain list, never before.
+   Reports never change a position row.
 5. **Standard script.** When no model may run — the day's cap is
    reached (`reason: capacity`), `ANTHROPIC_API_KEY` is unset
    (`unconfigured`), `LLM_MONTHLY_BUDGET_USD` is 0 (`budget`), or the
