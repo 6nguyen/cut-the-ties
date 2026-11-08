@@ -5,8 +5,8 @@
 
 | Feature | State | What it does | Spec | Change | Updated |
 |---|---|---|---|---|---|
-| action-router | BUILDING | Address → delegation → two ranked goal cards, return visit,… | [spec](specs/action-router.md) | [deploy](prd/deploy.md) 2/3 +3 | 2026-11-06 |
-| deployment | BUILDING | Merge → Worker + D1 seed + Pages deploy, PR previews, rollb… | [spec](specs/deployment.md) | [deploy](prd/deploy.md) 2/3 +1 | 2026-11-06 |
+| action-router | BUILDING | Address → delegation → two ranked goal cards, return visit,… | [spec](specs/action-router.md) | [deploy](prd/deploy.md) 2/3 +3 | 2026-11-08 |
+| deployment | BUILDING | Merge → Worker + D1 seed + Pages deploy, PR previews, rollb… | [spec](specs/deployment.md) | [deploy](prd/deploy.md) 2/3 +1 | 2026-11-08 |
 | electoral-record | BUILDING | One-seat sourced record before a 2028 primary: member's pos… | [spec](specs/electoral-record.md) | [primary-2028](prd/primary-2028.md) 1/2 | 2026-11-04 |
 | maintainer-tooling | BUILDING | Draft a sourced position row, weekly report digest by email… | [spec](specs/maintainer-tooling.md) | [state-holdings-sweep](prd/state-holdings-sweep.md) 2/3 | 2026-11-04 |
 | member-pages | BUILDING | Roster import, member page with contact and position, whip… | [spec](specs/member-pages.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 | 2026-11-06 |
@@ -15,7 +15,7 @@
 | countdown-stamp | SHIPPED | Ticking DD HH MM SS stamp on result cards, `/results` and t… | [spec](specs/countdown-stamp.md) | - | 2026-11-06 |
 | decision-feed | SHIPPED | Public `.ics` feed of decision dates, subscribe line on `/g… | [spec](specs/decision-feed.md) | - | 2026-11-05 |
 | district-counters | SHIPPED | This week's receipt counts per district and state on cards… | [spec](specs/district-counters.md) | - | 2026-11-06 |
-| goal-pages | SHIPPED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | - | 2026-11-06 |
+| goal-pages | SHIPPED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | - | 2026-11-08 |
 | office-visits | SHIPPED | List a district-office visit, maintainer approval from the… | [spec](specs/office-visits.md) | - | 2026-11-06 |
 | personalised-documents | SHIPPED | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | - | 2026-11-06 |
 | research-routines | SHIPPED | Scheduled research routines (federal positions, Senate-lead… | [spec](specs/research-routines.md) | - | 2026-11-08 |

@@ -56,7 +56,7 @@ no `Needs` entry can run in parallel with the row above it. Rules:
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [deploy.md](deploy.md) | BUILDING (§3 blocked) | — | Cloudflare provisioning, CI deploy on merge, go-live checklist. Nothing reaches users before this |
+| 1 | [deploy.md](deploy.md) | BUILDING (§3 owner checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
 | 2 | [state-holdings-sweep.md](state-holdings-sweep.md) | BUILDING (§2 research) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
 | 3 | [primary-2028.md](primary-2028.md) | BUILDING (§2 blocked) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
 | 4 | [district-vintage-rollover.md](district-vintage-rollover.md) | BUILDING (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 shipped (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
