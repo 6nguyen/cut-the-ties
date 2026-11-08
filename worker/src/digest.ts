@@ -5,7 +5,7 @@ import { SCREEN_MODEL, callMessage } from './anthropic';
 import { STANDARD_MODEL, costUsd, currentCap, documentCount, monthStart, parseBudget, usd } from './cost';
 import { DEFAULT_GLOBAL_CAP, digitRuns } from './generate';
 import { reviewSection } from './visits';
-import type { Action, BlockRow, Env, Goal, Member, Repo, ReportOutcome, ReportRow, ScreeningRow, TokenSum } from './types';
+import type { Action, BlockRow, Env, Goal, Member, Repo, ReportOutcome, ReportRow, ScreeningRow, TokenSum, ViaCount } from './types';
 
 export const DIGEST_MODEL = SCREEN_MODEL; // claude-haiku-5-5
 const WEEK = 7 * 86_400_000;
@@ -116,7 +116,7 @@ function spendDigits(s: Spend): string[] {
 }
 
 /** The deterministic text: a table a maintainer can read without the model. */
-export function digestTable(d: Digest, abuse: AbuseSummary, spend?: Spend): string {
+export function digestTable(d: Digest, abuse: AbuseSummary, spend?: Spend, via: ViaCount[] = []): string {
   const out = [`Reports ${d.since.slice(0, 10)} → ${d.now.slice(0, 10)}: ${d.total}`, ''];
   let member = '';
   for (const c of d.counts) {
@@ -126,13 +126,16 @@ export function digestTable(d: Digest, abuse: AbuseSummary, spend?: Spend): stri
   const sc = Object.entries(abuse.screenings).map(([k, v]) => `${k} ${v}`).join(', ') || 'none';
   out.push('', `Screened out: ${sc}`, `Blocked devices: ${abuse.blocks.length}`);
   for (const b of abuse.blocks) out.push(`  ${b.device_hash.slice(0, 12)}… until ${b.until}`);
+  // social-sharing §5: how many routes arrived through a share link, by tag; "none" when nothing carried one.
+  out.push(`Routes by via: ${via.map((v) => `${v.via} ${v.n}`).join(', ') || 'none'}`);
   if (spend) out.push('', spendTable(spend));
   return out.join('\n');
 }
 
 /** Every digit run the prose may use: the counts, totals, the window dates and the spend block. */
-export function allowedDigits(d: Digest, abuse: AbuseSummary, spend?: Spend): Set<string> {
+export function allowedDigits(d: Digest, abuse: AbuseSummary, spend?: Spend, via: ViaCount[] = []): Set<string> {
   const s = new Set<string>([String(d.total), String(abuse.blocks.length), ...digitRuns(d.since.slice(0, 10)), ...digitRuns(d.now.slice(0, 10)), ...(spend ? spendDigits(spend) : [])]);
+  for (const v of via) { s.add(String(v.n)); for (const x of digitRuns(v.via)) s.add(x); }
   for (const c of d.counts) s.add(String(c.n));
   for (const v of Object.values(abuse.screenings)) s.add(String(v));
   for (const c of d.counts) for (const x of [...digitRuns(c.goal_slug), ...digitRuns(c.goal_title)]) s.add(x);
@@ -145,8 +148,8 @@ Write 3–6 plain sentences for the maintainer: what moved, which members drew t
 Use only the numbers in the table you are given; never compute, estimate or introduce another number. No headings, no lists, no markdown.`;
 
 /** Haiku writes prose from the table. A reply with a number not in the counts, or any error, falls back to the table itself. */
-export async function digestProse(fetchImpl: typeof fetch, apiKey: string | undefined, d: Digest, abuse: AbuseSummary, spend?: Spend): Promise<{ text: string; model: string | null }> {
-  const table = digestTable(d, abuse, spend);
+export async function digestProse(fetchImpl: typeof fetch, apiKey: string | undefined, d: Digest, abuse: AbuseSummary, spend?: Spend, via: ViaCount[] = []): Promise<{ text: string; model: string | null }> {
+  const table = digestTable(d, abuse, spend, via);
   if (!apiKey) return { text: table, model: null };
   try {
     const r = await callMessage(fetchImpl, apiKey, {
@@ -157,7 +160,7 @@ export async function digestProse(fetchImpl: typeof fetch, apiKey: string | unde
       output_config: { effort: 'low' },
     });
     const text = r.text.trim();
-    const ok = allowedDigits(d, abuse, spend);
+    const ok = allowedDigits(d, abuse, spend, via);
     if (!text || digitRuns(text).some((n) => !ok.has(n))) return { text: table, model: null };
     return { text, model: DIGEST_MODEL };
   } catch {
@@ -247,15 +250,16 @@ export async function runDigest(deps: DigestDeps, env: Env): Promise<DigestResul
   const origin = from.includes('@') && !from.endsWith('@localhost') ? `https://${from.split('@')[1]}` : null;
   const visitNames = new Map((await Promise.all(pending.map((v) => deps.repo.member(v.bioguide_id)))).filter((m): m is Member => m !== null).map((m) => [m.bioguide_id, m.name]));
   const visitsText = await reviewSection(pending, (id) => visitNames.get(id) ?? id, origin, env.VISITS_REVIEW_SECRET?.trim() || undefined, now);
-  const [goals, screenings, blocks] = await Promise.all([deps.repo.activeGoals(), deps.repo.screeningsSince(since), deps.repo.activeBlocks(now)]);
+  // social-sharing §5: via counts ride along in the table; alone they never trigger a send.
+  const [goals, screenings, blocks, via] = await Promise.all([deps.repo.activeGoals(), deps.repo.screeningsSince(since), deps.repo.activeBlocks(now), deps.repo.viaCountsSince(since.toISOString().slice(0, 10))]);
   const members = (await Promise.all([...new Set(reports.map((r) => r.bioguide_id))].map((id) => deps.repo.member(id)))).filter((m): m is Member => m !== null);
   const digest = buildDigest(reports, members, goals, since, now);
   const abuse = summariseAbuse(screenings, blocks);
   const spend = buildSpend(windowSums, spent, budget, cap, await deps.repo.actionsFor(goals.map((g) => g.id)));
   // No reports and no listing (an 80%-only send) → the table alone, no model call.
-  const prose = reports.length || pending.length ? await digestProse(deps.fetch, env.ANTHROPIC_API_KEY, digest, abuse, spend) : { text: digestTable(digest, abuse, spend), model: null };
+  const prose = reports.length || pending.length ? await digestProse(deps.fetch, env.ANTHROPIC_API_KEY, digest, abuse, spend, via) : { text: digestTable(digest, abuse, spend, via), model: null };
   const day = now.toISOString().slice(0, 10);
-  const text = prose.model ? `${prose.text}\n\n---\n${digestTable(digest, abuse, spend)}` : prose.text;
+  const text = prose.model ? `${prose.text}\n\n---\n${digestTable(digest, abuse, spend, via)}` : prose.text;
   const parts = [
     ...(digest.total || !alert ? [`${digest.total} report${digest.total === 1 ? '' : 's'}`] : []),
     ...(pending.length ? [`${pending.length} visit listing${pending.length === 1 ? '' : 's'} to review`] : []),

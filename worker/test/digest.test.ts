@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ANTHROPIC_URL } from '../src/anthropic';
 import { DOC_MODEL } from '../src/anthropic';
-import { DIGEST_MODEL, buildDigest, buildMime, buildSpend, digestTable, runDigest, spendTable, summariseAbuse, type Mail } from '../src/digest';
+import { DIGEST_MODEL, allowedDigits, buildDigest, buildMime, buildSpend, digestTable, runDigest, spendTable, summariseAbuse, type Mail } from '../src/digest';
 import { loadRows, parseCsv } from '../src/load';
 import { MemoryRepo, sumTokens } from '../src/repo';
 import { scheduled } from '../src/index';
@@ -65,6 +65,8 @@ function job(opts: { prose?: string; fail?: boolean; reports?: ReportRow[]; gens
   repo.blocks.set('dev-x', '2026-11-06T00:00:00Z');
   repo.blocks.set('dev-old', '2026-11-01T00:00:00Z');
   repo.digestRuns.push({ ran_at: SINCE.toISOString(), report_count: 0 });
+  repo.via.set('2026-11-04|share', 2);
+  repo.via.set('2026-10-20|share', 9);
   const f = stub(opts);
   const sent: Mail[] = [];
   const env: Env = { ...ENV, ANTHROPIC_API_KEY: 'k', MAINTAINER_EMAIL: 'maintainer@example.org', DIGEST_FROM: 'digest@example.org', ...opts.env };
@@ -94,6 +96,14 @@ describe('buildDigest', () => {
     expect(d.counts).toEqual([]);
     expect(d.csv.trim()).toBe('bioguide_id,member,goal_slug,outcome,note,created_at,device_hash');
     expect(digestTable(d, summariseAbuse([], []))).toContain('Reports 2026-11-04 → 2026-11-05: 0');
+    expect(digestTable(d, summariseAbuse([], []))).toContain('Routes by via: none');
+  });
+
+  it('social-sharing §5: routes by via appear in the table and their digits are allowed in prose', () => {
+    const d = buildDigest([], rows.members, rows.goals, SINCE, NOW);
+    const via = [{ via: 'share', n: 12 }, { via: 'qr-flyer', n: 3 }];
+    expect(digestTable(d, summariseAbuse([], []), undefined, via)).toContain('Routes by via: share 12, qr-flyer 3');
+    expect(allowedDigits(d, summariseAbuse([], []), undefined, via)).toContain('12');
   });
 });
 
@@ -111,6 +121,7 @@ describe('runDigest', () => {
     expect(m.text).toContain('ndaa-1217 · will_support: 2');
     expect(m.text).toContain('Screened out: injection 1, off_topic 1');
     expect(m.text).toContain('Blocked devices: 1');
+    expect(m.text).toContain('Routes by via: share 2'); // since the last run; the older bump is out of the window
     expect(m.attachment.filename).toBe('reports-2026-11-05.csv');
     expect(parseCsv(m.attachment.content)).toHaveLength(5);
     // the prose call carried only the counts table, never a note or a device hash
@@ -123,7 +134,7 @@ describe('runDigest', () => {
     expect(j.repo.digestRuns.at(-1)).toEqual({ ran_at: NOW.toISOString(), report_count: 5 });
   });
 
-  it('no new reports → no email and no Anthropic call; the run is still recorded', async () => {
+  it('no new reports → no email and no Anthropic call; the run is still recorded (via counts alone never send)', async () => {
     const j = job({ reports: [report({ created_at: '2026-11-04T08:59:00Z' })] }); // before the last run
     expect(await j.run()).toEqual({ sent: false, reason: 'no_reports', since: SINCE.toISOString() });
     expect(j.sent).toHaveLength(0);
