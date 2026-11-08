@@ -97,6 +97,7 @@ describe('buildDigest', () => {
     expect(d.csv.trim()).toBe('bioguide_id,member,goal_slug,outcome,note,created_at,device_hash');
     expect(digestTable(d, summariseAbuse([], []))).toContain('Reports 2026-11-04 → 2026-11-05: 0');
     expect(digestTable(d, summariseAbuse([], []))).toContain('Routes by via: none');
+    expect(digestTable(d, summariseAbuse([], []))).toContain('Receipts (goal · calls · emails · captain lists)\n  none');
   });
 
   it('social-sharing §5: routes by via appear in the table and their digits are allowed in prose', () => {
@@ -104,6 +105,13 @@ describe('buildDigest', () => {
     const via = [{ via: 'share', n: 12 }, { via: 'qr-flyer', n: 3 }];
     expect(digestTable(d, summariseAbuse([], []), undefined, via)).toContain('Routes by via: share 12, qr-flyer 3');
     expect(allowedDigits(d, summariseAbuse([], []), undefined, via)).toContain('12');
+  });
+  // email-button §1.6: receipts per goal with the emails in their own column.
+  it('lists receipts per goal with calls, emails and captain lists apart', () => {
+    const ndaa = rows.goals.find((g) => g.slug === 'ndaa-1217')!, bonds = rows.goals.find((g) => g.slug === 'state-bonds')!;
+    const d = buildDigest([], rows.members, rows.goals, SINCE, NOW, [{ goal_id: bonds.id, calls: 0, emails: 2, captain_lists: 0 }, { goal_id: ndaa.id, calls: 7, emails: 3, captain_lists: 1 }]);
+    const t = digestTable(d, summariseAbuse([], []));
+    expect(t).toContain('Receipts (goal · calls · emails · captain lists)\n  ndaa-1217 · 7 · 3 · 1\n  state-bonds · 0 · 2 · 0');
   });
 });
 
@@ -134,6 +142,20 @@ describe('runDigest', () => {
     expect(j.repo.digestRuns.at(-1)).toEqual({ ran_at: NOW.toISOString(), report_count: 5 });
   });
 
+  it('the mail carries the receipts block from the repo, emails counted apart from calls', async () => {
+    const j = job();
+    const ndaa = rows.goals.find((g) => g.slug === 'ndaa-1217')!;
+    const base = { goal_id: ndaa.id, action_id: 2, target_id: 'C001110', state: 'CA', district: 46, device_hash: 'd', ip_hash: null, kind: 'action' as const };
+    j.repo.receipts.push(
+      { ...base, channel: 'call', created_at: '2026-11-04T10:00:00Z' },
+      { ...base, channel: 'email', created_at: '2026-11-04T10:05:00Z' },
+      { ...base, channel: 'email', created_at: '2026-11-04T10:06:00Z' },
+      { ...base, channel: 'call', created_at: '2026-11-03T10:00:00Z' }, // before the window
+      { ...base, action_id: null, target_id: null, kind: 'captain-list', channel: 'call', created_at: '2026-11-04T11:00:00Z' },
+    );
+    await j.run();
+    expect(j.sent[0].text).toContain('  ndaa-1217 · 1 · 2 · 1');
+  });
   it('no new reports → no email and no Anthropic call; the run is still recorded (via counts alone never send)', async () => {
     const j = job({ reports: [report({ created_at: '2026-11-04T08:59:00Z' })] }); // before the last run
     expect(await j.run()).toEqual({ sent: false, reason: 'no_reports', since: SINCE.toISOString() });

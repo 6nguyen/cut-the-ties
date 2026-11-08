@@ -201,6 +201,21 @@ export function deriveDistrictPhones(members: Member[], offices: Office[]): void
   }
 }
 
+/** email-button §2.1: the email step's subject. Required for a call action while its goal is active; ≤80 characters; no URL, email or phone; `{city}` is the only placeholder. */
+export const EMAIL_SUBJECT_MAX = 80;
+export function checkEmailSubject(a: Pick<Action, 'slug' | 'type' | 'email_subject'>, goal: Pick<Goal, 'slug' | 'status'>): void {
+  const s = a.email_subject;
+  if (s === null) {
+    if (a.type === 'call' && goal.status === 'active') throw new Error(`action ${a.slug}: email_subject is required while goal ${goal.slug} is active (email-button §2.1)`);
+    return;
+  }
+  if (!s.trim()) throw new Error(`action ${a.slug}: email_subject is empty`);
+  if (s.length > EMAIL_SUBJECT_MAX) throw new Error(`action ${a.slug}: email_subject is ${s.length} characters, max ${EMAIL_SUBJECT_MAX} (email-button §2.1)`);
+  if (/https?:\/\/|www\.|\S+@\S+|(?:\d[\s().-]*){7,}/i.test(s)) throw new Error(`action ${a.slug}: email_subject must not carry a URL, email or phone number (email-button §2.1)`);
+  const bad = [...s.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]).filter((n) => n !== 'city');
+  if (bad.length) throw new Error(`action ${a.slug}: email_subject allows only {city}, not {${bad[0]}} (email-button §2.1)`);
+}
+
 export function loadRows(dataDir: string, updatedAt = new Date().toISOString()): Rows {
   // stable-data-ids §2: ids come from the YAML and must match data/ids.md; the file order never numbers a row.
   const registry = readIds(dataDir);
@@ -279,6 +294,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
         doc_format: json(y.doc_format),
         standard_template: str(y.standard_template),
         script_blocks: null,
+        email_subject: str(y.email_subject),
       };
       if (y.script_blocks !== undefined) {
         // leader-call-scripts §1: the blocks file is inlined as JSON so D1 and MemoryRepo carry it with the action.
@@ -289,6 +305,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
         a.script_blocks = JSON.stringify(parseBlocks(parseYaml(readFileSync(file, 'utf8')), `action ${a.slug} (script_blocks/${name}.yaml)`));
       }
       if (!['house', 'senate', 'both', 'state'].includes(a.target_scope)) throw new Error(`action ${a.slug}: bad target_scope`);
+      checkEmailSubject(a, goals.find((g) => g.id === a.goal_id)!);
       return a;
     });
 

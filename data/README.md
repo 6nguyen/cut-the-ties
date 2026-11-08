@@ -165,6 +165,13 @@ eligible goal is paired with the state goal.
   the output must contain). The deterministic output check in
   `worker/src/generate.ts` enforces all of them; a failed check
   regenerates once, then refuses.
+- `email_subject` (email-button §2.1): the subject line of the "Send it in
+  writing" step a call action offers when the office is closed or did not
+  answer. Required on a `call` action while its goal is `active`; at most
+  80 characters; no URL, email address or phone number; `{city}` is the
+  only placeholder (filled from the form's `city`). The loader refuses a
+  file that breaks any of these. Example: `Constituent in {city}: vote only
+  for a leader who drops the integration section`.
 - `standard_template` or `script_blocks` (one of the two while the goal
   is `active`): the script served when no model may run
   (`docs/specs/standard-scripts.md`). `script_blocks: <name>`

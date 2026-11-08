@@ -1,5 +1,5 @@
 # Email button on the call page — PRD
-Status: APPROVED 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: SHIPPED 2026-11-08 (PR #66) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The act page ends in a call or nothing. A caller who reaches a full
@@ -220,3 +220,22 @@ text link).
 
 ## Changes
 - 2026-11-08 — created; no blocking questions, APPROVED (auto).
+- 2026-11-08 — §1–2 built on `feature/email-button-fe0ba7` (PR #66), spec
+  deltas folded, archived. Decisions: open question 1 adopted as proposed
+  (homepage-only targets keep "I sent it" under the "then Contact" label;
+  a member-elect or treasurer URL is `contact_kind 'homepage'`); question 2
+  adopted (ZIP+4 sentence in the House hint); question 3 deferred as
+  proposed. Schema: the `channel` CHECK is written `channel = 'call' OR
+  channel = 'email'` so `migrate.ts`'s column parser (no commas in a
+  column line) accepts it; the `receipts_kind_goal` index change is an
+  owner step because MIGRATIONS only adds columns. The digest's receipts
+  block is new (no per-goal receipts table existed before), so "emails"
+  arrives with "calls" and "captain lists" in one block. Act island
+  6833 → 7682 B gzip (+849 B). Owner steps: (1) `npm run seed:remote -w worker`, which
+  applies the pending MIGRATIONS (`actions.email_subject`,
+  `receipts.channel`) and reseeds so the five subjects land; (2) on production D1 `DROP INDEX IF EXISTS
+  receipts_kind_goal; CREATE INDEX receipts_kind_goal ON receipts(kind,
+  channel, goal_id, state, district);`; (3) deploy the Worker before the
+  site; (4) read the digest's emails column for two weeks and demote the
+  closed-offices button to a text link if call receipts per visit fall
+  more than 10 %.

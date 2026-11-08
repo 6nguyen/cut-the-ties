@@ -11,8 +11,10 @@ who was on it. The receipt itself and the share sheet are in
 
 ## Behavior
 1. **Commitment line.** On the receipt screen, before any share
-   affordance, one line: "Will you call by <date>?" for a letter or
-   comment, "Will you call again before the vote?" for a call. A date
+   affordance, one line: "Will you call by <date>?" for a letter, a
+   comment or an emailed script (`personalised-documents.md` §4 email
+   step, receipt `channel 'email'`), "Will you call again before the
+   vote?" for a call. A date
    input (10:00 local; 10:00 anywhere in the US falls inside DC office
    hours, `call-follow-through`) defaults to the next weekday, never
    later than the goal's decision date; the user may move it up to seven days out

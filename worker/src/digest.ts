@@ -5,7 +5,7 @@ import { SCREEN_MODEL, callMessage } from './anthropic';
 import { STANDARD_MODEL, costUsd, currentCap, documentCount, monthStart, parseBudget, usd } from './cost';
 import { DEFAULT_GLOBAL_CAP, digitRuns } from './generate';
 import { reviewSection } from './visits';
-import type { Action, BlockRow, Env, Goal, Member, Repo, ReportOutcome, ReportRow, ScreeningRow, TokenSum, ViaCount } from './types';
+import type { Action, BlockRow, Env, Goal, Member, ReceiptTotal, Repo, ReportOutcome, ReportRow, ScreeningRow, TokenSum, ViaCount } from './types';
 
 export const DIGEST_MODEL = SCREEN_MODEL; // claude-haiku-5-5
 const WEEK = 7 * 86_400_000;
@@ -17,7 +17,9 @@ export interface Digest {
   total: number;
   counts: DigestCount[]; // member × goal × outcome, sorted by member name, goal slug, outcome
   csv: string; // the raw report rows, one line each, for the attachment
+  receipts: DigestReceipts[]; // email-button §1.6: receipts per goal in the window, calls and emails apart
 }
+export interface DigestReceipts { goal_slug: string; calls: number; emails: number; captain_lists: number }
 
 const OUTCOME_ORDER: ReportOutcome[] = ['will_support', 'undecided', 'opposed', 'no_answer', 'other'];
 
@@ -30,7 +32,7 @@ export const csvCell = (v: string | number | null): string => {
 export const REPORT_CSV_HEADER = 'bioguide_id,member,goal_slug,outcome,note,created_at,device_hash';
 
 /** Pure: group `reports` by member × goal × outcome and render the raw rows as CSV. */
-export function buildDigest(reports: ReportRow[], members: Member[], goals: Goal[], since: Date, now: Date): Digest {
+export function buildDigest(reports: ReportRow[], members: Member[], goals: Goal[], since: Date, now: Date, receipts: ReceiptTotal[] = []): Digest {
   const memberName = (id: string): string => members.find((m) => m.bioguide_id === id)?.name ?? id;
   const goalOf = (id: number): Goal | undefined => goals.find((g) => g.id === id);
   const key = (r: ReportRow): string => `${r.bioguide_id}\u0000${r.goal_id}\u0000${r.outcome}`;
@@ -48,7 +50,10 @@ export function buildDigest(reports: ReportRow[], members: Member[], goals: Goal
   const lines = [...reports]
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((r) => [r.bioguide_id, memberName(r.bioguide_id), goalOf(r.goal_id)?.slug ?? String(r.goal_id), r.outcome, r.note, r.created_at, r.device_hash].map(csvCell).join(','));
-  return { since: since.toISOString(), now: now.toISOString(), total: reports.length, counts, csv: [REPORT_CSV_HEADER, ...lines].join('\n') + '\n' };
+  const receiptRows = receipts
+    .map((r) => ({ goal_slug: goalOf(r.goal_id)?.slug ?? String(r.goal_id), calls: r.calls, emails: r.emails, captain_lists: r.captain_lists }))
+    .sort((a, b) => a.goal_slug.localeCompare(b.goal_slug));
+  return { since: since.toISOString(), now: now.toISOString(), total: reports.length, counts, csv: [REPORT_CSV_HEADER, ...lines].join('\n') + '\n', receipts: receiptRows };
 }
 
 export interface AbuseSummary { screenings: Partial<Record<ScreeningRow['class'], number>>; blocks: BlockRow[] }
@@ -123,6 +128,10 @@ export function digestTable(d: Digest, abuse: AbuseSummary, spend?: Spend, via: 
     if (c.member !== member) { member = c.member; out.push(`${c.member} (${c.bioguide_id})`); }
     out.push(`  ${c.goal_slug} · ${c.outcome}: ${c.n}`);
   }
+  // email-button §1.6: receipts per goal with calls and emails in their own columns; the counters only ever show calls.
+  out.push('', 'Receipts (goal · calls · emails · captain lists)');
+  for (const r of d.receipts) out.push(`  ${r.goal_slug} · ${r.calls} · ${r.emails} · ${r.captain_lists}`);
+  if (!d.receipts.length) out.push('  none');
   const sc = Object.entries(abuse.screenings).map(([k, v]) => `${k} ${v}`).join(', ') || 'none';
   out.push('', `Screened out: ${sc}`, `Blocked devices: ${abuse.blocks.length}`);
   for (const b of abuse.blocks) out.push(`  ${b.device_hash.slice(0, 12)}… until ${b.until}`);
@@ -139,6 +148,7 @@ export function allowedDigits(d: Digest, abuse: AbuseSummary, spend?: Spend, via
   for (const c of d.counts) s.add(String(c.n));
   for (const v of Object.values(abuse.screenings)) s.add(String(v));
   for (const c of d.counts) for (const x of [...digitRuns(c.goal_slug), ...digitRuns(c.goal_title)]) s.add(x);
+  for (const r of d.receipts) for (const x of [String(r.calls), String(r.emails), String(r.captain_lists), ...digitRuns(r.goal_slug)]) s.add(x);
   return s;
 }
 
@@ -251,9 +261,9 @@ export async function runDigest(deps: DigestDeps, env: Env): Promise<DigestResul
   const visitNames = new Map((await Promise.all(pending.map((v) => deps.repo.member(v.bioguide_id)))).filter((m): m is Member => m !== null).map((m) => [m.bioguide_id, m.name]));
   const visitsText = await reviewSection(pending, (id) => visitNames.get(id) ?? id, origin, env.VISITS_REVIEW_SECRET?.trim() || undefined, now);
   // social-sharing §5: via counts ride along in the table; alone they never trigger a send.
-  const [goals, screenings, blocks, via] = await Promise.all([deps.repo.activeGoals(), deps.repo.screeningsSince(since), deps.repo.activeBlocks(now), deps.repo.viaCountsSince(since.toISOString().slice(0, 10))]);
+  const [goals, screenings, blocks, via, receiptTotals] = await Promise.all([deps.repo.activeGoals(), deps.repo.screeningsSince(since), deps.repo.activeBlocks(now), deps.repo.viaCountsSince(since.toISOString().slice(0, 10)), deps.repo.receiptTotalsSince(since)]);
   const members = (await Promise.all([...new Set(reports.map((r) => r.bioguide_id))].map((id) => deps.repo.member(id)))).filter((m): m is Member => m !== null);
-  const digest = buildDigest(reports, members, goals, since, now);
+  const digest = buildDigest(reports, members, goals, since, now, receiptTotals);
   const abuse = summariseAbuse(screenings, blocks);
   const spend = buildSpend(windowSums, spent, budget, cap, await deps.repo.actionsFor(goals.map((g) => g.id)));
   // No reports and no listing (an 80%-only send) → the table alone, no model call.

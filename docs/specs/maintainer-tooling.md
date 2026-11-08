@@ -56,7 +56,9 @@ and nothing here writes to `data/` or to `positions`.
    month to date — $ of $budget and the per cent; today's cap; per
    action — documents, redraft share, output-check failure classes,
    standard scripts; every figure from `costUsd` / `dailyCap` over
-   `tokensSince` sums), then `---` and the
+   `tokensSince` sums; then the "Receipts (goal · calls · emails · captain
+   lists)" block, one line per goal with a receipt since the last run from
+   `receiptTotalsSince`, `email-button`), then `---` and the
    pending listings, each with signed approve / reject / hide / delete
    links to `https://<DIGEST_FROM domain>/api/visits/review?token=…`
    (14-day HMAC tokens from `VISITS_REVIEW_SECRET`, so links outlive the next digest; unset → the block
@@ -107,11 +109,15 @@ and nothing here writes to `data/` or to `positions`.
    the second `import-members` source and only warns when it cannot be
    (runner IPs may be walled). It then runs `import-members`,
    `import-offices` and `npm run check-data -w worker` (`seed.ts --check`:
-   the loader and its seed checks, no write) and, only when `git diff --
+   the loader and its seed checks, no write), then a HEAD request to every
+   distinct `contact_form_url` in `data/members.csv` (`email-button` §2.3)
+   and, only when `git diff --
    data/` is non-empty, opens or updates one PR on `chore/roster-<date>`
    (reusing the open roster PR's branch when there is one) whose body
    lists the importer output (`changed:`, `stale:`, `left:`), the upstream
-   commit SHA and the bytes fetched. The PR never auto-merges; when a
+   commit SHA, the bytes fetched and, under "Contact links to check", each
+   URL whose HEAD answered outside 2xx/3xx with its code (or "none"); the
+   check never edits a row. The PR never auto-merges; when a
    roster PR has been open for `NAG_DAYS` (7) the run comments on it. The
    ETags are kept only after a complete run, so a failed run retries the
    same upstream next time. Needs `GITHUB_TOKEN` with `contents: write`
@@ -131,7 +137,7 @@ and nothing here writes to `data/` or to `positions`.
   (`draftHolding(fetch, apiKey, {state, url, existing?})` →
   `{kind:'row', row, status, amount, date, decider, quote, reason}` or
   `{kind:'none', reason}`; `STATES_HEADER` is the `states.csv` header).
-- `worker/src/digest.ts`: `buildDigest(reports, members, goals, since, now)`
+- `worker/src/digest.ts`: `buildDigest(reports, members, goals, since, now, receipts)` (`receipts` = `Repo.receiptTotalsSince(since)`: `{goal_id, calls, emails, captain_lists}[]`)
   (pure; counts member × goal × outcome, CSV header
   `bioguide_id,member,goal_slug,outcome,note,created_at,device_hash`),
   `buildSpend(windowSums, spentMonth, budget, cap, actions)` and

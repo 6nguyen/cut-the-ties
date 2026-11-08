@@ -100,22 +100,45 @@ stores identifies them. Address routing, goals and ranking are in
    office, "DC office" / "District office", under a one-line note that
    either works and both log the call; when the DC office is closed the
    district number is listed first with "DC office closed; district
-   office answers in office hours."), the contact-form link
+   office answers in office hours."; under the call buttons of a call
+   action the one text link "I can't call right now", replaced by the
+   primary button "Both offices are closed. Email instead" ("The office
+   is closed. Email instead" with one number) when `isOpen` is false for
+   every office on file), the contact-form link
    for letters and comments, and "I did it" → `POST /api/receipt`
    (goal, action, target, stored state/district, device hash). After a
    receipt, first the commitment line and the captain list
    (`commitment-funnel.md` §1–4; each skippable in one tap), and only
    once both are answered or skipped: the next-office buttons and the
    "You're one of <N>" line (`commitment-funnel.md` §10), then the share
-   row of `social-sharing.md` §3–5 (poster button when the sheet takes
-   files, "Share link" with the goal deep link, fallback and intent
-   links), the office-response picker
+   row of `social-sharing.md` §3–5 (poster, link, fallback, intents),
+   the office-response picker
    (`will_support · undecided · opposed · no_answer · other` + note
-   ≤140) → `POST /api/report` (`no_answer` also shows the voicemail line
-   and "Try again", `commitment-funnel.md` §9), a reflection line that
-   never leaves the page, and a link to `/donate`. The share row is
-   offered after a receipt or a completed captain list, never before.
-   Reports never change a position row.
+   ≤140) → `POST /api/report` (`no_answer` also shows the voicemail line,
+   "Try again", `commitment-funnel.md` §9, and the primary button "Email
+   it instead"; any other reported outcome shows the muted link "Put it
+   in writing (2 min)" under the thanks line), a reflection line that
+   never leaves the page, and a link to `/donate`. The share row comes
+   after a receipt or a completed captain list, never before. Reports
+   never change a position row.
+   **Email step** (`email-button`): "I can't call right now", the
+   closed-offices button, "Email it instead" and "Put it in writing" all
+   open, in place of the call row, a card "Send it in writing" with the
+   subject (the action's `email_subject`, `{city}` filled from the city
+   field), the message (`Dear <Role> <Surname>,` + blank line + the body
+   exactly as shown, standard script included + blank line +
+   `<first_name>, <city>`; nothing else, no model call), "Copy subject
+   and message", the contact link labelled by `contact_kind` ("Open the
+   contact form ↗" / "Open the contact form (asks for your ZIP first) ↗" /
+   "Open the office website, then Contact ↗"), a field hint by chamber
+   (House: name, address, ZIP, topic, message box, plus the ZIP+4
+   fallback; Senate: name, address, email, topic, message box; no
+   chamber: "Paste the message into the comment box."), "I sent it" and
+   "Back to calling". No `contact_form_url` → "This office lists no
+   contact form; the DC number is the only channel." and no "I sent it".
+   "I sent it" posts the call receipt's body plus `channel: 'email'`; the
+   funnel then runs as for a letter. A refused draft, a letter or a
+   comment action has no email step.
 5. **Standard script.** When no model may run — the day's cap is
    reached (`reason: capacity`), `ANTHROPIC_API_KEY` is unset
    (`unconfigured`), `LLM_MONTHLY_BUDGET_USD` is 0 (`budget`), or the
@@ -132,7 +155,10 @@ stores identifies them. Address routing, goals and ranking are in
   `status {stage: drafting|redrafting|standard, reason?}`, `delta
   {text}`, `reset {reason}`, `done {subject, body, facts_used, words,
   standard, reason?, variant?, target: {id, name, role, phones[],
-  contact_form_url}}` or `error {error: refused | internal, message}`;
+  contact_form_url, contact_kind, chamber}}` (`contact_kind` `form |
+  zip_gate | homepage | null`, `homepage` for a member-elect or treasurer
+  URL; `chamber` `house | senate | null`) or `error {error: refused |
+  internal, message}`;
   `variant` is present only on a standard script composed from blocks.
   Rejections are JSON `{error, message}`: 400 `bad_json | bad_request |
   no_action | no_target | bad_fields`, 403 `turnstile | blocked`, 422
@@ -145,7 +171,9 @@ stores identifies them. Address routing, goals and ranking are in
   for call scripts and 1500 otherwise; three screened-out attempts in
   24 h block the device for 24 h.
 - `POST /api/receipt` `{goal, action, target, state?, district?,
-  device}` → `{id}` (`action: 'captain-list'` with no target records a
+  device, channel?}` → `{id}` (`channel` `'call'` (default) or `'email'`,
+  stored on the row; any other value, or a `channel` on a captain list,
+  is 400 `bad_request`; `action: 'captain-list'` with no target records a
   completed captain list, `commitment-funnel.md`); `POST /api/report` `{goal, target, outcome, note?,
   device}` → `{id}` (note sanitised to ≤140 chars). Both 400
   `bad_request | no_action | no_target | bad_outcome`.
@@ -172,15 +200,20 @@ stores identifies them. Address routing, goals and ranking are in
   (action guidance appended to the system prompt), `doc_format`
   (`kind, min_words, max_words, mentions[], ask`; `max_words` defaults
   to 160 and the five call actions set 60–160 since 2026-11, 120 before) and
-  `standard_template` (`standard-scripts.md`; required while the goal is active);
+  `standard_template` (`standard-scripts.md`; required while the goal is active)
+  and, on call actions, `email_subject` (required while the goal is
+  active, ≤80 characters, no URL, email or phone, `{city}` the one
+  placeholder; the loader rejects anything else, `data/README.md`);
   `mentions` and `ask` are the exact phrases the output check requires.
+  `ActForm` receives `email_subject` with the action props.
 - Goal YAML `reasons[]` (`angle`, `points[]`): at most six angles, one to
   five points each, ≤130 characters, no digits; the seed rejects anything
   else (`data/README.md`).
 - Receipt limits (`district-counters.md` §8–9): `POST /api/receipt`
   answers 429 `limit_day` after 10 receipts per device hash in 24 h,
-  `limit_repeat` for a second receipt on the same device, goal and action
-  within 10 minutes and `limit_ip` after 50 per IP hash in 24 h; none of
+  `limit_repeat` for a second receipt on the same device, goal, action
+  and channel within 10 minutes (a call then an email for one office both
+  count) and `limit_ip` after 50 per IP hash in 24 h; none of
   those rows is stored. Every stored receipt carries `ip_hash` =
   SHA-256(`CF-Connecting-IP` | `IP_SALT` | UTC date), nullable, never the
   IP. The generation limits above are unchanged.
