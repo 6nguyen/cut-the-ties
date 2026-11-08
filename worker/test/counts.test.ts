@@ -34,7 +34,7 @@ function app(extraActions: typeof rows.actions = []) {
   return { a, repo, get, post, tick, now: () => now };
 }
 function receipt(over: Partial<ReceiptRow>): ReceiptRow {
-  return { goal_id: NDAA.id, action_id: CALL.id, target_id: CORREA, state: 'CA', district: 46, created_at: new Date(T0.getTime() - 3_600_000).toISOString(), device_hash: 'd', kind: 'action', ip_hash: 'i', ...over };
+  return { goal_id: NDAA.id, action_id: CALL.id, target_id: CORREA, state: 'CA', district: 46, created_at: new Date(T0.getTime() - 3_600_000).toISOString(), device_hash: 'd', kind: 'action', channel: 'call', ip_hash: 'i', ...over };
 }
 /** The independent count: receipts for the goal in the window, by place, kind and type. */
 function expected(repo: MemoryRepo, state: string, district: number | null, now: Date, threshold = 5) {
@@ -42,7 +42,8 @@ function expected(repo: MemoryRepo, state: string, district: number | null, now:
   const type = (id: number | null) => rows.actions.find((a) => a.id === id)?.type ?? null;
   const count = (rs: ReceiptRow[]) => {
     const b = { calls: 0, letters: 0, comments: 0, captain_lists: 0 };
-    for (const r of rs) { const k = bucketOf(r.kind, type(r.action_id)); if (k) b[k]++; }
+    // email-button §1.6: an emailed receipt never reaches a counter.
+    for (const r of rs) { if (r.kind === 'action' && r.channel !== 'call') continue; const k = bucketOf(r.kind, type(r.action_id)); if (k) b[k]++; }
     return applyThreshold(b, threshold);
   };
   const inWindow = repo.receipts.filter((r) => r.goal_id === NDAA.id && r.state === state && r.created_at >= since);
@@ -174,6 +175,41 @@ describe('POST /api/receipt limits (§3)', () => {
     expect(repo.receipts.filter((r) => r.device_hash === repo.receipts[0].device_hash).length).toBe(10);
     tick(24 * 60 - 10 * 11 + 1);
     expect((await post(body())).status).toBe(200);
+  });
+  // email-button: the channel column, its limits and its exclusion from the counters.
+  it('channel: email is stored, fax is 400, and a captain list refuses one', async () => {
+    const { repo, post } = app();
+    expect((await post(body({ channel: 'email' }))).status).toBe(200);
+    expect(repo.receipts[0].channel).toBe('email');
+    expect(repo.receipts[0].kind).toBe('action');
+    const fax = await post(body({ channel: 'fax', device: 'device-fresh-000000000' }));
+    expect(fax.status).toBe(400);
+    expect((await json(fax)).error).toBe('bad_request');
+    const list = await post(body({ action: 'captain-list', target: undefined, channel: 'email' }));
+    expect(list.status).toBe(400);
+    expect((await json(list)).error).toBe('bad_request');
+    expect((await post(body({ action: 'captain-list', target: undefined }))).status).toBe(200);
+    expect(repo.receipts.at(-1)!.channel).toBe('call');
+    expect(repo.receipts).toHaveLength(2);
+  });
+  it('limit_repeat is keyed on the channel: a call then an email within 10 minutes both count; a second email is 429', async () => {
+    const { repo, post, get } = app();
+    expect((await post(body())).status).toBe(200);
+    expect((await post(body({ channel: 'email' }))).status).toBe(200);
+    const again = await post(body({ channel: 'email' }));
+    expect(again.status).toBe(429);
+    expect((await json(again)).error).toBe('limit_repeat');
+    expect((await post(body({ channel: 'call' }))).status).toBe(429);
+    expect(repo.receipts).toHaveLength(2);
+    // Both are receipts for the device-day limit, but only the call reaches the counters and the echo.
+    for (let i = 0; i < 4; i++) repo.receipts.push(receipt({ device_hash: `d${i}`, channel: i % 2 ? 'email' : 'call' }));
+    repo.receipts.push(receipt({ device_hash: 'd9', kind: 'captain-list', action_id: null, target_id: null }));
+    const c = await json(await get('goal=ndaa-1217&state=CA&district=46'));
+    expect(c).toMatchObject(expected(repo, 'CA', 46, T0));
+    expect(c.district.calls).toBe(0); // 3 calls (one posted + two seeded) stay under the threshold of 5
+    repo.receipts.push(receipt({ device_hash: 'd7' }), receipt({ device_hash: 'd8' }));
+    expect((await json(await get('goal=ndaa-1217&state=CA&district=46'))).district.calls).toBe(5);
+    expect(repo.receipts.filter((r) => r.kind === 'action' && r.channel === 'email')).toHaveLength(3);
   });
   it('the 51st receipt from one IP hash in a day is 429', async () => {
     const { repo, post, tick } = app();

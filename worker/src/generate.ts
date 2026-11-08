@@ -1,6 +1,6 @@
 // §4 personalised documents: input shape, Haiku screen, prompt, Opus stream, deterministic output
 // check, shingle uniqueness and the limits. Every number the page shows comes from this file, not the model.
-import { TAKES_OFFICE, type Action, type Chamber, type Goal, type Member, type MemberElect, type Position, type Repo, type ScreenClass, type StateRow } from './types';
+import { TAKES_OFFICE, type Action, type Chamber, type ContactKind, type Goal, type Member, type MemberElect, type Position, type Repo, type ScreenClass, type StateRow } from './types';
 import { DOC_MODEL, SCREEN_MODEL, callMessage, streamMessage } from './anthropic';
 import { priorVote } from './route';
 import { fillAsk } from './state-copy';
@@ -159,17 +159,19 @@ export function targetName(t: Target): string {
   return t.row.treasurer_name || `${t.state} State Treasurer`;
 }
 
-export interface TargetContact { id: string; name: string; role: string; phones: string[]; contact_form_url: string | null }
+/** email-button §1.4: `contact_kind` labels the contact link, `chamber` picks the form hint (null for a state office). */
+export interface TargetContact { id: string; name: string; role: string; phones: string[]; contact_form_url: string | null; contact_kind: ContactKind | null; chamber: Chamber | null }
 export function targetContact(t: Target): TargetContact {
   if (t.kind === 'member') {
     const m = t.member;
-    return { id: t.id, name: m.name, role: m.chamber === 'house' ? 'Rep.' : 'Sen.', phones: [m.dc_phone, m.district_phone].filter((p): p is string => !!p), contact_form_url: m.contact_form_url };
+    return { id: t.id, name: m.name, role: m.chamber === 'house' ? 'Rep.' : 'Sen.', phones: [m.dc_phone, m.district_phone].filter((p): p is string => !!p), contact_form_url: m.contact_form_url, contact_kind: m.contact_form_url ? m.contact_kind ?? 'homepage' : null, chamber: m.chamber };
   }
   if (t.kind === 'elect') {
     const e = t.elect;
-    return { id: t.id, name: e.name, role: ELECT_ROLE[e.chamber], phones: e.phone ? [e.phone] : [], contact_form_url: e.contact_url };
+    // A member-elect's link is a campaign site, never an office form.
+    return { id: t.id, name: e.name, role: ELECT_ROLE[e.chamber], phones: e.phone ? [e.phone] : [], contact_form_url: e.contact_url, contact_kind: e.contact_url ? 'homepage' : null, chamber: e.chamber };
   }
-  return { id: t.id, name: targetName(t), role: 'Treasurer', phones: t.row.treasurer_phone ? [t.row.treasurer_phone] : [], contact_form_url: t.row.campaign_url };
+  return { id: t.id, name: targetName(t), role: 'Treasurer', phones: t.row.treasurer_phone ? [t.row.treasurer_phone] : [], contact_form_url: t.row.campaign_url, contact_kind: t.row.campaign_url ? 'homepage' : null, chamber: null };
 }
 
 // ---- fact block (§4.2) -------------------------------------------------------------------

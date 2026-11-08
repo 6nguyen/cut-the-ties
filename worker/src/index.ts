@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
-import type { Env, Repo, ReportOutcome } from './types';
+import { RECEIPT_CHANNELS, type Env, type ReceiptChannel, type Repo, type ReportOutcome } from './types';
 import { D1Repo } from './repo';
 import { runDigest, sendWithEmailRouting } from './digest';
 import { classifyAddress, geocode } from './geocode';
@@ -139,19 +139,22 @@ export function createApp(deps: Deps) {
 
   // §4.5 "I did it": one receipt row; no document text, no address.
   app.post('/api/receipt', async (c) => {
-    const body = await readJson<{ goal?: unknown; action?: unknown; target?: unknown; state?: unknown; district?: unknown; device?: unknown }>(c);
+    const body = await readJson<{ goal?: unknown; action?: unknown; target?: unknown; state?: unknown; district?: unknown; device?: unknown; channel?: unknown }>(c);
     if (!body || typeof body.goal !== 'string' || typeof body.action !== 'string' || typeof body.device !== 'string' || body.device.length < 8) {
       return c.json({ error: 'bad_request', message: 'Send goal, action, target and device.' }, 400);
     }
+    // email-button §2: 'call' (default) or 'email'; anything else is refused, and a captain list carries none.
+    const channel = body.channel === undefined || body.channel === null ? 'call' : RECEIPT_CHANNELS.find((x) => x === body.channel);
+    if (!channel) return c.json({ error: 'bad_request', message: "channel must be 'call' or 'email'." }, 400);
     const repo = deps.repo(c.env);
     const state = typeof body.state === 'string' && STATE.test(body.state) ? body.state : null;
     const district = Number.isInteger(body.district) && (body.district as number) >= 0 ? (body.district as number) : null;
     const now = deps.now();
     const [device_hash, ip_hash] = await Promise.all([sha256Hex(body.device), receiptIpHash(c.req.header('CF-Connecting-IP'), c.env.IP_SALT, now)]);
-    const common = { state, district, created_at: now.toISOString(), device_hash, ip_hash };
-    // district-counters §3: 10 per device per day, 1 per device+goal+action per 10 minutes, 50 per IP hash per day. Extra posts are not stored.
+    const common = { state, district, created_at: now.toISOString(), device_hash, ip_hash, channel };
+    // district-counters §3: 10 per device per day, 1 per device+goal+action+channel per 10 minutes, 50 per IP hash per day. Extra posts are not stored.
     const limited = async (goalId: number, actionId: number | null, kind: 'action' | 'captain-list') => {
-      const n = await repo.receiptLimitCounts(device_hash, ip_hash, goalId, actionId, kind, now);
+      const n = await repo.receiptLimitCounts(device_hash, ip_hash, goalId, actionId, kind, channel, now);
       if (n.device_day >= RECEIPT_LIMITS.device_day) return c.json({ error: 'limit_day', message: `Ten actions a day is plenty. Come back tomorrow.` }, 429);
       if (n.repeat >= 1) return c.json({ error: 'limit_repeat', message: 'That one is already counted. Try again in ten minutes.' }, 429);
       if (n.ip_day >= RECEIPT_LIMITS.ip_day) return c.json({ error: 'limit_ip', message: 'Too many receipts from this network today.' }, 429);
@@ -160,6 +163,7 @@ export function createApp(deps: Deps) {
     // commitment-funnel §2.1: a completed captain list is a receipt with no action and no target. Names never arrive here.
     if (body.action === 'captain-list') {
       if (body.target !== undefined && body.target !== null) return c.json({ error: 'bad_request', message: 'A captain list carries no target.' }, 400);
+      if (body.channel !== undefined && body.channel !== null) return c.json({ error: 'bad_request', message: 'A captain list carries no channel.' }, 400);
       const goal = await repo.goalBySlug(body.goal);
       if (!goal || goal.status !== 'active') return c.json({ error: 'no_action', message: 'No open goal by that name.' }, 400);
       const stop = await limited(goal.id, null, 'captain-list');
