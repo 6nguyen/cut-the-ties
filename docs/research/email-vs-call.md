@@ -1,5 +1,5 @@
 # Email to a congressional office: impact relative to a call, placement in the flow, and the delivery pipeline
-Researched: 2026-11-08 · Informs: [email-button](../prd/email-button.md)
+Researched: 2026-11-08 · Informs: [email-button](../prd/archive/2026-11-email-button.md)
 
 All URLs read 2026-11-08 unless a line says otherwise. "Not verified" marks claims
 seen only in search snippets or secondary summaries, never in the primary source.
