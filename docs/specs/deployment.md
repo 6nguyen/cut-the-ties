@@ -106,7 +106,7 @@ Files: `.env.example` (one block per name, kept in step with the code
 by `worker/test/env-example.test.ts`), `.github/workflows/deploy.yml`,
 `worker/scripts/render-deploy-config.ts`, `worker/wrangler.deploy.json`
 (generated, gitignored), `web/functions/api/[[path]].ts`. The icon set
-(`web/public/favicon.ico`, `favicon-32.png`, `mark-64.png`,
+(`web/public/favicon.ico`, `favicon-32.png`, `mark-96.png`,
 `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`,
 `site.webmanifest`) is committed output of `npm run icons -w web` from
 `web/src/assets/logo-1024.png`; `web/test/icons.test.ts` fails when a

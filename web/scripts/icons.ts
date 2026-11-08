@@ -11,7 +11,10 @@ export const SOURCE = join(here, '..', 'src', 'assets', 'logo-1024.png');
 export const PUBLIC = join(here, '..', 'public');
 
 /** Every file the script writes, by public path. Sizes in CSS pixels. */
-export const PNGS: Record<string, number> = { 'favicon-32.png': 32, 'mark-64.png': 64, 'apple-touch-icon.png': 180, 'icon-192.png': 192, 'icon-512.png': 512 };
+export const PNGS: Record<string, number> = { 'favicon-32.png': 32, 'apple-touch-icon.png': 180, 'icon-192.png': 192, 'icon-512.png': 512 };
+/** The header mark: the artwork cut out of its white square (exterior transparent, cropped to the drawing), 2× for a 48 px slot. */
+export const MARK = 'mark-96.png';
+export const MARK_SIZE = 96;
 export const ICO_SIZES = [16, 32, 48];
 
 export const MANIFEST = {
@@ -45,6 +48,41 @@ async function png(size: number): Promise<Buffer> {
   return stripText(await sharp(SOURCE).resize(size, size, { kernel: 'lanczos3' }).png({ compressionLevel: 9, palette: true }).toBuffer());
 }
 
+/**
+ * The source is an opaque white square with the circle-and-fists drawing inside it. Flood-fill the near-white
+ * exterior from the edges to alpha 0 (the white inside the ring stays), crop to a square around the drawing
+ * plus a 2% margin (shifted to stay inside the source) and resize. Returns an RGBA PNG.
+ */
+export async function cutout(size: number): Promise<Buffer> {
+  const { data, info } = await sharp(SOURCE).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width: w, height: h } = info;
+  const white = (i: number) => data[i] > 236 && data[i + 1] > 236 && data[i + 2] > 236;
+  const seen = new Uint8Array(w * h);
+  const stack: number[] = [];
+  const push = (x: number, y: number) => { const p = y * w + x; if (!seen[p] && white(p * 4)) { seen[p] = 1; stack.push(p); } };
+  for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+  for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+  while (stack.length) {
+    const p = stack.pop()!;
+    const x = p % w, y = (p - x) / w;
+    data[p * 4 + 3] = 0;
+    if (x > 0) push(x - 1, y);
+    if (x < w - 1) push(x + 1, y);
+    if (y > 0) push(x, y - 1);
+    if (y < h - 1) push(x, y + 1);
+  }
+  let minx = w, maxx = -1, miny = h, maxy = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3]) { if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+  const side = Math.max(maxx - minx, maxy - miny) + 1;
+  const margin = Math.round(side * 0.02);
+  const box = side + 2 * margin;
+  const clamp = (v: number, max: number) => Math.min(Math.max(0, v), max);
+  const left = clamp(Math.round((minx + maxx) / 2 - box / 2), w - box), top = clamp(Math.round((miny + maxy) / 2 - box / 2), h - box);
+  return stripText(await sharp(data, { raw: { width: w, height: h, channels: 4 } })
+    .extract({ left, top, width: box, height: box })
+    .resize(size, size, { kernel: 'lanczos3' }).png({ compressionLevel: 9, palette: true }).toBuffer());
+}
+
 /** An ICO container holding PNG-encoded images (every browser since 2010 reads them); 6-byte header, 16-byte entries, then the images. */
 export function ico(images: { size: number; data: Buffer }[]): Buffer {
   const header = Buffer.alloc(6);
@@ -72,6 +110,7 @@ export function ico(images: { size: number; data: Buffer }[]): Buffer {
 export async function renderIcons(): Promise<Record<string, Buffer>> {
   const out: Record<string, Buffer> = {};
   for (const [name, size] of Object.entries(PNGS)) out[name] = await png(size);
+  out[MARK] = await cutout(MARK_SIZE);
   out['favicon.ico'] = ico(await Promise.all(ICO_SIZES.map(async (size) => ({ size, data: await png(size) }))));
   out['site.webmanifest'] = Buffer.from(`${JSON.stringify(MANIFEST, null, 2)}\n`);
   return out;
