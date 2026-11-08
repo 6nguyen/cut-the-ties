@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rollcall-vote>
+  <vote-metadata>
+    <majority>R</majority>
+    <congress>119</congress>
+    <session>2nd</session>
+    <rollcall-num>243</rollcall-num>
+    <legis-num>H R 8595</legis-num>
+    <vote-question>On Agreeing to the Amendment</vote-question>
+    <vote-type>RECORDED VOTE</vote-type>
+    <vote-result>Failed</vote-result>
+    <action-date>15-Jul-2026</action-date>
+    <action-time time-etz="16:43">4:43 PM</action-time>
+    <vote-desc>Massie of Kentucky Part A Amendment No. 8 &amp; others</vote-desc>
+  </vote-metadata>
+  <vote-data>
+    <recorded-vote>
+      <legislator name-id="B001323" sort-field="Begich" unaccented-name="Begich" party="R" state="AK" role="legislator">Begich</legislator>
+      <vote>Aye</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="A000370" sort-field="Adams" unaccented-name="Adams" party="D" state="NC" role="legislator">Adams</legislator>
+      <vote>Yea</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="A000055" sort-field="Aderholt" unaccented-name="Aderholt" party="R" state="AL" role="legislator">Aderholt</legislator>
+      <vote>No</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="Y000067" sort-field="Yakym" unaccented-name="Yakym" party="R" state="IN" role="legislator">Yakym</legislator>
+      <vote>Nay</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="Z000018" sort-field="Zinke" unaccented-name="Zinke" party="R" state="MT" role="legislator">Zinke</legislator>
+      <vote>Not Voting</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="M001234" sort-field="Massie" unaccented-name="Massie" party="R" state="KY" role="legislator">Massie</legislator>
+      <vote>Present</vote>
+    </recorded-vote>
+    <recorded-vote>
+      <legislator name-id="X999999" sort-field="Nobody" unaccented-name="Nobody, &quot;Jr.&quot;" party="I" state="ZZ" role="legislator">Nobody</legislator>
+      <vote>Aye</vote>
+    </recorded-vote>
+  </vote-data>
+</rollcall-vote>
