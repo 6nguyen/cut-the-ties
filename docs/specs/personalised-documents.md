@@ -13,11 +13,14 @@ stores identifies them. Address routing, goals and ranking are in
    the action's `form_schema` fields (first name 40, city 60, "why this
    matters to you" 280 multiline, optional affiliation 80) with live
    counts and a Turnstile widget. Beside the form (below it on narrow
-   screens) an open "Not sure what to say?" panel lists the goal's
-   `reasons`: first-person starting points grouped by angle (who our
-   government answers to, being dragged into wars, my money, Gaza,
-   readiness, speech); tapping one appends it to the "why" field and
-   focuses it, for the caller to rewrite. The
+   screens) an open "Not sure what to say?" panel opens with a boxed
+   instruction (hazard-yellow, bordered, "How it works" tab: pick one
+   reason, it drops into the "why" field, then rewrite it) and lists the
+   goal's `reasons` as one radio group: first-person starting points
+   grouped by angle (who our government answers to, being dragged into
+   wars, my money, Gaza, readiness, speech), each at most 130 characters.
+   Picking one puts it in the "why" field in place of the previous pick
+   (after the caller's own words, if any) and focuses the field. The
    Turnstile widget sits outside the form, so it renders once the island
    has a target (not on the "Loading your target…" render) and stays
    through the output state for Regenerate; an expired token is dropped
@@ -168,7 +171,7 @@ stores identifies them. Address routing, goals and ranking are in
   `standard_template` (`standard-scripts.md`; required while the goal is active);
   `mentions` and `ask` are the exact phrases the output check requires.
 - Goal YAML `reasons[]` (`angle`, `points[]`): at most six angles, one to
-  five points each, ≤160 characters, no digits; the seed rejects anything
+  five points each, ≤130 characters, no digits; the seed rejects anything
   else (`data/README.md`).
 - Receipt limits (`district-counters.md` §8–9): `POST /api/receipt`
   answers 429 `limit_day` after 10 receipts per device hash in 24 h,

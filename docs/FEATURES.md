@@ -17,6 +17,6 @@
 | district-counters | SHIPPED | This week's receipt counts per district and state on cards… | [spec](specs/district-counters.md) | - | 2026-11-06 |
 | goal-pages | SHIPPED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | - | 2026-11-06 |
 | office-visits | SHIPPED | List a district-office visit, maintainer approval from the… | [spec](specs/office-visits.md) | - | 2026-11-06 |
-| personalised-documents | SHIPPED | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | - | 2026-11-06 |
+| personalised-documents | SHIPPED | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | - | 2026-11-08 |
 | standard-scripts | SHIPPED | Deterministic fallback document: per-action template or see… | [spec](specs/standard-scripts.md) | - | 2026-11-06 |
 | target-cards | SHIPPED | One spec 06 card per target (badge, name, role line, call s… | [spec](specs/target-cards.md) | - | 2026-11-06 |

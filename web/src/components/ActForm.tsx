@@ -20,7 +20,7 @@ interface Props {
   /** Goal title and decision date for the commitment step (commitment-funnel §1). */
   title?: string;
   decision?: string | null;
-  /** Goal `reasons`: first-person starting points shown above the "why" field, grouped by angle. */
+  /** Goal `reasons`: first-person starting points offered as one radio group beside the form, grouped by angle. */
   reasons?: Reason[];
 }
 
@@ -85,6 +85,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const [copied, setCopied] = useState(false);
   const [funnelDone, setFunnelDone] = useState(false);
   const [promised, setPromised] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null); // the reasons panel's selected starting point
   const ts = useTurnstile(siteKey);
   const place = loadPlace();
   const [extras, setExtras] = useState<typeof import('./ReceiptExtras') | null>(null); // call-follow-through: loaded once a receipt exists
@@ -194,10 +195,15 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const kind = type === 'call' ? 'call script' : type === 'letter' ? 'letter' : 'comment';
   const generating = phase.kind === 'generating';
   const whyField = fields.find((f) => f.multiline);
-  /** Reasons panel: append a starting point to the "why" field and put the cursor there, so the caller rewrites it. */
-  function addReason(point: string) {
+  /** Reasons panel: the picked starting point replaces the previous pick in the "why" field (or is appended to the caller's own words), then the cursor lands there so the caller rewrites it. */
+  function pickReason(point: string) {
     if (!whyField) return;
-    setValues((cur) => { const v = (cur[whyField.name] ?? '').trim(); return { ...cur, [whyField.name]: v ? `${v} ${point}` : point }; });
+    setValues((cur) => {
+      const v = cur[whyField.name] ?? '';
+      const base = (picked && v.includes(picked) ? v.replace(picked, '') : v).replace(/\s+/g, ' ').trim();
+      return { ...cur, [whyField.name]: base ? `${base} ${point}` : point };
+    });
+    setPicked(point);
     document.getElementById(whyField.name)?.focus();
   }
 
@@ -237,22 +243,29 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
         </div>
         {whyField && reasons && reasons.length > 0 && (
           <aside class="card p-4 mt-6 lg:mt-0 text-sm flex flex-col gap-4" aria-labelledby="reasons-heading" data-reasons>
-            <div>
+            <div class="relative border-2 border-ink bg-hazard shadow-brutal-sm p-4 pt-5 mt-2" data-reasons-how>
+              <span class="label-ticker absolute -top-2.5 left-3 bg-paper border border-ink px-1.5 py-0.5">How it works</span>
               <h2 id="reasons-heading" class="font-condensed uppercase tracking-wide text-2xl leading-none">Not sure what to say?</h2>
-              <p class="text-ink/70 mt-1">Reasons people give, from a few angles. Tap one to drop it into your lines, then change it so it sounds like you.</p>
+              <p class="mt-2 font-semibold leading-snug">Pick one reason. It drops into "{whyField.label}", then change it so it sounds like you.</p>
             </div>
-            {reasons.map((r) => (
-              <div>
-                <p class="label-code">{r.angle}</p>
-                <ul class="mt-1 flex flex-col gap-1.5">
-                  {r.points.map((p) => (
-                    <li>
-                      <button type="button" class="text-left underline decoration-dotted hover:decoration-solid" onClick={() => addReason(p)}>{p}</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <fieldset class="flex flex-col gap-4">
+              <legend class="sr-only">Reasons people give</legend>
+              {reasons.map((r) => (
+                <div>
+                  <p class="label-code">{r.angle}</p>
+                  <ul class="mt-1.5 flex flex-col gap-1">
+                    {r.points.map((p) => (
+                      <li>
+                        <label class={`flex items-start gap-2 cursor-pointer border-2 px-2 py-1.5 ${picked === p ? 'border-ink bg-newsprint' : 'border-transparent hover:border-rule'}`}>
+                          <input type="radio" name="reason" value={p} class="mt-0.5 shrink-0 accent-ink" checked={picked === p} onChange={() => pickReason(p)} />
+                          <span>{p}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </fieldset>
             <p class="text-xs text-ink/70">Your own words carry more weight than ours.</p>
           </aside>
         )}

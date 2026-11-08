@@ -18,17 +18,17 @@ export function soonest(goals: GoalCard[], now = Date.now()): { g: GoalCard; tar
 
 const CHAMBER: Record<Chamber, string> = { house: 'House', senate: 'Senate' };
 
-/** The targets box, counter line, ask and CTA of one goal; a leadership card renders one per chamber block. */
+/** The ask, the "Get my script" CTA, then the targets box and counter line of one goal; a leadership card renders one per chamber block. */
 function Block({ g, state, district, label }: { g: GoalCard; state: string; district: number; label?: string }) {
   const date = fmtDate(g.decision_date);
   return (
     <div class="flex flex-col gap-4" data-block={g.chamber ?? g.slug}>
       {label && <p class="label-code">{label}{date ? ` · Decision: ${date}` : ''}</p>}
+      <p class="font-semibold">{g.ask_text}</p>
+      <a href={g.action_href} class="btn btn-primary self-start">Get my script →</a>
       <TargetStack label={`Who to call (${g.targets.length})`} targets={g.targets} partner={g.partner_url}>
         <Counts goal={g.slug} state={state} district={district} />
       </TargetStack>
-      <p class="font-semibold">{g.ask_text}</p>
-      <a href={g.action_href} class="btn btn-primary self-start">Get my script →</a>
     </div>
   );
 }

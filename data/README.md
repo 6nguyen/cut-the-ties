@@ -102,7 +102,7 @@ so retiring a goal is one YAML edit. `summary` is at most 60 words;
 signal_date}` rows; `sources` holds `{title, url}` rows; `decider` is the
 one-line "who decides" shown on the detail page.
 `reasons` holds at most six `{angle, points[]}` groups (one to five points
-each, at most 160 characters, no digits): first-person starting points the
+each, at most 130 characters, no digits): first-person starting points the
 act form shows above its "why this matters to you" field, written from
 different angles (who our government answers to, being dragged into wars, my
 money, Gaza, readiness, speech) so a caller can put the gripe in their own
