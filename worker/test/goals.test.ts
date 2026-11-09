@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/index';
-import { MANIFEST_FILE, activateSuccessors, checkImage, imageIds, loadRows, manifestPath } from '../src/load';
+import { MANIFEST_FILE, activateSuccessors, checkImage, checkPicks, imageIds, loadRows, manifestPath } from '../src/load';
 import { MemoryRepo } from '../src/repo';
 import { buildRoute } from '../src/route';
 import type { Goal } from '../src/types';
@@ -192,5 +192,23 @@ describe('site-imagery §3: a goal\'s image', () => {
     const never = () => { throw new Error('manifest read'); };
     expect(() => checkImage({ slug: 'a', image: null }, never)).not.toThrow();
     expect(() => checkImage({ slug: 'a', image: 'x' }, never)).toThrow('manifest read');
+  });
+});
+
+describe('site-imagery §4: a pick\'s bioguide_id', () => {
+  const pick = (id?: string) => (y: string) => y.replace(/^our_picks: .*$/m, 'our_picks: ' + JSON.stringify([{ name: 'X', rationale: 'r', source_url: 'https://x', ...(id ? { bioguide_id: id } : {}) }]));
+  const picksOf = (dir: string) => JSON.parse(loadRows(dir).goals.find((g) => g.slug === 'senate-leader')!.our_picks) as { bioguide_id?: string }[];
+
+  it('an id that is not a members.csv row fails the seed, naming the goal and the id', () => {
+    expect(() => loadRows(dataWith({ 'senate-leader': pick('Z999999') }))).toThrow('goal senate-leader: our_picks[0] bioguide_id Z999999 is not in members.csv');
+    expect(() => checkPicks({ slug: 'a', our_picks: '[{"bioguide_id": 7}]' }, () => new Set(['7']))).toThrow('goal a: our_picks[0] bioguide_id 7 is not in members.csv');
+  });
+
+  it('a roster id passes and reaches the goal row; a pick without one is unchanged and the roster is not read', () => {
+    expect(picksOf(dataWith({ 'senate-leader': pick('P000145') }))[0].bioguide_id).toBe('P000145');
+    expect(picksOf(dataWith({ 'senate-leader': pick() }))[0]).not.toHaveProperty('bioguide_id');
+    const never = () => { throw new Error('roster read'); };
+    expect(() => checkPicks({ slug: 'a', our_picks: '[{"name": "X"}]' }, never)).not.toThrow();
+    expect(() => checkPicks({ slug: 'a', our_picks: '[{"bioguide_id": "P000145"}]' }, never)).toThrow('roster read');
   });
 });

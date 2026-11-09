@@ -99,6 +99,33 @@ the results and `/goals`.
     `goal <slug>: image <id> has no file row in
     web/src/assets/img/manifest.yaml`. `ndaa-1217` and `ndaa-report-vote`
     set `hasc-hearing-room`; every other goal shows its category default.
+14. **Portrait import.** `npm run import-members -w worker -- --portraits`
+    takes every `data/members.csv` row without `left_office` (a
+    member-elect has no Bioguide id) and, for each id with no
+    `web/src/assets/portraits/<bioguide_id>.webp`, fetches the 225×275
+    official portrait from `unitedstates/images` (public domain, from the
+    Government Publishing Office), then the Bioguide photo. `sharp` writes
+    a 160×200 WebP cropped from the top, at the highest quality from 62
+    down to 14 that fits 8 KB. An existing file is never fetched or
+    rewritten, so a second run changes no bytes. An id whose sources
+    answer 404 or 403, or serve no image, gets no file, is listed in
+    `missing.json` and printed under `no portrait:`; a network failure
+    prints `failed (network, run again):`, exits 1 and leaves
+    `missing.json` alone. The step never rewrites `members.csv`.
+15. **Portraits on pages.** A static endpoint
+    (`web/src/pages/portraits/[id].webp.ts`) serves each file at
+    `/portraits/<bioguide_id>.webp`, so an island builds the URL from the
+    id and no URL map reaches a client bundle. The box (`.portrait` in
+    `global.css`) holds the party letter or initial on the party colour;
+    the `<img>` over it (`alt=""`, explicit width and height) has zero
+    opacity until its `load` event sets `data-loaded`, so a blocked,
+    missing or failed image, or no JavaScript, leaves the letter. Target
+    cards: 48 px, lazy (`target-cards.md` §Behavior 1). Member hero:
+    120×150, newsprint border, `filter: contrast()` at the treatment's
+    step and no gradient, left of the title from 640 px and above it
+    below; a member with no file gets no box and no gap. Prep picks:
+    80×100, lazy (`goal-pages.md` §Behavior 4). Members-elect, treasurers
+    and state officials have no portrait.
 
 ## Data & contracts
 - `manifest.yaml` row: `id`, `file` | `dir`, `alt`, `subject`
@@ -131,6 +158,16 @@ the results and `/goals`.
   `commons.wikimedia.org`, otherwise the host without `www.`.
 - `Photo` marks itself with `data-photo="<id>"` and, once loaded,
   `data-loaded`. Its styles are scoped to the component.
+- `web/src/assets/portraits/`: `<bioguide_id>.webp` (160×200, ≤8 KB) and
+  `missing.json` (sorted ids). `images.ts` reads the directory at build:
+  `PORTRAIT`, `portraitIds()`, `hasPortraitFile(id)`.
+- `worker/scripts/import-members.ts`: `portraitSources(id)`,
+  `encodePortrait(bytes)`, `importPortraits(ids, dir, io)` →
+  `{written, kept, missing, failed, fallback}` with the fetch, file and
+  encoder functions injected (`PortraitIo`).
+- `web/src/components/Target.tsx`: `Avatar`, `showsPortrait(t)`,
+  `portraitSrc(id)`; `web/src/lib/goals.ts`: `pickBadge(pick, roster,
+  hasFile)`.
 - `web/src/layouts/Base.astro` has a `head` slot; the preload links of
   the landing, goal and prep pages are its users.
 - `web/src/components/Results.tsx`: `Results({ photos })` takes the slug →
@@ -162,9 +199,18 @@ the results and `/goals`.
       above the body.
 - [ ] The hero original is landscape and at least 1920 px wide; every
       original is at least 768 px wide.
+- [ ] Every sitting member in `members.csv` has a portrait file or is in
+      `missing.json`, never both; every file is a 160×200 WebP ≤8 KB.
+- [ ] A portrait `<img>` is invisible until it has loaded; no page
+      requests an image from another origin.
 
 ## Performance budget
 - Each original ≤600 KB; the five files total ≤3 MB (1.33 MB today).
+- Portraits: each ≤8 KB, the directory ≤4.5 MB. Imported 2026-11-08: 538
+  files, 1.57 MB, the largest 5.4 KB; one member has no source portrait.
+  Transferred at 390 px: 2.9 to 4.1 KB on a member page, 8.8 KB for the
+  three members of one `/results` page, whose LCP element stays a card
+  band (1.56 s before, 1.60 s after, Slow 4G with CPU 4x, localhost).
 - A page without a photo transfers no extra bytes. Tailwind scans these
   source files, so a bare utility name in a comment or a key adds CSS to
   every page; keep them out.

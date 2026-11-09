@@ -12,8 +12,18 @@ presentation: who the targets are and what each line says come from
 ## Behavior
 1. **Card.** `web/src/components/Target.tsx` `Target`: a paper `<li>`
    with a 2 px ink border and the small shadow (`data-target`). Header
-   row: a 40 px party badge (D/R/I in Bebas Neue; D cobalt, R crimson,
-   others hazard), the
+   row: for a sitting member with a portrait file, a 48 px portrait
+   (`Avatar`, `data-portrait`: `/portraits/<bioguide_id>.webp`, `alt=""`,
+   lazy, low fetch priority, a 48×48 box showing the top of the file)
+   with a 2 px party-coloured border (D cobalt, R crimson, others hazard)
+   and the party letter as a 16 px corner tag in the same colour. The
+   party letter on the party colour is the layer under it; the image and
+   the tag appear only once the image has loaded, so a blocked or failed
+   image leaves the letter, never a broken-image icon. A member-elect, a
+   treasurer and a member listed in
+   `web/src/assets/portraits/missing.json` keep the 40 px party badge
+   (D/R/I in Bebas Neue, the same colours, ink border) with no `<img>`.
+   Then the
    name in Bebas Neue uppercase (`text-2xl`), under it a Space Mono role
    line (`data-role-line`) "Representative · CA-46", "Senator · CA",
    "Representative · AK at large", "Treasurer · MD", or the role alone

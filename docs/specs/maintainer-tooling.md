@@ -110,9 +110,10 @@ and nothing here writes to `data/` or to `positions`.
    (runner IPs may be walled). It then runs `import-members`,
    `import-offices` and `npm run check-data -w worker` (`seed.ts --check`:
    the loader and its seed checks, no write), then a HEAD request to every
-   distinct `contact_form_url` in `data/members.csv` (`email-button` §2.3)
-   and, only when `git diff --
-   data/` is non-empty, opens or updates one PR on `chore/roster-<date>`
+   distinct `contact_form_url` in `data/members.csv` (`email-button` §2.3),
+   then `import-members --portraits` (`site-imagery.md` Behavior 14; an
+   unreachable source only warns) and, only when `git diff -- data/` is
+   non-empty, with `web/src/assets/portraits/` in the same commit, opens or updates one PR on `chore/roster-<date>`
    (reusing the open roster PR's branch when there is one) whose body
    lists the importer output (`changed:`, `stale:`, `left:`), the upstream
    commit SHA, the bytes fetched and, under "Contact links to check", each

@@ -12,31 +12,31 @@ never by this capability, and nothing here calls an LLM.
 
 ## Behavior
 1. **Roster import (`npm run import-members -w worker`).** Reads the
-   `unitedstates/congress-legislators` `legislators-current.yaml` file
-   (from the path passed as the first argument, or downloaded from raw
-   `main` when none is given) and, with `--senate-xml <path|url>`, the
-   Senate directory `senators_cfm.xml` as a second source. It takes each
-   person's last term and merges it into `data/members.csv`. Rows for a
-   `bioguide_id` already in the file keep their `name` (the file's common
-   name wins over the dataset's `official_full`, so "Lou Correa" stays),
-   their `district_phone`, `money_url`, `not_returning`, `left_office` and
+   `unitedstates/congress-legislators` `legislators-current.yaml`
+   (the path given as the first argument, else downloaded from raw
+   `main`) and, with `--senate-xml <path|url>`, the
+   Senate directory `senators_cfm.xml` as a second source, and merges each
+   person's last term into `data/members.csv`. A row already
+   in the file keeps its `name` (the file's common name wins over
+   `official_full`, so "Lou Correa" stays), its `district_phone`, `money_url`, `not_returning`, `left_office` and
    every flag column (`hasc`, `conferee`, `rc243`, `jrd_april_2026`,
    `btb_cosponsor`, `target_2028`); `party`, `chamber`, `state`,
    `district`, `dc_phone`, `contact_form_url` and `contact_kind` are
-   refreshed from the dataset when it has a value. The contact link by
+   refreshed when the dataset has a value. The contact link by
    kind: a roster `contact_form` (http(s), not the homepage) is `form`; a senator without one
    gets the XML `email` as `form` unless it is the homepage, else
    the homepage as `homepage`; a representative without one gets
    `terms[-1].url + '/contact'` as `zip_gate`. A row with a `contact_kind`
    keeps its link unless the dataset has a form.
-   New members get the dataset's name and empty flags. Members in the file
-   but not in the roster are kept, never deleted: before 2027-01-03
-   (`TRANSITION_DATE`) they are printed under `stale:` with no column
-   change; from that day on the import sets `left_office` to the run date
-   (kept once set) and prints them under `left:`. Rows are sorted by
-   state, House before Senate, district, name, and the script is
-   idempotent (a second run changes no bytes). At-large seats, DC and the
-   territories keep district `0`; senators keep an empty district.
+   New members get the dataset's name and empty flags. Members absent
+   from the roster are never deleted: before 2027-01-03
+   (`TRANSITION_DATE`) they print under `stale:`, unchanged; from that
+   day the import sets `left_office` to the run date (kept once set) and
+   prints them under `left:`. Rows sort by state,
+   House before Senate, district, name; a second run changes no bytes.
+   At-large seats, DC and the territories keep district `0`; senators
+   an empty one. `--portraits` alone writes the portraits and never the
+   CSV (`site-imagery.md` §Behavior 14).
 2. **Seed checks.** `loadRows` rejects `members.csv` when a `bioguide_id`
    repeats, a senator carries a district, a House district is outside the
    state's seat count (`worker/src/districts.ts`, labelled by
@@ -53,11 +53,11 @@ never by this capability, and nothing here calls an LLM.
    first office phone in file order; a filled cell wins. The error names
    the file and the row.
 3. **Member page (`/m/<bioguide_id>`).** One static page per member,
-   built from `data/`. Hero: party and seat chip (`CA-46`, `TX at large`,
-   `VT` for a senator), chamber chip, title "Rep./Del./Sen. Name", a
-   `tel:` button for the DC office, a `tel:` button for the district
-   office (the derived or hand-filled `district_phone`) and the contact
-   link labelled by `contact_kind`: "Contact form", "Contact form (asks
+   built from `data/`. Hero: the portrait (`site-imagery.md` §Behavior 15),
+   party and seat chip (`CA-46`, `TX at large`,
+   `VT` for a senator), chamber chip, title "Rep./Del./Sen. Name", `tel:` buttons for the DC office and the
+   district office (the derived or hand-filled `district_phone`) and the
+   contact link labelled by `contact_kind`: "Contact form", "Contact form (asks
    for your ZIP)" or "Office website"; a link without a kind is never
    shown. Each `tel:` button carries an "Open now" / "Closed · opens
    <weekday> <time>" chip (`web/src/components/OpenChip.tsx`) computed
@@ -238,9 +238,9 @@ never by this capability, and nothing here calls an LLM.
       disallows `/api/`.
 
 ## Performance budget
-- Member page ≤100 KB transferred (measured 2026-11-04: `/m/C001110` HTML
-  2.7 KB gzipped + 4.7 KB CSS; the share card is loaded only by link
-  previews). LCP ≤1.5 s on a mid-range phone over 4G.
+- Member page ≤100 KB transferred, fonts excluded (2026-11-08, 390 px,
+  gzip: 65.0 to 66.4 KB with a portrait, 61.2 KB without; the share card
+  loads only for link previews). LCP ≤1.5 s on a mid-range phone over 4G.
 - House whip page ≤150 KB transferred (measured: default view 11.4 KB
   gzipped HTML, `/whip/all` 23.2 KB).
 - Zero LLM calls at build or request time; infra cost unchanged at

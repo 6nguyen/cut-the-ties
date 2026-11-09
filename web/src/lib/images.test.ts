@@ -5,7 +5,10 @@ import { readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { publishedGoals } from './goals';
+import { readFileSync as readText } from 'node:fs';
+import { parseCsv as csvRows } from '@worker/load';
+import { pickBadge, publishedGoals } from './goals';
+import { PORTRAIT, hasPortraitFile, portraitIds } from './images';
 import { BAND, FILE_NAMES, HERO, heroWidths, LICENCES, MANIFEST, PHOTO_OUTPUT, TREATMENT, fitWidths, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
 
 const DIR = fileURLToPath(new URL('../assets/img/', import.meta.url));
@@ -232,7 +235,66 @@ describe('goal pages', () => {
     for (const [p, src] of under) expect(src, p).not.toMatch(/<Photo\b|imageFor\(|imageIdFor\(/);
   });
 
-  it('with the hearing room on a goal page, the credits list every photo file', () => {
-    expect(credits(publishedGoals()).map((c) => c.id)).toEqual(MANIFEST.filter((r) => r.file).map((r) => r.id));
+  it('with the hearing room on a goal page, the credits list every photo file and the portraits row', () => {
+    expect(credits(publishedGoals()).map((c) => c.id)).toEqual(MANIFEST.filter((r) => r.file || r.id === 'portraits').map((r) => r.id));
+  });
+});
+
+describe('site-imagery §4: portraits', () => {
+  const sitting = csvRows(readText(join(process.cwd(), '..', 'data', 'members.csv'), 'utf8')).filter((r) => !r.left_office).map((r) => r.bioguide_id);
+  const missing = JSON.parse(readText(join(PORTRAIT.dir, 'missing.json'), 'utf8')) as string[];
+
+  it('every sitting member has a portrait file or is listed in missing.json, never both', () => {
+    const have = new Set(portraitIds());
+    const none = new Set(missing);
+    expect(have.size).toBeGreaterThan(500);
+    expect(sitting.filter((id) => have.has(id) === none.has(id))).toEqual([]);
+    expect(missing.filter((id) => !sitting.includes(id))).toEqual([]);
+    expect([...missing].sort()).toEqual(missing);
+    expect(hasPortraitFile(portraitIds()[0])).toBe(true);
+    for (const id of [...missing, 'Z999999', '', null, undefined]) expect(hasPortraitFile(id)).toBe(false);
+  });
+
+  it('every file is a 160×200 WebP of at most 8 KB and the directory stays under 4.5 MB', async () => {
+    let total = 0;
+    const bad: string[] = [];
+    for (const id of portraitIds()) {
+      const file = join(PORTRAIT.dir, `${id}.webp`);
+      const size = statSync(file).size;
+      total += size;
+      const meta = await sharp(file).metadata();
+      if (size > PORTRAIT.maxBytes || meta.format !== 'webp' || meta.width !== PORTRAIT.width || meta.height !== PORTRAIT.height) bad.push(`${id}: ${size} B ${meta.format} ${meta.width}x${meta.height}`);
+    }
+    expect(bad).toEqual([]);
+    expect(total).toBeLessThanOrEqual(PORTRAIT.maxTotalBytes);
+  });
+
+  it('the portraits row earns its /about credit line once the directory holds a file', () => {
+    expect(credits([]).map((c) => c.id)).toContain('portraits');
+  });
+
+  it('a pick shows a portrait for a member with a file, that party\'s initial badge without one, a hazard initial without a bioguide_id', () => {
+    const roster = [{ bioguide_id: 'P000145', party: 'D' as const }, { bioguide_id: 'A000383', party: 'R' as const }];
+    const pick = (name: string, id?: string) => ({ name, rationale: 'r', source_url: 'https://x', ...(id ? { bioguide_id: id } : {}) });
+    const hasFile = (id: string) => id !== 'A000383';
+    expect(pickBadge(pick('Alex Padilla', 'P000145'), roster, hasFile)).toEqual({ initial: 'A', party: 'D', portrait: true });
+    expect(pickBadge(pick('markwayne mullin', 'A000383'), roster, hasFile)).toEqual({ initial: 'M', party: 'R', portrait: false });
+    expect(pickBadge(pick(' Someone Else'), roster, hasFile)).toEqual({ initial: 'S', party: null, portrait: false });
+  });
+
+  it('the member hero and the prep picks draw the portrait over a badge, at their sizes, from the site\'s own origin', () => {
+    const page = (end: string) => Object.entries(pageSources()).find(([k]) => k.endsWith(end))![1];
+    const hero = page('pages/m/[id].astro');
+    const prep = page('pages/goals/[slug]/prep.astro');
+    expect(hero).toContain('width="120" height="150"');
+    expect(hero).toContain('TREATMENT.contrast');
+    expect(hero).toContain('{portrait && (');
+    expect(hero).not.toContain('btn-ghost">District office');
+    expect(prep).toContain('width="80" height="100"');
+    for (const src of [hero, prep]) {
+      expect(src).toContain('src={portraitSrc(');
+      expect(src).toContain("onload=\"this.parentNode.dataset.loaded='1'\"");
+      expect(src).not.toMatch(/unitedstates\.github\.io|bioguide\.congress\.gov\/bioguide\/photo/);
+    }
   });
 });
