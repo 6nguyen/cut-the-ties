@@ -2,9 +2,9 @@
 
 `docs/specs/` describes the app as shipped today. A PRD here is a **change**:
 a proposal with an explicit `## Spec delta`, approved **before** code. A PRD
-opened as a PR is APPROVED on creation unless it has a `[blocking]` open
-question (see the template's `## Open questions`); the owner can still reject
-it in review.
+opened as a PR is approved on creation, with Status `READY`, unless it has a
+`[blocking]` open question (see the template's `## Open questions`); the
+owner can still reject it in review.
 
 ## Lifecycle
 Specced in `docs/specs/prd-lifecycle.md` (template repo only). The spec is
@@ -46,24 +46,39 @@ no `Needs` entry can run in parallel with the row above it. Rules:
 - Creating a PRD inserts its row at its priority and renumbers the rest;
   rows are never appended by default. Buildable rows rank above rows
   blocked on the owner, counsel or a date.
-- `Status` mirrors the PRD's `Status:` line, with the blocked or
-  in-progress section and its reason in parentheses; the same commit that
-  changes a PRD's Status or State block updates its row.
+- `Status` mirrors the PRD's `Status:` line: one word from the table
+  below, then the section still open and why in parentheses. The same
+  commit that changes a PRD's Status or State block updates its row.
 - A PRD that ships, is superseded or is dropped loses its row in the
   commit that archives it (Lifecycle 4–5); completed work never stays here.
 - `prd-lint` fails on a `docs/prd/*.md` without a row, a row whose PRD is
   missing or archived, and a row whose Status word differs from the PRD's.
 
+Status follows the board a team would keep. The word comes from the PRD's
+`Sections:` markers, never from a guess:
+
+| Status | Means | Sections markers |
+|---|---|---|
+| `DRAFT` | A `[blocking]` question is open; no code | all `[ ]` |
+| `READY` | Approved, nothing started | all `[ ]` |
+| `IN PROGRESS` | Build work remains: a section is being built, not yet started, or blocked | some `[x]` or `[~]`, and a build section still `[ ]`, `[~]` or `[!]` |
+| `DEV COMPLETE` | All code is merged; verification has not started | every build section `[x]`; a verification section `[ ]` |
+| `TESTING` | Only verification remains and it is under way or waiting on the owner (device matrix, go-live checklist, measured budgets) | every build section `[x]`; a verification section `[~]` or `[!]` |
+| `SHIPPED` | Resolved: verified, archived, no row here | all `[x]` |
+
+`docs/FEATURES.md` keeps its own coarser words (PLANNED, BUILDING, SHIPPED);
+it is generated from the same markers.
+
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [one-screen-receipt.md](one-screen-receipt.md) | APPROVED | — | Poster stamp "I CALLED" + "YOUR TURN. CALL YOUR REP" call to action, one-screen receipt (save-on-tap office response, one filled button), Instagram / Copy link / Message icon buttons, captain list retired; §1–§4 buildable now, §2 after PR #70 merges |
-| 2 | [deploy.md](deploy.md) | BUILDING (§3 owner checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
-| 3 | [social-sharing.md](social-sharing.md) | BUILDING (§1 owner device test) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; §1 is a half-day owner device test |
-| 4 | [draft-cap-per-office.md](draft-cap-per-office.md) | APPROVED | — | `/api/generate` limits in `worker/src/generate.ts`, `generationCounts` in `worker/src/repo.ts`, `STANDARD_WHY` in `ActForm.tsx`; 3 model drafts per office per ask, then the template script; §1 buildable now |
-| 5 | [site-imagery.md](site-imagery.md) | APPROVED | — | `web/src/assets/img/` + manifest, `Photo.astro`, landing/results/goal heroes, portraits on targets and member pages, share-card photo; §1–§5 buildable now |
-| 6 | [state-holdings-sweep.md](state-holdings-sweep.md) | BUILDING (§2 research) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
-| 7 | [primary-2028.md](primary-2028.md) | BUILDING (§2 blocked) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
-| 8 | [district-vintage-rollover.md](district-vintage-rollover.md) | BUILDING (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 shipped (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
+| 1 | [one-screen-receipt.md](one-screen-receipt.md) | READY | — | Poster stamp "I CALLED" + "YOUR TURN. CALL YOUR REP" call to action, one-screen receipt (save-on-tap office response, one filled button), Instagram / Copy link / Message icon buttons, captain list retired; §1–§4 buildable now |
+| 2 | [draft-cap-per-office.md](draft-cap-per-office.md) | READY | — | `/api/generate` limits in `worker/src/generate.ts`, `generationCounts` in `worker/src/repo.ts`, `STANDARD_WHY` in `ActForm.tsx`; 3 model drafts per office per ask, then the template script; §1 buildable now |
+| 3 | [site-imagery.md](site-imagery.md) | READY | — | `web/src/assets/img/` + manifest, `Photo.astro`, landing/results/goal heroes, portraits on targets and member pages, share-card photo; §1–§5 buildable now |
+| 4 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
+| 5 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
+| 6 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
+| 7 | [primary-2028.md](primary-2028.md) | IN PROGRESS (§2 blocked: counsel) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
+| 8 | [district-vintage-rollover.md](district-vintage-rollover.md) | IN PROGRESS (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 merged (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
 
 ## Next (ideas without a PRD, in intended order; ≤10)
 Targets is an existing spec stem or `new`. Writing the PRD deletes its row
@@ -76,7 +91,7 @@ in the same commit; dropping an idea deletes its row.
 
 ```markdown
 # <Change name> — PRD
-Status: DRAFT | APPROVED | BUILDING | SHIPPED YYYY-MM-DD (PR #n) | SUPERSEDED by <prd> | DROPPED · Owner: <name> · Last updated: YYYY-MM-DD
+Status: DRAFT | READY | IN PROGRESS | DEV COMPLETE | TESTING | SHIPPED YYYY-MM-DD (PR #n) | SUPERSEDED by <prd> | DROPPED · Owner: <name> · Last updated: YYYY-MM-DD
 
 ## Problem
 What is wrong or missing today, in one paragraph, with the evidence.
@@ -137,7 +152,7 @@ markers current (merged PRs flip to `[x]` on the next run).
 ## Open questions
 Numbered. Each has a `Proposal:`. Mark one `[blocking]` only if its answer
 changes Expected behavior, Data & contracts, Acceptance criteria or scope, or
-is costly to reverse. No blocking questions → Status `APPROVED YYYY-MM-DD
+is costly to reverse. No blocking questions → Status `READY YYYY-MM-DD
 (auto)` at PR creation, proposals become decisions, logged under Changes.
 Any blocking question → Status `DRAFT`, PR body lists them, no code yet.
 

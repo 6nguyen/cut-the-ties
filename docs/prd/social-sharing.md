@@ -1,5 +1,5 @@
 # Social sharing: a poster for the action you just took — PRD
-Status: BUILDING (§1 owner device test) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: TESTING (§1 owner device test: iPhone passed, Android not run) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 After a call the receipt screen offers one "Share" button that hands the
@@ -214,21 +214,21 @@ receipts per goal. A second-week ratio under 2 % of receipts means the
 poster is not travelling and the caption and poster copy get one revision
 before any new platform is added.
 
-## State (updated 2026-11-08, PR #69)
+## State (updated 2026-11-08)
 - Sections:
-  - [!] 1. Device test matrix · blocked: owner runs the matrix on a real iPhone and Android phone with Instagram installed
+  - [!] 1. Device test matrix · blocked: owner runs the rest of the matrix on an Android phone (Chrome and Samsung Internet); iPhone passed 2026-11-08
   - [x] 2. Poster and share after a receipt · PR #67 merged
   - [x] 3. Fallback and desktop row · PR #67 merged
   - [x] 4. Captain-list share uses the poster · PR #67 merged
-- Completed: §2–4 and `via` counting (PR #67); phone-free acceptance criteria verified and ticked.
+- Completed: §2–4 and `via` counting (PR #67); phone-free acceptance criteria verified and ticked (PR #69). §1 on iPhone: the share sheet offered Instagram Story, Post, Reel and Message and each opened with the poster.
 - Folded: §2, §3, §4 (PR #67; `docs/specs/social-sharing.md` and the four MODIFIED specs)
-- Branch / open PRs: `feat/social-sharing-device-test-matrix` · PR #69 (State + three tests, no behavior change)
+- Branch / open PRs: none (PR #67 and PR #69 merged)
 - Files changed (file:line map): `web/src/components/share.test.tsx:89-112` (share-link payload, intents at 1024 px); `web/src/components/funnel.test.ts:9-15,154-173` (captain-list poster attach)
-- Tests run + result: test-web 168 passed, test (worker) 356 passed, tsc 0 errors, build PASS. Landing 38.5 KB; poster chunk 1.8 KB gzip, lazy; desktop Chromium draw + encode 11–23 ms, 0 requests during drawing.
-- Remaining: §1 only. It sets `SHARE_PAYLOAD` / `POSTER_LABEL` in `web/src/lib/poster.ts:11-12` (today `'files'` / "Share poster") and closes two criteria: Instagram composers on both phones, and draw + encode ≤300 ms on a mid-range Android with the act page's LCP.
+- Tests run + result: test-web 168 passed, test (worker) 356 passed, tsc 0 errors, build PASS (PR #69). Landing 38.5 KB; poster chunk 1.8 KB gzip, lazy; desktop Chromium draw + encode 11–23 ms, 0 requests during drawing.
+- Remaining: §1 on Android only. It sets `SHARE_PAYLOAD` / `POSTER_LABEL` in `web/src/lib/poster.ts:11-12` (today `'files'` / "Share poster") and closes two criteria: Instagram composers on both phones, and draw + encode ≤300 ms on a mid-range Android with the act page's LCP.
 - Decisions since last update: none.
-- Known failures / blockers: §1 needs physical phones; no agent can run it.
-- Next action: merge PR #69; owner runs §1 and gives the per-device results, then /implement-prd-section docs/prd/social-sharing.md (next: §1. Device test matrix) logs them, sets the two constants, ticks the last criteria and archives the PRD.
+- Known failures / blockers: §1 needs a physical Android phone; no agent can run it. The iPhone run did not record the iOS or Instagram version, and no phone draw time has been measured.
+- Next action: owner runs §1 on Android and gives the results, then /implement-prd-section docs/prd/social-sharing.md (next: §1. Device test matrix) logs them, sets the two constants, ticks the last criteria and archives the PRD. `one-screen-receipt.md` reworks the same poster and row; whichever lands second re-checks the other's criteria.
 ## Open questions
 1. Should the poster carry a QR code for the Story link? Proposal: not
    now; the URL is seven syllables and a QR needs a ~5 KB library; add it
@@ -259,3 +259,9 @@ before any new platform is added.
   already loaded on the act page). Still open, both need §1's phones: the
   Instagram composers criterion and draw + encode ≤300 ms on a mid-range
   Android (with the act page's LCP).
+- 2026-11-08 — §1, iPhone (owner, Chrome on iPhone; iOS and Instagram
+  versions not recorded): the file-only share sheet offered Instagram
+  Story, Post, Reel and Message, and each opened with the poster. Android
+  (Chrome and Samsung Internet) not run; phone draw time not measured.
+  `SHARE_PAYLOAD` / `POSTER_LABEL` stay as they are until Android is in.
+- 2026-11-08 — Status BUILDING → TESTING: all code is merged (PR #67, PR #69) and only §1 remains. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.

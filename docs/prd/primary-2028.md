@@ -1,5 +1,5 @@
 # 2028 primary-target goal — PRD
-Status: BUILDING 2026-11-04 · Owner: George Nguyen · Last updated: 2026-11-04
+Status: IN PROGRESS (§2 blocked: counsel) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The ranking engine and goal model support an `electoral` category, and
@@ -125,3 +125,4 @@ electoral goal per targeted district.
   (no primary date verifiable offline); the first target lands in a
   data/ PR citing its roll call (`data/README.md`).
 - 2026-11-04 — §1 merged via PR #29; §2 unchanged, blocked on counsel.
+- 2026-11-08 — Status BUILDING → IN PROGRESS. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.

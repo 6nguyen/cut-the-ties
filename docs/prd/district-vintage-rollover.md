@@ -1,5 +1,5 @@
 # District map rollover to the 120th Congress — PRD
-Status: BUILDING (§3 blocked until 2027-01-03) · Owner: George Nguyen · Last updated: 2026-11-06
+Status: IN PROGRESS (§3 blocked until 2027-01-03) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 Ten states (AL, CA, FL, LA, MO, NC, OH, TN, TX, UT) elected their 2026
@@ -152,3 +152,4 @@ and the TIGER paragraphs of [data-ingestion](../research/data-ingestion.md).
 - 2026-11-05 (§2): probe run: cd119 vs `ACS2025_Current` 510/510, cd120 vs `Current_Current` (MO vs `ACS2025_Current`) 510/510, zero mismatches. Georgia closed: 0 of 60 fresh seeded points differ between the two vintages and GA's 10 probe points agree on both sets; the research's 2/29 were TIGER2026 edge re-cuts (the GA file's bytes change between vintages like 39 other unchanged states), not a map change. No rebuild needed.
 - 2026-11-05 (§3 prep): `ACTIVE_CONGRESS` and `DISTRICTS_DIR` in `pip.ts`, `SEATS_CONGRESS` in `worker/src/districts.ts`, all at 119; `docs/guides/deploy.md` §6 holds the dated flip and rollback checklist. The results-header label waits for the flip PR.
 - 2026-11-05 (§1): geocoder answers recorded from `geographies/coordinates`: Austin (-97.7431, 30.2672) `Current_Current` = TX-10 (120th layer), `ACS2025_Current` = TX-37 (119th); downtown Kansas City (-94.5786, 39.0997) MO-4 vs MO-5. The Missouri re-query goes to `geographies/coordinates` with the match's coordinates, so the address is sent to Census once; `parseCensus` reads both response shapes.
+- 2026-11-08 — Status BUILDING → IN PROGRESS. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
