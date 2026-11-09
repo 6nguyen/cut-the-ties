@@ -1,5 +1,5 @@
 # Site imagery — PRD
-Status: READY 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1 in review; §2–§5 to build) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The Stitch screens (`design/stitch/screens/`) put a photograph behind every
@@ -259,23 +259,22 @@ Lighthouse mobile LCP and transferred bytes for `/` before and after §2,
 quoted in the PR. Success is the budget holding; there is no engagement
 metric a static site can read without analytics, and the site has none.
 
-## State (updated 2026-11-08, PR #n) — ≤30 lines
+## State (updated 2026-11-08) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [ ] 1. Image library, policy and credits
+  - [~] 1. Image library, policy and credits · feat/site-imagery-image-library-policy
   - [ ] 2. Landing and results heroes
   - [ ] 3. Goal pages
   - [ ] 4. Portraits: picks, targets and member pages
   - [ ] 5. Share cards
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/site-imagery-prd` (this PRD)
+- Branch / open PRs: feat/site-imagery-image-library-policy (no PR yet)
 - Files changed (file:line map): none yet
 - Tests run + result: none yet
 - Remaining: §1–§5
 - Decisions since last update: none
 - Known failures / blockers: none
-- Next action: `/implement-prd-section` §1
-
+- Next action: build §1 on feat/site-imagery-image-library-policy
 ## Open questions
 1. Which exact Capitol, House, Senate, hearing-room and state-capitol
    photos? Proposal: the implementing session picks the highest-resolution
