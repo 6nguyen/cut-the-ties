@@ -160,7 +160,10 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   });
 
   async function generate() {
-    setError(null); setText(''); setReceipt(null); setReported(false); setOutcome(''); setNote(''); setFunnelDone(false); setWriting(false); setChannel('call');
+    // A rejected request (rate limit, bot check, network) costs nothing on screen: the draft and its receipt
+    // state are cleared only once the Worker starts a new stream, and a draft already shown comes back.
+    const prev = phase.kind === 'output' ? { phase, text } : null;
+    setError(null); setText('');
     setPhase({ kind: 'generating', stage: 'Drafting…' });
     // leader-call-scripts §2: a fresh seed per request, so "Another version" composes a different standard script.
     const variant = Math.floor(Math.random() * 2 ** 31);
@@ -178,6 +181,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
         const err = (await res.json().catch(() => ({ message: 'The server sent something we could not read.' }))) as { message?: string };
         throw new Error(err.message ?? `Request failed (${res.status}).`);
       }
+      setReceipt(null); setReported(false); setOutcome(''); setNote(''); setFunnelDone(false); setWriting(false); setChannel('call');
       let buf = '';
       let final: GenerateDone | null = null;
       let refused: string | null = null;
@@ -192,7 +196,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
       else setPhase({ kind: 'refused', message: refused ?? 'The draft ended early. Try again.' });
     } catch (e) {
       setError((e as Error).message);
-      setPhase({ kind: 'form' });
+      if (prev) { setText(prev.text); setPhase(prev.phase); } else setPhase({ kind: 'form' });
     } finally {
       ts.reset(); // the token rode on this request; the widget issues the next one
     }
@@ -246,6 +250,10 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     document.getElementById(whyField.name)?.focus();
   }
 
+  // On the form the alert sits under the submit button: below the form and the reasons panel it was off-screen,
+  // so a rejected submit looked like the page had reset.
+  const alert = error && <p role="alert" class="card border-crimson bg-newsprint text-ink px-4 py-3 text-sm font-semibold max-w-2xl">{error}</p>;
+
   return (
     <div class="flex flex-col gap-6">
       {phase.kind === 'form' && (
@@ -277,6 +285,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
             );
           })}
           <button type="submit" class="btn btn-primary self-start" disabled={!valid}>Write my {kind} →</button>
+          {alert}
           <p class="text-xs text-ink/70">Your lines are used as material for one {kind}, checked by code, and not stored. {fmt.min_words}–{fmt.max_words} words.</p>
         </form>
         </div>
@@ -312,7 +321,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
       )}
       {/* Outside the form so the widget survives into the output phase: Regenerate needs a fresh token too. */}
       <div ref={ts.mount} class="empty:hidden" />
-      {error && <p role="alert" class="card border-crimson bg-newsprint text-ink px-4 py-3 text-sm font-semibold max-w-2xl">{error}</p>}
+      {phase.kind !== 'form' && alert}
 
       {/* Output layout: script (and its copy/download/regenerate row) on the left, call buttons and the receipt card beside it from 1024 px. */}
       {(generating || phase.kind === 'output') && (
