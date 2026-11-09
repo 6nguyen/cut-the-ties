@@ -86,6 +86,31 @@ describe('ShareRow', () => {
     expect(buttons()).toEqual(['Share link', 'Your other action']);
     expect(root.textContent).not.toMatch(/Greg/);
   });
+  it('Share link hands the sheet text and URL only, and no request leaves the page while sharing', async () => {
+    const fetchSpy = vi.fn(); vi.stubGlobal('fetch', fetchSpy);
+    const share = vi.fn(() => Promise.resolve());
+    stubShare(share);
+    await mount({ file, canShare: true });
+    (root.querySelector('[data-share-link]') as HTMLButtonElement).click();
+    (root.querySelector('[data-share-poster]') as HTMLButtonElement).click();
+    expect(share.mock.calls[0][0]).toEqual({ text: "I just called Rep. Casar's office about Strip the section. Yours takes two minutes:", url: 'https://cutthetiesmovement.org/goals/ndaa?via=share' });
+    expect(share.mock.calls[1][0]).toEqual({ files: [file] });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+  it('from 1024 px the four intent links follow even with a share sheet, carrying the encoded caption and ?via=share link', async () => {
+    window.matchMedia = (() => ({ matches: true, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    stubShare(vi.fn(() => Promise.resolve()));
+    await mount({ file, canShare: true });
+    const t = encodeURIComponent("I just called Rep. Casar's office about Strip the section. Yours takes two minutes:");
+    const u = encodeURIComponent('https://cutthetiesmovement.org/goals/ndaa?via=share');
+    expect(root.querySelector('[data-share-poster]')).not.toBeNull();
+    expect([...root.querySelectorAll('[data-share-intents] a')].map((a) => a.getAttribute('href'))).toEqual([
+      `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+      `https://x.com/intent/tweet?text=${t}&url=${u}`,
+      `https://www.threads.com/intent/post?text=${t}&url=${u}`,
+      `https://bsky.app/intent/compose?text=${t}%20${u}`,
+    ]);
+  });
   it('receiptSpec picks the verb by channel and names the state treasurer without a person', () => {
     expect(receiptSpec('letter', 'Sen.', 'Alex Padilla', 'CA', 'T', 'W')).toMatchObject({ verb: 'I JUST WROTE TO', target: "SEN. PADILLA'S OFFICE" });
     expect(receiptSpec('call', 'Treasurer', 'Fiona Ma', 'CA', 'T', 'W').target).toBe('THE CA TREASURER');

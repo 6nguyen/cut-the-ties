@@ -176,31 +176,31 @@ can hand each platform:
   "routes by via".
 
 ## Acceptance criteria
-- [ ] No share affordance renders before the receipt and before the
+- [x] No share affordance renders before the receipt and before the
       commitment and captain steps are answered or skipped (existing
       `funnel.test.ts` invariant still passes).
 - [ ] On an iPhone and an Android phone with Instagram installed, the
       primary button opens the OS share sheet with Instagram listed, and
       choosing it offers at least the feed composer with the poster
       loaded; the composers offered are logged in `## Changes`.
-- [ ] The poster is 1080×1920, every glyph lies within y 285–1635 and x
+- [x] The poster is 1080×1920, every glyph lies within y 285–1635 and x
       72–1008, headline ≥72 px, body ≥44 px, URL ≥40 px; it names the
       goal, the office role and surname, the date and the site, and
       contains none of: first name, city, district, phone, the generated
       text (`poster.test.ts` renders with a stub context and checks the
       text calls).
-- [ ] The poster share payload holds the file only (plus `title: ''` if
+- [x] The poster share payload holds the file only (plus `title: ''` if
       §1 says so); "Share link" holds text and URL only.
-- [ ] With `canShare` stubbed false the fallback row renders with a
+- [x] With `canShare` stubbed false the fallback row renders with a
       working download (PNG, correct name), a caption copy that matches
       §2.4 plus the link, and "Open Instagram"; at 1024 px the four
       intent links carry the encoded caption and `?via=share` link.
-- [ ] The captain-list share attaches the 9:16 poster and its text is
+- [x] The captain-list share attaches the 9:16 poster and its text is
       unchanged.
-- [ ] `POST /api/route` with `via: 'share'` succeeds and the digest's
+- [x] `POST /api/route` with `via: 'share'` succeeds and the digest's
       "routes by via" counts it; `via: 'x'.repeat(17)` or `via: 'A B'` is
       400; no table gains a row for it.
-- [ ] No request leaves the page during drawing or sharing (network log
+- [x] No request leaves the page during drawing or sharing (network log
       empty between receipt and share).
 - [ ] Performance: landing stays ≤100 KB transferred; the poster chunk ≤4
       KB gzip and loaded only on the receipt screen; draw + encode ≤300
@@ -214,6 +214,21 @@ receipts per goal. A second-week ratio under 2 % of receipts means the
 poster is not travelling and the caption and poster copy get one revision
 before any new platform is added.
 
+## State (updated 2026-11-08, PR #69)
+- Sections:
+  - [!] 1. Device test matrix · blocked: owner runs the matrix on a real iPhone and Android phone with Instagram installed
+  - [x] 2. Poster and share after a receipt · PR #67 merged
+  - [x] 3. Fallback and desktop row · PR #67 merged
+  - [x] 4. Captain-list share uses the poster · PR #67 merged
+- Completed: §2–4 and `via` counting (PR #67); phone-free acceptance criteria verified and ticked.
+- Folded: §2, §3, §4 (PR #67; `docs/specs/social-sharing.md` and the four MODIFIED specs)
+- Branch / open PRs: `feat/social-sharing-device-test-matrix` · PR #69 (State + three tests, no behavior change)
+- Files changed (file:line map): `web/src/components/share.test.tsx:89-112` (share-link payload, intents at 1024 px); `web/src/components/funnel.test.ts:9-15,154-173` (captain-list poster attach)
+- Tests run + result: test-web 168 passed, test (worker) 356 passed, tsc 0 errors, build PASS. Landing 38.5 KB; poster chunk 1.8 KB gzip, lazy; desktop Chromium draw + encode 11–23 ms, 0 requests during drawing.
+- Remaining: §1 only. It sets `SHARE_PAYLOAD` / `POSTER_LABEL` in `web/src/lib/poster.ts:11-12` (today `'files'` / "Share poster") and closes two criteria: Instagram composers on both phones, and draw + encode ≤300 ms on a mid-range Android with the act page's LCP.
+- Decisions since last update: none.
+- Known failures / blockers: §1 needs physical phones; no agent can run it.
+- Next action: merge PR #69; owner runs §1 and gives the per-device results, then /implement-prd-section docs/prd/social-sharing.md (next: §1. Device test matrix) logs them, sets the two constants, ticks the last criteria and archives the PRD.
 ## Open questions
 1. Should the poster carry a QR code for the Story link? Proposal: not
    now; the URL is seven syllables and a QR needs a ~5 KB library; add it
@@ -234,3 +249,13 @@ before any new platform is added.
   "Routes by via" line; spec delta folded into `docs/specs/`. §1 (the
   owner's device matrix) remains: run it, log one dated line per device
   here, and set `SHARE_PAYLOAD` / `POSTER_LABEL` in `poster.ts`.
+- 2026-11-08 — State block added: §2–4 done (PR #67), §1 blocked on the
+  owner's device matrix. Acceptance checked without a phone: three tests
+  added (share-link payload is text + URL only, intent links at 1024 px
+  with a share sheet, captain-list share attaches the poster); web 168 and
+  worker 356 tests pass. Measured: landing 38.5 KB transferred, poster
+  chunk 1.8 KB gzip and imported only after a receipt, draw + encode
+  11–23 ms in desktop Chromium with no request during drawing (all faces
+  already loaded on the act page). Still open, both need §1's phones: the
+  Instagram composers criterion and draw + encode ≤300 ms on a mid-range
+  Android (with the act page's LCP).
