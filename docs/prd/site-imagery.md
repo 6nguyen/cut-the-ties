@@ -1,5 +1,5 @@
 # Site imagery — PRD
-Status: IN PROGRESS 2026-11-08 (§1 merged, PR #80; §2 merged, PR #82; §3 merged, PR #84; §4 in review; §5 to build) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1 merged, PR #80; §2 merged, PR #82; §3 merged, PR #84; §4 in review, PR #85; §5 to build) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The Stitch screens (`design/stitch/screens/`) put a photograph behind every
@@ -264,18 +264,18 @@ metric a static site can read without analytics, and the site has none.
   - [x] 1. Image library, policy and credits · PR #80 merged
   - [x] 2. Landing and results heroes · PR #82 merged
   - [x] 3. Goal pages · PR #84 merged
-  - [~] 4. Portraits: picks, targets and member pages · feat/site-imagery-portraits
+  - [~] 4. Portraits: picks, targets and member pages · feat/site-imagery-portraits · PR #85
   - [ ] 5. Share cards
 - Completed: §1 merged (library and `manifest.yaml`, policy check, `Photo.astro`, `/about` credits). §2 merged (landing hero photo with its preload link, 16:9 photo band on landing goal cards and result cards, landscape `capitol-dome-dusk`). §3 merged (16:9 band on every `/goals` card, goal and prep hero photos, the goal `image` field end to end with the loader check). §4 built, in review: `import-members --portraits` (538 WebP files and `missing.json`), `/portraits/<bioguide_id>.webp`, 48 px portraits on target cards, the 120×150 member hero portrait, the prep picks block with `our_picks[].bioguide_id` and its loader check, filled buttons on the member hero, `/about` lists six credits
 - Folded: §1 (ADDED `docs/specs/site-imagery.md`; `goal-pages.md` §Behavior 6). §2: `action-router.md` §Behavior 1 and §Performance budget; `site-imagery.md` §Behavior 9–11 and §Performance budget. §3: `goal-pages.md` §Behavior 1 and 2, §Data & contracts (`image`), §Invariants, §Performance budget; `site-imagery.md` §Behavior 7, 10, 12, 13, contracts, invariants and budgets. §4: `target-cards.md` §Behavior 1; `member-pages.md` §Behavior 1, 3 and §Performance budget; `goal-pages.md` §Behavior 4 and §Data & contracts (`our_picks[].bioguide_id`); `site-imagery.md` §Behavior 14 and 15, contracts, invariants and budgets. Left for §5: the share card compositing the photo (`goal-pages.md` §Behavior 2)
-- Branch / open PRs: feat/site-imagery-portraits
+- Branch / open PRs: feat/site-imagery-portraits · PR #85
 - Files changed (file:line map): worker/scripts/import-members.ts:5,10,124-212,222 · worker/src/load.ts:126-132,251,297 · worker/src/types.ts:113 · worker/test/goals.test.ts:6,197-214 · worker/test/members.test.ts:7,187-249 · web/src/assets/portraits/ (538 `.webp` + `missing.json`) · web/src/assets/img/manifest.yaml:59 · web/src/pages/portraits/[id].webp.ts:1-14 · web/src/components/Target.tsx:2,7,21-51,71,79 · web/src/components/Results.test.tsx:9,137-177 · web/src/components/Target.test.ts:116,119 · web/src/lib/goals.ts:6,9,51-57 · web/src/lib/images.ts:6-7,193-205,212 · web/src/lib/images.test.ts:8-11,238-298 · web/src/pages/m/[id].astro:9-10,16-17,29-36,44-45,48-49 · web/src/pages/goals/[slug]/prep.astro:6-9,22-23,61-66,74 · web/src/styles/global.css:66-71 · docs/specs/target-cards.md · docs/specs/member-pages.md · docs/specs/goal-pages.md · docs/specs/site-imagery.md
 - Tests run + result: tsc PASS (0 type errors) · test PASS (26 files, 383 tests) · test-web PASS (27 files, 247 tests) · build PASS (11 s, as before) · prd-lint PASS · doc-lint PASS · import: 538 written (14 from Bioguide), 1 with no source portrait (A000383), 1,574,374 bytes, largest 5,404; second run 0 written, no byte changed · local build served with gzip, 390 px @2x, fonts excluded: `/m/<id>` 65.0 to 66.4 KB with a portrait (2.9 to 4.1 KB), 61.2 KB without · `/results` 94.2 KB (84.9 before; three portraits 8.8 KB) · `/results` LCP 1,596 to 1,604 ms (1,556 to 1,564 before; Slow 4G, CPU 4x), a card band both times · `/m/<id>` LCP 484 to 492 ms, the portrait · 0 image requests off-origin · portraits blocked: 0 visible, 0 broken-image icons
 - Remaining: §5
 - Follow-ups: §5 builds 3.2's share card using the goal's image; the roster-refresh workflow runs `import-members` without `--portraits`, so a PR that adds a member fails `test-web` until the portrait step is run (add the step to the workflow); `docs/specs/action-router.md` §Performance budget quotes landing bytes 2.2 KB under today's (not this PR's file)
 - Decisions since last update: Changes 2026-11-08 (§4 built; eleven decisions and deviations)
 - Known failures / blockers: none. Owner review: 14 portraits come from the Bioguide fallback, which the `unitedstates/images` licence statement does not cover (ids in Changes): confirm or drop; A000383 has no portrait in either source and shows the badge; `/results` LCP is over 1.5 s on this run's Slow 4G profile before and after this section, re-check on the Pages preview; `house-floor` (1080 px) and `senate-chamber` (946 px) are stretched on a desktop hero wider than the file; production D1 needs the `goals.image` column (`worker/scripts/migrate.ts`) before the next seed
-- Next action: open the PR for §4, merge it, then /implement-prd-section docs/prd/site-imagery.md (next: §5. Share cards)
+- Next action: merge PR #85, then /implement-prd-section docs/prd/site-imagery.md (next: §5. Share cards)
 ## Open questions
 1. Which exact Capitol, House, Senate, hearing-room and state-capitol
    photos? Proposal: the implementing session picks the highest-resolution
