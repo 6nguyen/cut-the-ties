@@ -6,6 +6,13 @@ import Funnel from './Funnel';
 import { NextOffice, Retry } from './ReceiptExtras';
 import YourWeek from './YourWeek';
 import { CAPTAIN_KEY, COMMIT_KEY, loadCaptain, loadCommitments, logReceipt } from '../lib/commitments';
+import { posterFile } from '../lib/poster';
+
+// social-sharing §4: happy-dom has no canvas, so the draw is stubbed with a PNG File; the rest of poster.ts is real.
+vi.mock('../lib/poster', async (orig) => ({
+  ...(await orig<typeof import('../lib/poster')>()),
+  posterFile: vi.fn(async (_spec: unknown, name: string) => new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' })),
+}));
 
 const PLACE = { state: 'TX', district: 35 };
 const GOALS = [
@@ -143,6 +150,26 @@ describe('YourWeek (§2, §3)', () => {
     expect(JSON.stringify(fetchMock.mock.calls)).not.toMatch(/Ana|Ben|Cy|people/);
     expect(root.querySelector('[data-share]')?.textContent).toMatch(/Share/);
     expect(loadCaptain()?.receipted).toBe(true);
+  });
+  it('social-sharing §4: Share on a receipted list attaches the 9:16 poster; text and link are unchanged, district off the image', async () => {
+    localStorage.setItem('cut-ties:place', JSON.stringify(PLACE));
+    localStorage.setItem(CAPTAIN_KEY, JSON.stringify(list([true, true, false])));
+    const share = vi.fn((_d: ShareData) => Promise.resolve());
+    vi.stubGlobal('navigator', { ...navigator, share, canShare: () => true });
+    await mount(); await flush();
+    await act(() => { ([...root.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[])[2].click(); }); await flush(); await flush();
+    const spec = vi.mocked(posterFile).mock.calls.at(-1)![0];
+    expect(spec).toMatchObject({ verb: 'THREE OF US ARE CALLING', title: 'Strip the section' });
+    expect(spec.target).toMatch(/^CASAR'S OFFICE BEFORE \S+/);
+    expect(`${spec.verb} ${spec.target}`).not.toMatch(/TX|35|Ana|Ben|Cy/);
+    await act(() => { [...root.querySelectorAll('[data-share] button')].find((b) => /Share/.test(b.textContent ?? ''))!.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    expect(share).toHaveBeenCalledTimes(1);
+    const data = share.mock.calls[0][0];
+    expect(data.files).toHaveLength(1);
+    expect(data.files![0]).toMatchObject({ name: 'cut-the-ties-ndaa-1217.png', type: 'image/png' });
+    expect(data.text).toMatch(/^Three of us in .*35.* are calling Casar before .+\. Who's next\?$/);
+    expect(data.url).toBe(`${location.origin}/goals/ndaa-1217`);
+    expect(fetchMock).toHaveBeenCalledTimes(1); // the list receipt only: drawing and sharing send nothing
   });
   it('shows the open commitment, drops a closed goal with its outcome, keeps items on Change address and clears all on Start over', async () => {
     localStorage.setItem('cut-ties:place', JSON.stringify(PLACE));

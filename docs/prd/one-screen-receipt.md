@@ -288,12 +288,11 @@ with no intermediate step:
 ## Rollout & metrics
 No flag, no migration. Build order §1, §2, §3, §4, one PR each; §2 and
 §3 both edit `ActForm.tsx` and `ShareRow.tsx`, so they run in sequence.
-PR #69 (social-sharing State and tests) and PR #70 (rejected-receipt
-message) merge before §2 starts. Measured in the weekly digest: receipts
+PR #70 (rejected-receipt message) merges before §2 starts. Measured in the weekly digest: receipts
 per week, reports per receipt (expected up once a chip saves on tap) and
 "Routes by via: share".
 
-## State (updated 2026-11-08, PR #n) — ≤30 lines
+## State (updated 2026-11-08, PR #72) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [ ] 1. Poster: stamp and call to action
   - [ ] 2. Receipt screen: one screen
@@ -301,13 +300,13 @@ per week, reports per receipt (expected up once a chip saves on tap) and
   - [ ] 4. Retire the captain list
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/one-screen-receipt` (this PRD)
+- Branch / open PRs: `docs/one-screen-receipt` · PR #72 (this PRD)
 - Files changed (file:line map): none yet
 - Tests run + result: none yet
 - Remaining: §1–§4
 - Decisions since last update: none
 - Known failures / blockers: none
-- Next action: merge this PRD, PR #69 and PR #70, then `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §1)
+- Next action: merge this PRD (PR #72) and PR #70, then `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §1)
 
 ## Open questions
 1. Retire the captain list entirely, or only take it off the receipt
