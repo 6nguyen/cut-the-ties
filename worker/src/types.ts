@@ -120,6 +120,7 @@ export interface Goal {
   detail_md: string | null;
   prep_md: string | null;
   partner_url: string | null;
+  image: string | null; // site-imagery §3: an id in web/src/assets/img/manifest.yaml; null = the category default (web/src/lib/images.ts)
   updated_at: string;
 }
 

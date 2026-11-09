@@ -110,6 +110,25 @@ export function activateSuccessors(goals: Goal[]): void {
   }
 }
 
+/** site-imagery §3: where the image manifest is. It lives with the site's assets, beside `data/`; a data directory copied somewhere else (the tests) falls back to the checkout the process runs in. */
+export const MANIFEST_FILE = 'web/src/assets/img/manifest.yaml';
+export function manifestPath(dataDir: string): string | null {
+  const rel = MANIFEST_FILE.split('/');
+  return [join(dataDir, '..', ...rel), join(process.cwd(), '..', ...rel), join(process.cwd(), ...rel)].find((p) => existsSync(p)) ?? null;
+}
+/** The manifest ids a goal may name: rows with a `file`. The portraits `dir` row is not one photo, so it is left out. */
+export function imageIds(path: string | null): Set<string> {
+  if (!path) throw new Error(`${MANIFEST_FILE} not found: a goal's image cannot be checked`);
+  const rows = parseYaml(readFileSync(path, 'utf8')) as unknown;
+  if (!Array.isArray(rows)) throw new Error(`${MANIFEST_FILE}: not a list of rows`);
+  return new Set(rows.filter((r): r is { id: string; file: string } => !!r && typeof r.id === 'string' && typeof r.file === 'string' && r.file !== '').map((r) => r.id));
+}
+/** A goal's optional `image` must be a manifest id, so a typo fails the seed and the build instead of shipping a page with no photo. The manifest is read only when a goal names an image. */
+export function checkImage(g: Pick<Goal, 'slug' | 'image'>, ids: () => Set<string>): void {
+  if (g.image === null) return;
+  if (!ids().has(g.image)) throw new Error(`goal ${g.slug}: image ${g.image} has no file row in ${MANIFEST_FILE}`);
+}
+
 /** Member-pages §1.3 seed checks on the raw CSV rows: one row per bioguide id, districts inside the state's count, senators without one. */
 export function checkMembers(rows: Record<string, string>[]): void {
   const seen = new Set<string>();
@@ -221,6 +240,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
   // stable-data-ids §2: ids come from the YAML and must match data/ids.md; the file order never numbers a row.
   const registry = readIds(dataDir);
   const goalIds = new Set<number>();
+  let photoIds: Set<string> | null = null;
   const actionIds = new Set<number>();
   const goals: Goal[] = readdirSync(join(dataDir, 'goals'))
     .filter((f) => f.endsWith('.yaml'))
@@ -255,6 +275,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
         detail_md: str(y.detail_md),
         prep_md: str(y.prep_md),
         partner_url: str(y.partner_url),
+        image: str(y.image),
         updated_at: updatedAt,
       };
       if (g.slug !== f.replace(/\.yaml$/, '')) throw new Error(`goal slug ${g.slug} != file ${f}`);
@@ -268,6 +289,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
       checkJsonList(g.slug, 'sources', g.sources, ['title', 'url']);
       checkReasons(g.slug, g.reasons);
       checkPrep(g.slug, g.prep_md);
+      checkImage(g, () => (photoIds ??= imageIds(manifestPath(dataDir))));
       return g;
     });
   activateSuccessors(goals);

@@ -6,7 +6,8 @@ sourced, licensed photograph, never a generated picture of a person or a
 real place. Every photo gets the same ink treatment and a credit line on
 `/about`. This spec covers the library, the policy check, the `Photo`
 component, the credits and the slots that show a photo today: the landing
-hero, the landing goal cards and the result cards.
+hero, the goal and prep page heroes, and the card bands on the landing,
+the results and `/goals`.
 
 ## Behavior
 1. **Library.** Originals live in `web/src/assets/img/`: JPEG or PNG, at
@@ -52,7 +53,7 @@ hero, the landing goal cards and the result cards.
    row has one. An `ai` row reads `<alt>: illustration generated with
    <generator>; no photo of a person or a real place on this site is
    generated.` When no image is in use the heading and list are absent.
-   Today it lists four: every file but `hasc-hearing-room`.
+   Today it lists all five files.
 8. **In use.** An image is in use when a page, component or layout source
    holds a literal `<Photo id="…" />`. Once any of them calls `imageFor(`
    or `imageIdFor(`, every published goal's image is in use. The
@@ -66,20 +67,38 @@ hero, the landing goal cards and the result cards.
    hero's AVIF `srcset`. Below 768 px, where the text runs over the
    lightest side of the photo, the loaded photo and its layers are dimmed
    to `brightness(.75)`.
-10. **Card band.** Each landing goal card and each result card has a 16:9
-    header carrying the goal's image (`imageIdFor`) under the halftone,
+10. **Card band.** Each landing goal card, result card and `/goals` card
+    has a 16:9 header carrying the goal's image (`imageIdFor`) under the halftone,
     chip and title: lazy, widths 480/768, quality 22 (`BAND`). `sizes`
     follows the grid from 768 px up; below it the slot is declared at 36vw
     although the card is 92vw wide, so a phone at any pixel density takes
     the 480 px file. A header whose text needs more than 16:9 grows taller
     (`overflow: clip`), never cutting the title. On a result card the band sits above the body, whose
-    first element stays the CTA.
+    first element stays the CTA. On `/goals` the first card's band is the
+    LCP element on a phone and loads eagerly.
 11. **Result cards.** The `Results` island renders the cards in the
     browser, so `/results` ships one inert
     `<template data-photo-band="<id>">` per image a published goal uses,
     each holding the built `Photo` markup, and passes the island a goal
     slug → image id map. A card copies its template's markup into its
     header. With no id or no template the header is the gradient alone.
+12. **Goal and prep heroes.** `/goals/<slug>` and `/goals/<slug>/prep`
+    show the goal's image (`imageIdFor`) full bleed behind the hero's
+    chips, title, summary and date: eager, high fetch priority, with the
+    same preload link as the landing. Widths are `heroWidths(original)`:
+    640/960/1440/1920, and a file narrower than 1920 px also serves its
+    own width instead of a smaller copy stretched further (`house-floor`
+    640/960/1080, `senate-chamber` 640/946). `sizes` is `HERO.sizes`:
+    100vw from 768 px up and 49vw below it, so a phone takes the 640 px
+    file. Below 1024 px, where the text runs the full width, the loaded
+    photo is dimmed to `brightness(.75)`. The act pages, the receipt and
+    the whip page under a goal show no photo.
+13. **A goal's image.** A goal YAML may set `image: <id>`. The loader
+    (`worker/src/load.ts`) refuses an id with no `file` row in the
+    manifest, so the seed, the worker tests and the site build stop with
+    `goal <slug>: image <id> has no file row in
+    web/src/assets/img/manifest.yaml`. `ndaa-1217` and `ndaa-report-vote`
+    set `hasc-hearing-room`; every other goal shows its category default.
 
 ## Data & contracts
 - `manifest.yaml` row: `id`, `file` | `dir`, `alt`, `subject`
@@ -92,7 +111,16 @@ hero, the landing goal cards and the result cards.
   `TREATMENT`; `PHOTO_OUTPUT` (`formats` AVIF then WebP, `fallback` JPEG,
   `quality` 30); `BAND` (`widths` 480 and 768, `quality` 22);
   `fitWidths(original, widths)` → unique ascending widths no wider than
-  the original, or the original's width.
+  the original, or the original's width; `HERO` (`widths` 640, 960, 1440
+  and 1920, `sizes`); `heroWidths(original)` → the hero widths that fit
+  plus the original's own width when it is under 1920.
+- Goal row: optional `image` (YAML → `Goal.image` → D1 `goals.image TEXT`,
+  column migration in `worker/scripts/migrate.ts`); null shows the
+  category default. `worker/src/load.ts`: `MANIFEST_FILE`,
+  `manifestPath(dataDir)` (beside `data/`, else the checkout the process
+  runs in), `imageIds(path)` (ids of rows with a `file`) and
+  `checkImage(goal, ids)`; the manifest is read only when a goal names an
+  image.
 - `imageIdFor(goal)`: the goal's `image` id when set (an unknown id
   throws), else by category: `state` → `state-capitol`; `leadership` →
   `house-floor` when the eligibility rule names the House, otherwise
@@ -103,8 +131,8 @@ hero, the landing goal cards and the result cards.
   `commons.wikimedia.org`, otherwise the host without `www.`.
 - `Photo` marks itself with `data-photo="<id>"` and, once loaded,
   `data-loaded`. Its styles are scoped to the component.
-- `web/src/layouts/Base.astro` has a `head` slot; the landing's preload
-  link is its only user.
+- `web/src/layouts/Base.astro` has a `head` slot; the preload links of
+  the landing, goal and prep pages are its users.
 - `web/src/components/Results.tsx`: `Results({ photos })` takes the slug →
   image id map; `bandHtml(id, doc?)` → the template's markup or `null`
   (also for an id outside `a-z`, `0-9`, `-`); a card header with a band
@@ -121,9 +149,15 @@ hero, the landing goal cards and the result cards.
 - [ ] With images blocked, a photo slot shows only its gradient.
 - [ ] A page with no `<Photo>` ships no CSS, script or image from this
       capability.
-- [ ] The landing preload's `imagesrcset` equals the hero's AVIF `srcset`,
-      and the hero image is the page's LCP element.
-- [ ] No image request leaves the site's origin on `/` or `/results`.
+- [ ] On the landing, a goal page and a prep page the preload's
+      `imagesrcset` equals the hero's AVIF `srcset`, and the hero image is
+      the page's LCP element.
+- [ ] No image request leaves the site's origin on `/`, `/results`,
+      `/goals`, a goal page or a prep page.
+- [ ] A goal `image` with no manifest `file` row fails the seed and the
+      build, naming the goal and the id.
+- [ ] No hero or band is served wider than its original; the act, receipt
+      and whip pages under a goal carry no `<Photo>`.
 - [ ] A result card's CTA is the first element of its body; the band is
       above the body.
 - [ ] The hero original is landscape and at least 1920 px wide; every
@@ -134,20 +168,29 @@ hero, the landing goal cards and the result cards.
 - A page without a photo transfers no extra bytes. Tailwind scans these
   source files, so a bare utility name in a comment or a key adds CSS to
   every page; keep them out.
-- Per slot, AVIF: landing hero ≤35 KB on a phone and ≤75 KB on desktop;
-  card band ≤25 KB each on the phone. Built 2026-11-08: hero 8.2 / 15.0 /
+- Per slot, AVIF: a hero (landing, goal, prep) ≤35 KB on a phone and
+  ≤75 KB on desktop; card band ≤25 KB each on the phone. Goal and prep
+  heroes transferred 2026-11-08: 8.3 to 24.1 KB on a phone (the 640 px
+  file) and 30.8 to 51.5 KB at 1440 px (`house-floor` at its own 1080 px
+  is the largest). Built 2026-11-08: landing hero 8.2 / 15.0 /
   25.4 / 36.1 KB at 640 / 960 / 1440 / 1920 px; bands 3.7 to 12.1 KB at
   480 px and 7.6 to 22.3 KB at 768 px. The WebP fallbacks of `house-floor`
   (36.4 KB) and `senate-chamber` (29.8 KB) pass 25 KB at 768 px; a phone
   takes the 480 px file (WebP ≤17.7 KB).
 - Landing ≤100 KB transferred on a phone and ≤170 KB on desktop, own
   origin, fonts excluded. Measured 2026-11-08 on a local preview build:
-  94.9 KB at 390 px @3x (hero 25.6 KB and three bands of 4.0 to 12.3 KB
-  loaded without a scroll), 84.5 KB at 412 px @1.75x (hero 15.2 KB),
-  98.8 KB at 1440 px; everything but photos is 44.1 KB.
+  97.1 KB at 390 px @3x (hero 25.6 KB and three bands loaded without a
+  scroll), 86.7 KB at 412 px @1.75x (hero 15.2 KB), 101.1 KB at 1440 px;
+  everything but photos is 44.1 KB. The NDAA card's band is the hearing
+  room since goals carry `image`, 2.2 KB more than the Capitol band.
 - LCP ≤1.5 s on a mid-range phone over 4G with the hero image as the LCP
   element (CLAUDE.md §Performance budgets). Measured 2026-11-08 at 412 px
   with CPU 4x: 532 ms on Fast 4G, 1,432 ms on Slow 4G, from localhost.
 - H1 contrast over the lightest pixel behind it with the photo loaded:
   7.64:1 at 390 px, 8.27:1 at 1440 px; the 18 px paragraph 5.96:1 and
   9.37:1.
+- Goal and prep heroes, lightest pixel behind each line of text with the
+  photo loaded, at 390 / 768 / 1024 / 1440 px: H1 at least 7.40 / 9.05 /
+  5.99 / 7.72:1; 18 px paragraph at least 6.88 / 6.27 / 6.95 / 9.06:1;
+  13 px label at least 8.95:1. `/goals` card title: 4.45:1 at 390 px
+  (30 px type, where large text needs 3:1), 5.88:1 or more from 768 px.

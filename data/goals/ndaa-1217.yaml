@@ -10,6 +10,7 @@ window_end: 2026-12-31
 decision_date: 2026-12-10   # placeholder: set to the conference report date when scheduled
 priority: 3
 eligibility: {"any": [{"house": {}}, {"senator": {}}]}
+image: hasc-hearing-room   # site-imagery §3: the two NDAA goals show the committee room, not the landing's Capitol
 our_picks: []
 sources: []   # add {title, url} rows as the conference record is sourced
 decider: A small group of House and Senate members writing the final bill, then every member of Congress on the final vote

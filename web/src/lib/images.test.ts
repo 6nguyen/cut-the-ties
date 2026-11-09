@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { publishedGoals } from './goals';
-import { BAND, FILE_NAMES, LICENCES, MANIFEST, PHOTO_OUTPUT, TREATMENT, fitWidths, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
+import { BAND, FILE_NAMES, HERO, heroWidths, LICENCES, MANIFEST, PHOTO_OUTPUT, TREATMENT, fitWidths, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
 
 const DIR = fileURLToPath(new URL('../assets/img/', import.meta.url));
 const good: ImageRow = { id: 'x', file: 'x.jpg', alt: 'A room', subject: 'place', source_url: 'https://example.gov/x', author: 'An agency', licence: 'us-gov' };
@@ -186,5 +186,53 @@ describe('photo output', () => {
     expect(page('index')).toMatch(/@media \(max-width: 767px\) \{\s*:global\(\.hero-photo\) \{ filter: brightness\(0\.75\); \}/);
     expect(page('results')).toContain('<template data-photo-band={id}><Photo id={id} widths={[...BAND.widths]} sizes={bandSizes} quality={BAND.quality} /></template>');
     expect(usedIds([page('results')], ['state-capitol'])).toEqual(['state-capitol']);
+  });
+});
+
+// site-imagery §3: goal pages.
+describe('goal pages', () => {
+  const page = (name: string) => Object.entries(pageSources()).find(([p]) => p.endsWith(`/pages/${name}.astro`))![1];
+  const image = (slug: string) => imageIdFor(publishedGoals().find((g) => g.slug === slug)!);
+
+  it('a goal\'s image field wins over its category default: the NDAA goal shows the hearing room', () => {
+    expect(image('ndaa-1217')).toBe('hasc-hearing-room');
+    expect(image('house-caucus')).toBe('house-floor');
+    expect(image('senate-leader')).toBe('senate-chamber');
+    expect(image('state-bonds')).toBe('state-capitol');
+  });
+
+  it('the hero offers the four hero widths, plus the file\'s own width when it is narrower than the widest, never a wider one', () => {
+    expect(HERO).toEqual({ widths: [640, 960, 1440, 1920], sizes: '(max-width: 767px) 49vw, 100vw' });
+    expect(heroWidths(2000)).toEqual([640, 960, 1440, 1920]);
+    expect(heroWidths(1920)).toEqual([640, 960, 1440, 1920]);
+    expect(heroWidths(1080)).toEqual([640, 960, 1080]);
+    expect(heroWidths(946)).toEqual([640, 946]);
+    expect(heroWidths(500)).toEqual([500]);
+  });
+
+  it('every overview card carries the 16:9 band of its goal, and the header grows instead of clipping a long title', () => {
+    expect(page('goals/index')).toContain('<Photo id={imageIdFor(g)} widths={[...BAND.widths]} sizes={cardSizes} quality={BAND.quality} eager={i === 0} />'); // only the first band is eager: it is the LCP element
+    expect(page('goals/index')).toMatch(/hero-gradient text-newsprint p-5 aspect-video overflow-clip /);
+    expect(page('goals/index').match(/<Photo\b/g)).toHaveLength(1); // the Outcomes strip stays text-only
+  });
+
+  it.each(['goals/[slug]', 'goals/[slug]/prep'])('%s shows the goal\'s photo eagerly, preloads the same files and dims it below 1024 px', (name) => {
+    const src = page(name);
+    expect(src).toContain('<Photo id={imageIdFor(goal)} widths={heroW} sizes={HERO.sizes} eager class="hero-photo" />');
+    expect(src).toContain('const heroW = heroWidths(heroFile.width);');
+    expect(src).toContain("getImage({ src: heroFile, format: 'avif', widths: heroW, quality: PHOTO_OUTPUT.quality })");
+    expect(src).toMatch(/<link slot="head" rel="preload" as="image" type="image\/avif" imagesrcset=\{heroPreload\.srcSet\.attribute\} imagesizes=\{HERO\.sizes\} fetchpriority="high" \/>/);
+    expect(src).toMatch(/@media \(max-width: 1023px\) \{\s*:global\(\.hero-photo\) \{ filter: brightness\(0\.75\); \}/);
+    expect(src.match(/<Photo\b/g)).toHaveLength(1);
+  });
+
+  it('the act, receipt and whip pages under a goal show no photo', () => {
+    const under = Object.entries(pageSources()).filter(([p]) => /\/pages\/goals\/\[slug\]\/(?!prep\.astro$)/.test(p));
+    expect(under.length).toBeGreaterThan(0);
+    for (const [p, src] of under) expect(src, p).not.toMatch(/<Photo\b|imageFor\(|imageIdFor\(/);
+  });
+
+  it('with the hearing room on a goal page, the credits list every photo file', () => {
+    expect(credits(publishedGoals()).map((c) => c.id)).toEqual(MANIFEST.filter((r) => r.file).map((r) => r.id));
   });
 });

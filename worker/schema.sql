@@ -42,6 +42,7 @@ CREATE TABLE goals (
   detail_md TEXT,
   prep_md TEXT,
   partner_url TEXT,
+  image TEXT,
   updated_at TEXT NOT NULL
 );
 

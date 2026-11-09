@@ -14,13 +14,18 @@ there.
    rank order: category chip, "Impact n" chip (the goal's `priority`,
    `action-router.md` Ranking), title, summary (≤60
    words, enforced at seed), "We want" sentence, decision date or "not yet
-   scheduled", CTA to `/goals/<slug>`. Below, an "Outcomes" strip lists
+   scheduled", CTA to `/goals/<slug>`. The card's header is a 16:9 band
+   of the goal's photo under the chips and title; the first card's loads
+   eagerly, the rest lazily ([site-imagery.md](site-imagery.md) Behavior
+   10). Below, a text-only "Outcomes" strip lists
    every `completed` and `expired` goal with its `outcome_note` and
    decision date (empty state: "No goal has closed yet"). Two columns at
    ≥768 px. The footer, and each goal page's aside, carry the
    decision-date feed link (`decision-feed.md`).
 2. **Goal detail (`/goals/<slug>`).** Hero (category chip, status chip
-   when closed, title, summary, decision date); "The basics / What is
+   when closed, title, summary, decision date) over the goal's photo,
+   full bleed; the prep page's hero carries the same photo
+   ([site-imagery.md](site-imagery.md) Behavior 12); "The basics / What is
    going on" (`detail_md` rendered as markdown, else the summary); "What
    we are asking for"; "Who makes the call, and when" (`decider`, decision
    date, window end); "Who we would back instead" block when `our_picks` is non-empty (first pick: name, rationale,
@@ -125,7 +130,11 @@ there.
   non-empty: exactly the six `##` headings of `worker/src/prep.ts` in
   order, each non-empty, "Where things stand" carrying an ISO date),
   `sources`
-  (`{title, url}` rows), `successor_slug` targets, and that every
+  (`{title, url}` rows), `successor_slug` targets, `image` (optional;
+  when set, an id with a `file` row in
+  `web/src/assets/img/manifest.yaml`, else the error names the goal and
+  the id; unset shows the category default,
+  [site-imagery.md](site-imagery.md) Behavior 13), and that every
   position row carries a source. `goals.status` also allows `upcoming`;
   `goals.decider` is the one-line "who decides". `goals.decision_at`
   (optional, ISO 8601 with an offset, same calendar day as
@@ -166,10 +175,22 @@ there.
       leadership goal with `our_picks` shows them in order before any
       section, and the ask names the first pick; every date, count or name
       in `prep_md` is a `data/` row or carries a `[VERIFY: …]` marker.
+- [ ] A goal whose `image` has no manifest `file` row fails the seed and
+      the build, naming the goal and the id
+      (`worker/test/goals.test.ts`); `/goals/<slug>/act/…` and the whip
+      page show no photo (`web/src/lib/images.test.ts`).
 
 ## Performance budget
-`/goals` ≤100 KB transferred (measured 2026-11-04: 6 KB gzip for HTML,
-CSS and JS chunks, fonts excluded; `/goals/<slug>` 7 KB,
-`/goals/<slug>/prep` 4–5 KB, `/donate` 1.4 KB); LCP ≤1.5 s on a mid-range
-phone over 4G; every page is static, so no Worker call is on the render
+`/goals`, `/goals/<slug>` and `/goals/<slug>/prep` ≤100 KB transferred on
+a phone, own origin, fonts excluded. Measured 2026-11-08 on a local
+preview build, with the photos: `/goals` 46.5 KB at 390 px (three bands
+of 6.4 to 12.6 KB before a scroll; 50.4 KB with all four) and 80.1 KB at
+1440 px; `/goals/<slug>` 48.4 to 64.4 KB at 390 px over four goals (hero
+8.3 to 24.1 KB) and 71.0 to 91.8 KB at 1440 px (hero 30.8 to 51.5 KB);
+`/goals/<slug>/prep` 44.4 to 56.0 KB and 67.4 to 83.4 KB. Without the
+photos the three pages are 19.2, 40.4 and 32.0 KB (`/donate` 1.4 KB gzip,
+2026-11-04). LCP ≤1.5 s on a mid-range phone over 4G, the photo being the
+LCP element (412 px, CPU 4x, localhost): goal and prep pages 576 to
+592 ms on Fast 4G and 1,400 to 1,424 ms on Slow 4G; `/goals`
+580 to 592 ms and 1,408 ms, its first band being the element. Every page is static, so no Worker call is on the render
 path except the "Who to call" and "Take action" islands.

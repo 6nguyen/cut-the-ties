@@ -1,12 +1,20 @@
 ---
+import { getImage } from 'astro:assets';
 import Base from '../../../layouts/Base.astro';
+import Photo from '../../../components/Photo.astro';
 import PrepAction from '../../../components/PrepAction';
 import { actionsFor, CATEGORY, fmtDate, picks, prepGoals, prepHtml, prepSections, sources, unifiedAsk, type Goal } from '../../../lib/goals';
+import { HERO, PHOTO_OUTPUT, heroWidths, imageFor, imageIdFor } from '../../../lib/images';
 export function getStaticPaths() {
   return prepGoals().map((g) => ({ params: { slug: g.slug }, props: { goal: g } }));
 }
 const { goal } = Astro.props as { goal: Goal };
 const open = goal.status === 'active';
+// site-imagery §3.2: the hero photo is the goal's image and the LCP element, so the head preloads the AVIF files the
+// hero `Photo` below asks for (same file, widths and sizes).
+const heroFile = imageFor(goal);
+const heroW = heroWidths(heroFile.width);
+const heroPreload = await getImage({ src: heroFile, format: 'avif', widths: heroW, quality: PHOTO_OUTPUT.quality });
 const sections = prepSections(goal.prep_md);
 const ranked = picks(goal).slice(0, 3);
 const leadership = goal.category === 'leadership';
@@ -17,8 +25,10 @@ const verbs: Record<string, string> = { call: 'Get my call script', letter: 'Wri
 const actions = open ? actionsFor(goal).map((a) => ({ slug: a.slug, label: verbs[a.type] ?? 'Comment' })) : [];
 ---
 <Base title={`Prep: ${goal.title} — Cut the Ties`} description={`What to know and what to say: ${goal.summary}`} image={`/goals/${goal.slug}/card.png`}>
+  <link slot="head" rel="preload" as="image" type="image/avif" imagesrcset={heroPreload.srcSet.attribute} imagesizes={HERO.sizes} fetchpriority="high" />
   <section class="relative hero-gradient text-newsprint overflow-hidden">
     <div class="absolute inset-0 halftone pointer-events-none"></div>
+    <Photo id={imageIdFor(goal)} widths={heroW} sizes={HERO.sizes} eager class="hero-photo" />
     <div class="relative mx-auto max-w-[1360px] px-4 lg:px-10 py-12 lg:py-16">
       <div class="flex gap-2 mb-4">
         <span class="chip bg-hazard text-ink border-ink">{CATEGORY[goal.category]}</span>
@@ -94,3 +104,11 @@ const actions = open ? actionsFor(goal).map((a) => ({ slug: a.slug, label: verbs
     </aside>
   </div>
 </Base>
+
+<style>
+  /* site-imagery §3.2: below 1024 px the hero text runs the full width, over the lightest side of the photo, so the
+     loaded photo is dimmed there (the landing does the same below 768 px). */
+  @media (max-width: 1023px) {
+    :global(.hero-photo) { filter: brightness(0.75); }
+  }
+</style>
