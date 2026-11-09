@@ -6,9 +6,22 @@
 // (deploy run 42303908649 on 2026-11-06, the first merge after the first production generation), so
 // goals and actions are upserted by id and only ids that left data/ are deleted. The other five tables
 // are referenced by nothing outside this seed and are deleted and re-inserted, children before parents.
+import { createHash } from 'node:crypto';
 import type { Rows } from '../src/load';
 
 type Row = Record<string, unknown>;
+
+/**
+ * The stamp `seed-remote.ts` compares with `meta.seed_sha256` to skip a reseed when data/ is unchanged.
+ * It covers the rows, not the SQL text, and drops `updated_at`: `loadRows` stamps the render time into
+ * every goal, so a hash over the raw rows changed on every run and the skip never fired (sixteen merges
+ * on 2026-11-09 each reseeded and used up the free tier's daily row writes).
+ */
+export function seedHash(rows: Rows): string {
+  return createHash('sha256')
+    .update(JSON.stringify(rows, (k, v: unknown) => (k === 'updated_at' ? undefined : v)))
+    .digest('hex');
+}
 const q = (v: unknown): string => (v === null || v === undefined ? 'NULL' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
 const cols = (o: Row) => Object.keys(o).map((k) => `"${k}"`).join(',');
 const vals = (o: Row) => Object.values(o).map(q).join(',');

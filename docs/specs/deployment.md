@@ -29,8 +29,9 @@ reach production through `seed-remote`'s add-column step (Behavior 3).
    from `data/` (`worker/scripts/seed-sql.ts`) and runs
    `worker/scripts/seed-remote.ts`, which applies that file only when
    its stamp differs from the database's: `seed.sql` ends with an upsert
-   of `meta.seed_sha256` (SHA-256 of the rendered rows; `meta` is
-   created `IF NOT EXISTS`, so no migration). The skip exists because
+   of `meta.seed_sha256` (`seedHash` in `seed-sql.ts`: SHA-256 of the
+   rows without `updated_at`, which `loadRows` stamps with the render
+   time; `meta` is created `IF NOT EXISTS`, so no migration). The skip exists because
    D1's free tier allows 100k row writes a day and a reseed costs ~4k:
    fifteen merges on 2026-11-06 used the quota and every INSERT in the
    Worker failed for the rest of the day. `FORCE_SEED=1` applies

@@ -2,9 +2,10 @@
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { loadRows } from '../src/load';
-import { REPLACED_TABLES, UPSERTED_TABLES, renderSeedSql } from '../scripts/seed-sql';
+import { REPLACED_TABLES, UPSERTED_TABLES, renderSeedSql, seedHash } from '../scripts/seed-sql';
 
-const rows = loadRows(join(__dirname, '..', '..', 'data'), '2026-11-04T00:00:00Z');
+const dataDir = join(__dirname, '..', '..', 'data');
+const rows = loadRows(dataDir, '2026-11-04T00:00:00Z');
 const sql = renderSeedSql(rows, '2026-11-06T00:00:00Z');
 // Values span lines (markdown fields), so statements are located by prefix in the whole text, not by line.
 const count = (needle: string) => sql.split(needle).length - 1;
@@ -31,6 +32,14 @@ describe('seed.sql', () => {
     expect(REPLACED_TABLES.indexOf('district_offices')).toBeLessThan(REPLACED_TABLES.indexOf('members'));
     expect(REPLACED_TABLES.indexOf('members_elect')).toBeLessThan(REPLACED_TABLES.indexOf('members'));
     expect(sql).not.toContain('PRAGMA');
+  });
+  it('stamps a hash that ignores the render time, so an unchanged data/ skips the reseed, and a row change does not', () => {
+    const later = loadRows(dataDir, '2026-11-09T12:00:00Z');
+    expect(later.goals[0].updated_at).not.toBe(rows.goals[0].updated_at);
+    expect(seedHash(later)).toBe(seedHash(rows));
+    expect(seedHash(rows)).toMatch(/^[0-9a-f]{64}$/);
+    const edited = { ...rows, goals: rows.goals.map((g, i) => (i === 0 ? { ...g, title: `${g.title}!` } : g)) };
+    expect(seedHash(edited)).not.toBe(seedHash(rows));
   });
   it('touches no production table', () => {
     for (const t of ['receipts', 'reports', 'generations', 'screenings', 'blocks', 'digest_runs', 'visits', 'visit_requests']) expect(sql).not.toMatch(new RegExp(`\\b(INSERT INTO|DELETE FROM|UPDATE)\\s+${t}\\b`));
