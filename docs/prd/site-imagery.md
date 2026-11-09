@@ -261,20 +261,20 @@ metric a static site can read without analytics, and the site has none.
 
 ## State (updated 2026-11-08) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [~] 1. Image library, policy and credits · feat/site-imagery-image-library-policy
+  - [~] 1. Image library, policy and credits · feat/site-imagery-image-library-policy · PR #80
   - [ ] 2. Landing and results heroes
   - [ ] 3. Goal pages
   - [ ] 4. Portraits: picks, targets and member pages
   - [ ] 5. Share cards
 - Completed: §1 built, in review: five sourced originals and `manifest.yaml`, the policy check (a bad row fails `build` with the row named), `Photo.astro`, `/about` "Photo credits" (absent while no page shows a photo)
 - Folded: §1 entries only: ADDED `docs/specs/site-imagery.md` (library, policy and check, `Photo` treatment, credits); MODIFIED `docs/specs/goal-pages.md` §Behavior 6 (`/about` credits). The §2–§5 parts of the delta are not folded.
-- Branch / open PRs: feat/site-imagery-image-library-policy (PR pending)
+- Branch / open PRs: feat/site-imagery-image-library-policy · PR #80 (open)
 - Files changed (file:line map): web/src/assets/img/ (5 jpg, manifest.yaml) · web/src/lib/images.ts:1-184 · web/src/lib/images.test.ts:1-152 · web/src/components/Photo.astro:1-57 · web/src/pages/about.astro:3-6,19-28 · docs/specs/site-imagery.md · docs/specs/README.md:36 · docs/specs/goal-pages.md:79-81
-- Tests run + result: test-web PASS · build PASS · landing `/` 38,402 B gzip (HTML + CSS + JS) before and after · a build with two bad rows fails and names both · preview build: 5 of 5 photos load, 0 of 5 with images blocked
+- Tests run + result: test-web PASS (26 files, 213 tests) · build PASS · landing `/` 38,402 B gzip (HTML + CSS + JS) before and after · a build with two bad rows fails and names both · preview build: 5 of 5 photos load, 0 of 5 with images blocked
 - Remaining: §2–§5
 - Decisions since last update: Changes 2026-11-08 (the five picks; six deviations)
 - Known failures / blockers: none. Owner review: the Architect of the Capitol usage notice on `capitol-dome-dusk`; `house-floor` (1080 px) and `senate-chamber` (946 px) are narrower than a desktop hero
-- Next action: open the §1 PR
+- Next action: merge PR #80, then /implement-prd-section docs/prd/site-imagery.md (next: §2. Landing and results heroes)
 ## Open questions
 1. Which exact Capitol, House, Senate, hearing-room and state-capitol
    photos? Proposal: the implementing session picks the highest-resolution
