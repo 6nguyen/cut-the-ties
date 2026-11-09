@@ -119,6 +119,11 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const [extras, setExtras] = useState<typeof import('./ReceiptExtras') | null>(null); // call-follow-through: loaded once a receipt exists
   const [shareMod, setShareMod] = useState<typeof import('./ShareRow') | null>(null); // social-sharing: the share row and its poster chunk
   const [poster, setPoster] = useState<import('./ShareRow').Poster | null>(null);
+  // A rejected receipt (rate limit, network) is said beside the button that was pressed: the page-level alert
+  // sits above the script, off-screen from the receipt card, so a rejected tap looked like nothing happened.
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [counting, setCounting] = useState(false);
+  useEffect(() => { setReceiptError(null); }, [phase.kind]);
 
   useEffect(() => {
     if (receipt === null || extras) return;
@@ -204,9 +209,16 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
 
   /** email-button §1.5: an emailed receipt is the call receipt's shape plus `channel: 'email'`; a call receipt is unchanged. */
   async function didIt(via: 'call' | 'email' = 'call') {
+    if (counting) return;
+    setReceiptError(null); setCounting(true);
+    try { await postReceipt(via); }
+    catch { setReceiptError('Could not reach the server. Check your connection and try again.'); }
+    finally { setCounting(false); }
+  }
+  async function postReceipt(via: 'call' | 'email') {
     const res = await fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, action, target, state: place?.state, district: place?.district, device: deviceId(), ...(via === 'email' ? { channel: via } : {}) }) });
     const data = (await res.json().catch(() => ({}))) as { id?: number; message?: string };
-    if (!res.ok || !data.id) { setError(data.message ?? 'Could not record that.'); return; }
+    if (!res.ok || !data.id) { setReceiptError(data.message ?? 'Could not record that. Try again.'); return; }
     logReceipt({ goal, action, target }); // call-follow-through §3
     if (receipt === null) setChannel(via);
     setReceipt(data.id);
@@ -250,6 +262,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     document.getElementById(whyField.name)?.focus();
   }
 
+  const receiptAlert = receiptError && <p role="alert" class="text-sm text-crimson font-semibold" data-receipt-error>{receiptError}</p>;
   // On the form the alert sits under the submit button: below the form and the reasons panel it was off-screen,
   // so a rejected submit looked like the page had reset.
   const alert = error && <p role="alert" class="card border-crimson bg-newsprint text-ink px-4 py-3 text-sm font-semibold max-w-2xl">{error}</p>;
@@ -359,9 +372,10 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               </div>
               {phase.doc.target.contact_form_url && <p class="text-sm" data-field-hint>{fieldHint(phase.doc.target.chamber)}</p>}
               <div class="flex flex-wrap gap-2">
-                {phase.doc.target.contact_form_url && <button type="button" class="btn btn-primary" onClick={() => void didIt('email')} data-sent>I sent it</button>}
+                {phase.doc.target.contact_form_url && <button type="button" class="btn btn-primary" onClick={() => void didIt('email')} disabled={counting} aria-busy={counting} data-sent>{counting ? 'Counting…' : 'I sent it'}</button>}
                 <button type="button" class="btn btn-ghost" onClick={() => setWriting(false)}>Back to calling</button>
               </div>
+              {receiptAlert}
             </div>
           ) : (
           <div class="flex flex-wrap gap-2 items-center">
@@ -384,7 +398,10 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
           )}
           {!(writing && receipt === null) && <div class="card p-4 flex flex-col gap-3">
             {receipt === null ? (
-              <button type="button" class="btn btn-primary self-start" onClick={() => void didIt()}>I did it</button>
+              <>
+                <button type="button" class="btn btn-primary self-start" onClick={() => void didIt()} disabled={counting} aria-busy={counting}>{counting ? 'Counting…' : 'I did it'}</button>
+                {receiptAlert}
+              </>
             ) : (
               <>
                 <p class="font-semibold"><span class="chip bg-acid text-ink mr-2">✓</span>Counted. No name, no address: just this goal, this office, today.</p>
