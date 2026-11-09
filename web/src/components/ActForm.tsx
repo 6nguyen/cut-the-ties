@@ -5,7 +5,6 @@ import { surname } from '@worker/names';
 import type { TargetCard } from '../lib/api';
 import { deviceId, loadPlace } from '../lib/store';
 import { commitmentFor, fmtDue, logReceipt } from '../lib/commitments';
-import Funnel from './Funnel';
 import OpenChip from './OpenChip';
 import { isOpen } from '../lib/hours';
 import { useTurnstile } from '../lib/turnstile';
@@ -19,7 +18,7 @@ interface Props {
   fields: FormField[];
   fmt: DocFormat;
   siteKey?: string;
-  /** Goal title and decision date for the commitment step (commitment-funnel §1). */
+  /** Goal title and decision date for the reminder link (commitment-funnel §1). */
   title?: string;
   decision?: string | null;
   /** Goal `reasons`: first-person starting points offered as one radio group beside the form, grouped by angle. */
@@ -63,6 +62,14 @@ export function allClosed(phones: string[], state: string | undefined, now: Date
   return phones.length > 0 && phoneOrder(phones, now).every((p) => !isOpen(now, p.district ? { state } : undefined));
 }
 const OUTCOMES: [string, string][] = [['will_support', 'Will support'], ['undecided', 'Undecided'], ['opposed', 'Opposed'], ['no_answer', 'No answer'], ['other', 'Other']];
+/** one-screen-receipt §2.1: the countdown stamp's under-inked ends (countdown-stamp §1). */
+const STAMP_MASK = 'radial-gradient(ellipse at center, #000 45%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.38) 100%)';
+/** one-screen-receipt §2.1: the stamp's office, worded as on the poster ("Rep. Correa's office" / "the TX Treasurer"); the poster's own module stays in its lazy chunk. */
+export function stampOffice(role: string, name: string, state?: string | null): string {
+  return /treasurer/i.test(role) ? `the ${state ? `${state} ` : ''}Treasurer` : `${role} ${surname(name)}'s office`;
+}
+/** "Nov 8": the stamp's date, local. */
+export const stampDay = (d: Date = new Date()): string => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 /**
  * call-follow-through §2: the Worker lists the DC number first, the district number second; when DC is closed the
@@ -99,7 +106,7 @@ async function readSse(body: ReadableStream<Uint8Array>, on: (event: string, dat
   }
 }
 
-/** §4.1–4.6: the form, the streamed document, receipt, share and the office-response report. */
+/** §4.1–4.6: the form, the streamed document, then the one-screen receipt (stamp, count, share, next office, office response, three text links). */
 export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons, what, emailSubject }: Props) {
   const [choices, setChoices] = useState<Choice[] | null>(null);
   const [target, setTarget] = useState<string>('');
@@ -108,11 +115,13 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<number | null>(null);
-  const [outcome, setOutcome] = useState('');
+  // one-screen-receipt §2.5: the office response saves on the tap; `saved` is the outcome that posted and locks the chips.
+  const [saved, setSaved] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false); // "Other" opens the note field and posts nothing until "Save note"
   const [note, setNote] = useState('');
-  const [reported, setReported] = useState(false);
+  const [reportError, setReportError] = useState(false);
   const [copied, setCopied] = useState(false); // the script's Copy button
-  const [funnelDone, setFunnelDone] = useState(false);
   const [promised, setPromised] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null); // the reasons panel's selected starting point
   const [writing, setWriting] = useState(false); // email-button §1.4: the email step stands in for the call row
@@ -132,7 +141,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     if (receipt === null || extras) return;
     import('./ReceiptExtras').then(setExtras).catch(() => {});
   }, [receipt]);
-  // social-sharing §2.1: render the poster on receipt mount, so the File and canShare are cached before the funnel ends.
+  // social-sharing §2.1: render the poster on receipt mount, so the File and canShare are cached when the share block shows.
   useEffect(() => {
     if (receipt === null || phase.kind !== 'output') return;
     const t = phase.doc.target;
@@ -189,7 +198,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
         const err = (await res.json().catch(() => ({ message: 'The server sent something we could not read.' }))) as { message?: string };
         throw new Error(err.message ?? `Request failed (${res.status}).`);
       }
-      setReceipt(null); setReported(false); setOutcome(''); setNote(''); setFunnelDone(false); setWriting(false); setChannel('call');
+      setReceipt(null); setSaved(null); setNote(''); setNoteOpen(false); setReportError(false); setWriting(false); setChannel('call');
       let buf = '';
       let final: GenerateDone | null = null;
       let refused: string | null = null;
@@ -228,9 +237,17 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     setWriting(false);
   }
 
-  async function report() {
-    const res = await fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, target, outcome, note: note.trim() || undefined, device: deviceId() }) });
-    if (res.ok) setReported(true); else setError('Could not send that.');
+  /** one-screen-receipt §2.5: one report per call. A second tap while one is in flight, or after one saved, posts nothing. */
+  async function report(outcome: string) {
+    if (saving || saved) return;
+    setSaving(true); setReportError(false);
+    let ok = false;
+    try {
+      const res = await fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, target, outcome, note: outcome === 'other' ? note.trim() || undefined : undefined, device: deviceId() }) });
+      ok = res.ok;
+    } catch { /* said under the chips */ }
+    setSaving(false);
+    if (ok) { setSaved(outcome); setNoteOpen(false); } else setReportError(true);
   }
 
   function download(doc: GenerateDone) {
@@ -269,6 +286,10 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   // On the form the alert sits under the submit button: below the form and the reasons panel it was off-screen,
   // so a rejected submit looked like the page had reset.
   const alert = error && <p role="alert" class="card border-crimson bg-newsprint text-ink px-4 py-3 text-sm font-semibold max-w-2xl">{error}</p>;
+  // one-screen-receipt §2.8: once a receipt exists the screen keeps one filled button (the next office, or "I sent it"
+  // while the email step is open), so the call row and the contact link drop to bordered.
+  const fill = receipt === null ? 'btn-primary' : 'btn-ghost';
+  const wrote = channel === 'email' || type !== 'call';
 
   return (
     <div class="flex flex-col gap-6">
@@ -370,7 +391,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               <div class="flex flex-wrap gap-2 items-center">
                 <button type="button" class="btn btn-ghost" onClick={() => { void navigator.clipboard?.writeText(`${emailSubject.replace('{city}', (values.city ?? '').trim() || 'your city')}\n\n${emailMessage(phase.doc.target, text, values)}`); setCopied(true); }}>{copied ? 'Copied' : 'Copy subject and message'}</button>
                 {phase.doc.target.contact_form_url ? (
-                  <a href={phase.doc.target.contact_form_url} class="btn btn-primary" rel="noopener" target="_blank" data-contact-link>{CONTACT_LABEL[phase.doc.target.contact_kind ?? 'homepage']}</a>
+                  <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank" data-contact-link>{CONTACT_LABEL[phase.doc.target.contact_kind ?? 'homepage']}</a>
                 ) : <p class="text-sm w-full" data-no-form>This office lists no contact form; the DC number is the only channel.</p>}
               </div>
               {phase.doc.target.contact_form_url && <p class="text-sm" data-field-hint>{fieldHint(phase.doc.target.chamber)}</p>}
@@ -384,22 +405,22 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
           <div class="flex flex-wrap gap-2 items-center">
             {phoneOrder(phase.doc.target.phones).map(({ phone, district, label }) => (
               <span class="flex items-center gap-2">
-                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} class="btn btn-primary" data-office={district ? 'district' : 'dc'}>Call {phase.doc.target.role} {phase.doc.target.name} · {label ? `${label} · ` : ''}{phone}</a>
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} class={`btn ${fill}`} data-office={district ? 'district' : 'dc'}>Call {phase.doc.target.role} {phase.doc.target.name} · {label ? `${label} · ` : ''}{phone}</a>
                 <OpenChip state={district ? place?.state : undefined} />
               </span>
             ))}
             {/* email-button §1.2: the one email affordance sits under the call buttons; closed offices promote it to a primary button. */}
             {emailSubject && (allClosed(phase.doc.target.phones, place?.state)
-              ? <button type="button" class="btn btn-primary w-full sm:w-auto" onClick={() => setWriting(true)} data-email-closed>{phase.doc.target.phones.length > 1 ? 'Both offices are closed. Email instead' : 'The office is closed. Email instead'}</button>
+              ? <button type="button" class={`btn ${fill} w-full sm:w-auto`} onClick={() => setWriting(true)} data-email-closed>{phase.doc.target.phones.length > 1 ? 'Both offices are closed. Email instead' : 'The office is closed. Email instead'}</button>
               : <button type="button" class="text-sm underline w-full text-left" onClick={() => setWriting(true)} data-email-link>I can't call right now</button>)}
             {phoneOrder(phase.doc.target.phones)[0]?.district && <p class="text-sm w-full" data-dc-closed>DC office closed; district office answers in office hours.</p>}
             {phase.doc.target.phones.length > 1 && <p class="text-sm w-full" data-two-offices>Either number works and both log your call. The DC office is where the legislative staff sit; the district office is the local one.</p>}
             {type !== 'call' && phase.doc.target.contact_form_url && (
-              <a href={phase.doc.target.contact_form_url} class="btn btn-primary" rel="noopener" target="_blank">Open the contact form ↗</a>
+              <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank">Open the contact form ↗</a>
             )}
           </div>
           )}
-          {!(writing && receipt === null) && <div class="card p-4 flex flex-col gap-3">
+          {!(writing && receipt === null) && <div class="card p-4 flex flex-col gap-4" data-receipt-card>
             {receipt === null ? (
               <>
                 <button type="button" class="btn btn-primary self-start" onClick={() => void didIt()} disabled={counting} aria-busy={counting}>{counting ? 'Counting…' : 'I did it'}</button>
@@ -407,50 +428,59 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               </>
             ) : (
               <>
-                <p class="font-semibold"><span class="chip bg-acid text-ink mr-2">✓</span>Counted. No name, no address: just this goal, this office, today.</p>
-                <Funnel goal={goal} action={action} target={target} who={surname(phase.doc.target.name)} role={phase.doc.target.role} title={title ?? goal} type={channel === 'email' ? 'letter' : type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
-                {funnelDone && (
-                  <>
-                    {extras && <extras.NextOffice goal={goal} action={action} choices={choices} />}
-                    {extras && place && <extras.Counts goal={goal} state={place.state} district={scope === 'state' ? null : place.district} echo />}
-                    {shareMod ? (
-                      <shareMod.default type={channel === 'email' ? 'letter' : type} role={phase.doc.target.role} name={phase.doc.target.name} title={title ?? goal} slug={goal} poster={poster} other={<a href="/results" class="btn btn-ghost">Your other action</a>} />
-                    ) : (
-                      <div class="flex flex-wrap gap-2"><a href="/results" class="btn btn-ghost">Your other action</a></div>
-                    )}
-                  </>
-                )}
-                {!reported ? (
-                  <form class="flex flex-col gap-2 border-t-2 border-ink pt-3" onSubmit={(e) => { e.preventDefault(); if (outcome) void report(); }}>
-                    <p class="label-code">What did the office say? (optional)</p>
-                    <div class="flex flex-wrap gap-2">
-                      {OUTCOMES.map(([v, l]) => (
-                        <label class={`chip cursor-pointer ${outcome === v ? 'bg-ink text-paper' : 'bg-newsprint'}`}>
-                          <input type="radio" name="outcome" value={v} class="sr-only" checked={outcome === v} onChange={() => setOutcome(v)} />{l}
-                        </label>
-                      ))}
-                    </div>
-                    {outcome === 'other' && <input type="text" maxLength={140} class="input-field text-sm" placeholder="In a few words (140 max)" value={note} onInput={(e) => setNote((e.target as HTMLInputElement).value)} />}
-                    <button type="submit" class="btn btn-ghost self-start" disabled={!outcome}>Send</button>
-                  </form>
-                ) : (
-                  <>
-                    <p class="text-sm">Thanks. Reports go to the maintainer; they never change a listed position on their own.</p>
-                    {/* email-button §1.3: the private, related second ask after a reported call; a muted link, never a card. */}
-                    {emailSubject && outcome !== 'no_answer' && !writing && <button type="button" class="text-sm underline text-ink/70 self-start" onClick={() => setWriting(true)} data-put-in-writing>Put it in writing (2 min)</button>}
-                  </>
-                )}
-                {outcome === 'no_answer' && extras && (
-                  <div class="flex flex-wrap gap-2 items-end">
-                    <extras.Retry goal={goal} action={action} target={target} who={`${phase.doc.target.role} ${phase.doc.target.name}`} title={title ?? goal} />
-                    {emailSubject && !writing && <button type="button" class="btn btn-primary" onClick={() => setWriting(true)} data-email-instead>Email it instead</button>}
+                {/* one-screen-receipt §2.1: the countdown stamp's markup, reading as a finished act; the sentence is the accessible name. */}
+                <div class="inline-block self-start -rotate-[4deg] my-2 ml-1" role="status" aria-label={`I ${wrote ? 'wrote to' : 'called'} ${stampOffice(phase.doc.target.role, phase.doc.target.name, place?.state)}, ${stampDay()}`} data-receipt-stamp>
+                  <svg aria-hidden="true" width="0" height="0" class="absolute">
+                    <filter id="stamp-grain-receipt" x="-5%" y="-5%" width="110%" height="110%">
+                      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="noise" />
+                      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+                    </filter>
+                  </svg>
+                  <div aria-hidden="true" class="border-[5px] border-dashed border-crimson bg-paper text-crimson flex flex-col items-center gap-1 px-4 py-2 max-w-[320px]" style={{ filter: 'url(#stamp-grain-receipt)', WebkitMaskImage: STAMP_MASK, maskImage: STAMP_MASK }}>
+                    <span class="font-condensed text-5xl leading-none tracking-[0.06em] whitespace-nowrap flex items-center gap-2">
+                      {wrote ? 'I WROTE' : 'I CALLED'}
+                      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"><path d="M4 13l5 5L20 6" /></svg>
+                    </span>
+                    <span class="font-mono font-bold text-xs tracking-[0.14em] uppercase text-center flex flex-wrap justify-center gap-x-3">
+                      <span>{stampOffice(phase.doc.target.role, phase.doc.target.name, place?.state)}</span><span>{stampDay()}</span>
+                    </span>
                   </div>
-                )}
-                <div class="border-t-2 border-ink pt-3">
-                  <label class="label-code block mb-1" for="reflection">One line for yourself: how did it feel? (stays on this page)</label>
-                  <input id="reflection" type="text" class="input-field w-full text-sm" />
                 </div>
-                <p class="text-sm">This site is one person's project. <a href="/donate" class="underline font-semibold">Chip in for the hosting and the drafts →</a></p>
+                {extras && place && <extras.Counts goal={goal} state={place.state} district={scope === 'state' ? null : place.district} echo />}
+                {shareMod && <shareMod.default type={channel === 'email' ? 'letter' : type} role={phase.doc.target.role} name={phase.doc.target.name} title={title ?? goal} slug={goal} poster={poster} />}
+                {extras && <extras.NextOffice goal={goal} action={action} choices={choices} primary={!(writing && emailSubject && phase.doc.target.contact_form_url)} />}
+                <div class="flex flex-col gap-2" data-response>
+                  <p class="label-code">What did the office say? (optional)<span aria-live="polite">{saved && <span class="ml-2 text-ink/70" data-outcome-saved>Saved</span>}</span></p>
+                  <div class="flex flex-wrap gap-2">
+                    {OUTCOMES.map(([v, l]) => (
+                      <button type="button" class={`chip px-3 py-2 cursor-pointer disabled:cursor-default disabled:opacity-40 ${saved === v ? 'bg-ink text-paper' : v === 'other' && noteOpen ? 'bg-hazard' : 'bg-newsprint'}`} aria-pressed={saved === v} disabled={saving || (!!saved && saved !== v)} data-chip={v}
+                        onClick={() => { if (v === 'other') { if (!saved) setNoteOpen(true); } else void report(v); }}>{saved === v ? '✓ ' : ''}{l}</button>
+                    ))}
+                  </div>
+                  {noteOpen && !saved && (
+                    <form class="flex gap-2 items-stretch" onSubmit={(e) => { e.preventDefault(); void report('other'); }} data-note>
+                      <label class="sr-only" for="outcome-note">What the office said, in a few words</label>
+                      <input id="outcome-note" type="text" maxLength={140} class="input-field text-sm flex-1 min-w-0" placeholder="In a few words (140 max)" value={note} onInput={(e) => setNote((e.target as HTMLInputElement).value)} />
+                      <button type="submit" class="btn btn-ghost shrink-0 whitespace-nowrap" disabled={saving}>Save note</button>
+                    </form>
+                  )}
+                  {reportError && <p role="alert" class="text-sm text-crimson font-semibold" data-report-error>Could not save that. Try again.</p>}
+                  {saved && <p class="text-xs text-ink/70">Reports go to the maintainer; they never change a listed position on their own.</p>}
+                  {/* email-button §1.3: the private, related second ask after a reported call; a muted link, never a card. */}
+                  {saved && saved !== 'no_answer' && emailSubject && !writing && <button type="button" class="text-sm underline text-ink/70 self-start" onClick={() => setWriting(true)} data-put-in-writing>Put it in writing (2 min)</button>}
+                  {saved === 'no_answer' && extras && (
+                    <div class="flex flex-wrap gap-2 items-end">
+                      <extras.Retry goal={goal} action={action} target={target} who={`${phase.doc.target.role} ${phase.doc.target.name}`} title={title ?? goal} />
+                      {emailSubject && !writing && <button type="button" class="btn btn-ghost" onClick={() => setWriting(true)} data-email-instead>Email it instead</button>}
+                    </div>
+                  )}
+                </div>
+                {/* one-screen-receipt §2.6–2.7: the screen's three text links, underlined, never boxed. */}
+                <div class="flex flex-col gap-2 text-sm" data-receipt-links>
+                  {extras && <extras.Remind goal={goal} action={action} target={target} title={title ?? goal} decision={decision ?? null} again={!wrote} />}
+                  <p>This site is one person's project. <a href="/donate" class="underline font-semibold">Chip in for the hosting and the drafts →</a></p>
+                  <a href="/results" class="underline self-start">Your other action</a>
+                </div>
               </>
             )}
           </div>}
