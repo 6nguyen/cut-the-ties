@@ -6,14 +6,14 @@
 | Feature | State | What it does | Spec | Change | Updated |
 |---|---|---|---|---|---|
 | action-router | BUILDING | Address → delegation → two ranked goal cards, return visit,… | [spec](specs/action-router.md) | [deploy](prd/deploy.md) 2/3 +5 | 2026-11-08 |
-| commitment-funnel | BUILDING | Private commitment and captain list after a receipt, "Your… | [spec](specs/commitment-funnel.md) | [social-sharing](prd/social-sharing.md) BUILDING | 2026-11-08 |
+| commitment-funnel | BUILDING | Private commitment and captain list after a receipt, "Your… | [spec](specs/commitment-funnel.md) | [social-sharing](prd/social-sharing.md) 3/4 | 2026-11-08 |
 | deployment | BUILDING | Merge → Worker + D1 seed + Pages deploy, PR previews, rollb… | [spec](specs/deployment.md) | [deploy](prd/deploy.md) 2/3 +1 | 2026-11-08 |
 | electoral-record | BUILDING | One-seat sourced record before a 2028 primary: member's pos… | [spec](specs/electoral-record.md) | [primary-2028](prd/primary-2028.md) 1/2 | 2026-11-04 |
-| maintainer-tooling | BUILDING | Draft a sourced position row, weekly report digest by email… | [spec](specs/maintainer-tooling.md) | [social-sharing](prd/social-sharing.md) BUILDING +1 | 2026-11-08 |
+| maintainer-tooling | BUILDING | Draft a sourced position row, weekly report digest by email… | [spec](specs/maintainer-tooling.md) | [social-sharing](prd/social-sharing.md) 3/4 +1 | 2026-11-08 |
 | member-pages | BUILDING | Roster import, member page with contact and position, whip… | [spec](specs/member-pages.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 +1 | 2026-11-06 |
 | on-device-districts | BUILDING | Browser location → district on the device, per-state TopoJS… | [spec](specs/on-device-districts.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 | 2026-11-06 |
-| personalised-documents | BUILDING | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | [social-sharing](prd/social-sharing.md) BUILDING +1 | 2026-11-08 |
-| social-sharing | BUILDING | On-device 1080×1920 poster after a receipt or a completed l… | [spec](specs/social-sharing.md) | [social-sharing](prd/social-sharing.md) BUILDING | 2026-11-08 |
+| personalised-documents | BUILDING | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | [social-sharing](prd/social-sharing.md) 3/4 +1 | 2026-11-08 |
+| social-sharing | BUILDING | On-device 1080×1920 poster after a receipt or a completed l… | [spec](specs/social-sharing.md) | [social-sharing](prd/social-sharing.md) 3/4 | 2026-11-08 |
 | goal-pages | PINNED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | [site-imagery](prd/site-imagery.md) 0/5 | 2026-11-08 |
 | standard-scripts | PINNED | Deterministic fallback document: per-action template or see… | [spec](specs/standard-scripts.md) | [draft-cap-per-office](prd/draft-cap-per-office.md) 0/1 | 2026-11-08 |
 | target-cards | PINNED | One spec 06 card per target (badge, name, role line, call s… | [spec](specs/target-cards.md) | [site-imagery](prd/site-imagery.md) 0/5 | 2026-11-08 |

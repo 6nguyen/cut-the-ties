@@ -203,8 +203,8 @@ drafting device should not fall. Worker logs show no `limit_action` or
 - Remaining: §1
 - Decisions since last update: none
 - Known failures / blockers: none; PR #68 (limit messages beside the
-  button) should merge first, since §1 deletes two of the messages it
-  rewords and keeps its alert placement for `limit_day` and `limit_ip`
+  button) is merged, so §1 deletes two of its messages and keeps its
+  alert placement for `limit_day` and `limit_ip`
 - Next action: `/implement-prd-section` §1
 
 ## Open questions
