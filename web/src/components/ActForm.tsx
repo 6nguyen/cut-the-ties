@@ -38,6 +38,8 @@ const STANDARD_WHY: Record<string, string> = {
   budget: "This month's drafting budget is spent, so this one is built from our template with your lines dropped in.",
   unconfigured: 'Drafting is not configured on this server, so this one is built from our template with your lines dropped in.',
   upstream: 'The drafting service is not answering, so this one is built from our template with your lines dropped in.',
+  // draft-cap-per-office §1.3: the 3 is LIMITS.device_target_day in worker/src/generate.ts (limit.test.tsx holds them together).
+  limit: 'You have had 3 personalised drafts for this office in the last 24 hours, which is the limit, so this one is built from our template with your lines dropped in.',
 };
 /** email-button §1.4: the contact link's label by `contact_kind`, as on member pages. */
 export const CONTACT_LABEL: Record<ContactKind, string> = {
@@ -351,7 +353,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
           <div class="flex flex-wrap gap-2">
             <button type="button" class="btn btn-ghost" onClick={() => { void navigator.clipboard?.writeText(text); setCopied(true); }}>{copied ? 'Copied' : 'Copy'}</button>
             <button type="button" class="btn btn-ghost" onClick={() => download(phase.doc)}>Download .txt</button>
-            <button type="button" class="btn btn-ghost" onClick={() => void generate()}>{phase.doc.standard && phase.doc.variant ? 'Another version' : 'Regenerate'}</button>
+            {!(phase.doc.standard && phase.doc.reason === 'limit' && !phase.doc.variant) && <button type="button" class="btn btn-ghost" onClick={() => void generate()}>{phase.doc.standard && phase.doc.variant ? 'Another version' : 'Regenerate'}</button>}
           </div>
         )}
         </div>

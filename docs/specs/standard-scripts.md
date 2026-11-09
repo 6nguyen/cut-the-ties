@@ -11,8 +11,10 @@ would do. Generation, its guardrails, receipts and reports are in
 ## Behavior
 1. **When it runs.** When no model may run — the day's cap is reached
    (`reason: capacity`), `ANTHROPIC_API_KEY` is unset (`unconfigured`),
-   `LLM_MONTHLY_BUDGET_USD` is 0 (`budget`), or the screen or both model
-   attempts threw (`upstream`) — the route serves the action's standard
+   `LLM_MONTHLY_BUDGET_USD` is 0 (`budget`), the caller has had 3 model
+   drafts for this device, action and target in the last 24 hours
+   (`limit`), or the screen or both model attempts threw (`upstream`) —
+   the route serves the action's standard
    script instead: `worker/src/standard.ts` fills `{{target_name}}
    {{target_role}} {{ask}} {{mention}} {{position_line}} {{prior_vote_line}}
    {{pick_line}} {{leader_line}} {{user_<field>}}` from the same rows as the
@@ -22,9 +24,15 @@ would do. Generation, its guardrails, receipts and reports are in
    `status {stage: 'standard', reason}`, one `delta`, `done {..., standard:
    true, reason}`; no Anthropic request is made on that path. The act page
    labels it "Standard script — not personalised today" with one line of
-   why; receipt, commitment, captain, share and report are unchanged. The
+   why (for `limit`: "You have had 3 personalised drafts for this office
+   in the last 24 hours, which is the limit, so this one is built from
+   our template with your lines dropped in."); when more than one reason
+   applies the first of `budget`, `unconfigured`, `limit`, `capacity`
+   wins; receipt, commitment, captain, share and report are unchanged. The
    `generations` row has `model = 'standard'`, zero tokens and `check_fail`
-   null, so counts and limits see it and `costUsd` adds $0. The loader
+   null, so the per-device-day and per-IP limits see it; the per-office
+   cap and the global daily cap count model rows only, and `costUsd`
+   adds $0. The loader
    (`checkStandardTemplates`) rejects an `active` goal's action without a
    template or blocks, an unknown placeholder, a brace left in the text, or
    a fill that fails the output check for any in-scope target with the
@@ -57,7 +65,9 @@ would do. Generation, its guardrails, receipts and reports are in
    2027-01-03, replacing <name>" and "Prior vote: No recorded vote yet",
    contact from the elect row. Every ask carries the action's `ask` phrase
    and a mention. For such an action the act page's regenerate button reads
-   "Another version" and resends with a new seed. The leadership actions
+   "Another version" and resends with a new seed. For a plain-template
+   action the regenerate button is not rendered when the reason is
+   `limit` (a press would return the same text). The leadership actions
    (`house-caucus-call`, `senate-leader-call`) use `leadership.yaml`; the
    NDAA action keeps a plain template.
 
