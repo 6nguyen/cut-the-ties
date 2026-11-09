@@ -28,7 +28,7 @@ interface Legislator { id: { bioguide: string }; name: { first: string; last: st
 export interface SenateContact { bioguide_id: string; email: string; website: string }
 
 const cell = (v: string): string => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-const trimSlash = (u: string): string => u.trim().replace(/\/+$/, '').toLowerCase();
+const trimSlash = (u: string): string => u.trim().replace(/\/+$/, '').toLowerCase().replace(/^(https?:\/\/)www\./, '$1');
 
 /** senators_cfm.xml → one row per member. A regex pass: the file is flat and has no attributes worth a parser. */
 export function senateContacts(xml: string): SenateContact[] {
@@ -41,11 +41,11 @@ export function senateContacts(xml: string): SenateContact[] {
   return out;
 }
 
-/** §2: the contact link and its kind for one roster term. A roster form counts only when it is an http(s) URL (the dataset has carried a typo'd scheme). Senators: roster form, else the XML email when it is not the homepage, else the homepage. House: roster form, else `<url>/contact` behind a ZIP gate. */
+/** §2: the contact link and its kind for one roster term. A roster form counts only when it is an http(s) URL (the dataset has carried a typo'd scheme) and is not the member's homepage (it lists `https://alsobrooks.senate.gov/` as a form). Senators: roster form, else the XML email when it is not the homepage, else the homepage. House: roster form, else `<url>/contact` behind a ZIP gate. */
 export function contactFor(t: Pick<Term, 'type' | 'contact_form' | 'url'>, senate?: SenateContact): { contact_form_url: string; contact_kind: ContactKind | '' } {
   const form = (t.contact_form ?? '').trim();
-  if (/^https?:\/\//.test(form)) return { contact_form_url: form, contact_kind: 'form' };
   const home = (t.url ?? '').trim();
+  if (/^https?:\/\//.test(form) && trimSlash(form) !== trimSlash(home)) return { contact_form_url: form, contact_kind: 'form' };
   if (t.type === 'sen') {
     const email = senate?.email.trim() ?? '';
     const pages = new Set([home, senate?.website ?? ''].filter(Boolean).map(trimSlash));

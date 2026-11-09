@@ -64,7 +64,10 @@ Senate XML, `homepage` for a senator whose office publishes no contact
 page, `zip_gate` for `<house site>/contact`, which usually asks for a ZIP
 first). Where the dataset had no working link, the link is hand-set from
 the office's own site and survives re-import: 13 senators and 8
-representatives on 2026-11-08, leaving 1 `homepage` row; `money_url`, `district_office_address`, `district_office_city`,
+representatives on 2026-11-08. Four senators are `homepage`: Graham (no
+contact page), Alsobrooks and McCormick (the roster's form is the
+homepage) and Risch (the roster's form link redirects to a press release;
+a re-import restores it until the roster is fixed); `money_url`, `district_office_address`, `district_office_city`,
 `not_returning` (hand-set from the 2026-11-03 results, each change with its
 AP or state-election-office URL in the commit body), `caucus` and every
 flag column stay as they are in the file and are empty until sourced. `district_phone`

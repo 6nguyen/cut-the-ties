@@ -23,9 +23,9 @@ never by this capability, and nothing here calls an LLM.
    every flag column (`hasc`, `conferee`, `rc243`, `jrd_april_2026`,
    `btb_cosponsor`, `target_2028`); `party`, `chamber`, `state`,
    `district`, `dc_phone`, `contact_form_url` and `contact_kind` are
-   refreshed from the dataset when it has a value. The contact link is
-   filled by kind: an http(s) roster `contact_form` is `form`; a senator without one
-   gets the XML `email` as `form` when it differs from the homepage, else
+   refreshed from the dataset when it has a value. The contact link by
+   kind: a roster `contact_form` (http(s), not the homepage) is `form`; a senator without one
+   gets the XML `email` as `form` unless it is the homepage, else
    the homepage as `homepage`; a representative without one gets
    `terms[-1].url + '/contact'` as `zip_gate`. A row with a `contact_kind`
    keeps its link unless the dataset has a form.
