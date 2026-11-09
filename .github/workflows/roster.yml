@@ -5,7 +5,8 @@ name: roster
 # and on demand. Fetches raw `main` of unitedstates/congress-legislators with If-None-Match from a
 # cached ETag; a 304 on both files ends the run; any other non-200 fails it (the ci failure path
 # uploads ops/logs). Runs import-members (roster + Senate XML) and import-offices, checks the rows
-# with the loader, and opens or updates one PR only when data/ changed. Never auto-merges; a PR open
+# with the loader, fetches a portrait for each new member (site-imagery §4.1), and opens or updates
+# one PR only when data/ changed. Never auto-merges; a PR open
 # for more than NAG_DAYS gets a reminder comment. Needs GITHUB_TOKEN with contents + pull-requests write.
 
 on:
@@ -88,6 +89,9 @@ jobs:
           npm run import-members -w worker -- upstream/legislators-current.yaml $xml | tee import-members.log
           npm run import-offices -w worker -- upstream/legislators-district-offices.yaml | tee import-offices.log
           npm run check-data -w worker
+          # site-imagery §4.1: a new member needs a portrait file or a line in missing.json, or test-web fails on the PR.
+          # A source that cannot be reached must not stop the roster: the id is left for the next run.
+          npm run import-members -w worker -- --portraits | tee import-portraits.log || echo "::warning::portrait import incomplete; run import-members --portraits before merging"
           # email-button §2.3: a HEAD on every distinct contact_form_url; an answer outside 2xx/3xx is listed for a human, the row is never edited.
           : > contact-links.log
           while IFS= read -r u; do
@@ -105,6 +109,7 @@ jobs:
             echo; echo "## import-members"; echo '```'; grep -v '^changed:' import-members.log; echo '```'
             n=$(grep -c '^changed:' import-members.log || true); echo "Changed rows: $n"; echo '```'; grep '^changed:' import-members.log | head -80; echo '```'
             echo; echo "## import-offices"; echo '```'; cat import-offices.log; echo '```'
+            echo; echo "## portraits"; echo '```'; grep -E '^(portraits:|bioguide fallback:|no portrait:|failed)' import-portraits.log || true; echo '```'
             echo; echo "## Contact links to check"
             if [ -s contact-links.log ]; then echo "HEAD answered outside 2xx/3xx (email-button §2.3). Open each by hand; the row is unchanged."; echo '```'; cat contact-links.log; echo '```'; else echo "none: every \`contact_form_url\` answered 2xx/3xx to a HEAD."; fi
             echo; echo "Review \`stale:\` and \`left:\` lines before merging (roster-freshness §4). This PR never auto-merges."
@@ -125,7 +130,9 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           branch: ${{ steps.existing.outputs.branch }}
-          add-paths: data/
+          add-paths: |
+            data/
+            web/src/assets/portraits/
           commit-message: "Refresh roster and district offices from upstream ${{ steps.fetch.outputs.sha }}"
           title: "chore: roster refresh ${{ steps.window.outputs.today }}"
           body-path: pr-body.md
