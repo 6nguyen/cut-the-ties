@@ -1,5 +1,5 @@
 # Draft cap per office — PRD
-Status: APPROVED 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: READY 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 `/api/generate` allows 3 drafts per device per action per 24 hours
@@ -227,3 +227,4 @@ drafting device should not fall. Worker logs show no `limit_action` or
 
 ## Changes
 - 2026-11-08 — created; no blocking questions, APPROVED (auto).
+- 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.

@@ -1,5 +1,5 @@
 # One-screen receipt: stamped poster, icon share buttons, no funnel steps — PRD
-Status: APPROVED 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: READY 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The owner's phone test on 2026-11-08 (Chrome on iPhone; Story, Post, Reel
@@ -292,7 +292,7 @@ PR #70 (rejected-receipt message) merges before §2 starts. Measured in the week
 per week, reports per receipt (expected up once a chip saves on tap) and
 "Routes by via: share".
 
-## State (updated 2026-11-08, PR #72) — ≤30 lines
+## State (updated 2026-11-08) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [ ] 1. Poster: stamp and call to action
   - [ ] 2. Receipt screen: one screen
@@ -300,14 +300,13 @@ per week, reports per receipt (expected up once a chip saves on tap) and
   - [ ] 4. Retire the captain list
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/one-screen-receipt` · PR #72 (this PRD)
+- Branch / open PRs: none (this PRD merged as PR #72; PR #70, which §2 waited on, is merged)
 - Files changed (file:line map): none yet
 - Tests run + result: none yet
 - Remaining: §1–§4
 - Decisions since last update: none
 - Known failures / blockers: none
-- Next action: merge this PRD (PR #72) and PR #70, then `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §1)
-
+- Next action: `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §1)
 ## Open questions
 1. Retire the captain list entirely, or only take it off the receipt
    screen? Proposal: retire it in §4 (the owner asked on 2026-11-08 for
@@ -331,3 +330,4 @@ per week, reports per receipt (expected up once a chip saves on tap) and
 - 2026-11-08 — created from the owner's phone test and mockup picks (1B,
   2B, stamp "I CALLED", no "Counted…" line); no blocking questions,
   APPROVED (auto).
+- 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change. PR #70 and this PRD (PR #72) are merged, so §1–§4 are all buildable.

@@ -58,6 +58,10 @@ From `docs/prd/archive/2026-11-action-router.md` acceptance criteria:
   `Superseded by` line and a `## What changed` section.
 - `docs/FEATURES.md` is generated; hand edits are undone by the next
   `features.sh` run.
+- PRD `Status:` words here are `READY`, `IN PROGRESS`, `DEV COMPLETE` and
+  `TESTING` (table in `docs/prd/README.md` §Index). Where a global rule or
+  skill says APPROVED, write READY; where it says BUILDING, write the word
+  the `Sections:` markers give.
 
 ## Don'ts
 - Don't aim a feature at "cut aid" alone. The live decision points are the

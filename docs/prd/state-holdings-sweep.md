@@ -1,5 +1,5 @@
 # State Israel-bond holdings sweep — PRD
-Status: BUILDING · Owner: George Nguyen · Last updated: 2026-11-04
+Status: IN PROGRESS (§2 maintainer research sweep) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The state goal (`data/goals/state-bonds.yaml`) renders for every visitor
@@ -151,3 +151,4 @@ versus `unknown`; state-goal receipts per state after each batch.
   (`fillAsk`). §2 stays maintainer research: the research file lists all
   50 states as "not checked" in the PRD's batch order.
 - 2026-11-04 — §1 and §3 merged via PR #29; §2 is the maintainer's research sweep, batch 1 next.
+- 2026-11-08 — Status BUILDING → IN PROGRESS. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.

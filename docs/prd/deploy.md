@@ -1,5 +1,5 @@
 # Production deployment — PRD
-Status: BUILDING · Owner: George Nguyen · Last updated: 2026-11-08
+Status: TESTING (§3 owner go-live checklist) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The action-router shipped (archive/2026-11-action-router.md) as code that
@@ -186,3 +186,4 @@ measured budget numbers above.
   PR because no queued feature can reach users without it.
 - 2026-11-04 — §1–2 merged via PR #29; §3 stays blocked on provisioning (docs/guides/deploy.md §1, then §5).
 - 2026-11-05 — the positional-id known bug is fixed by `docs/prd/stable-data-ids.md` (explicit ids + `data/ids.md`); dropped from Remaining.
+- 2026-11-08 — Status BUILDING → TESTING: §1–2 are live and only the owner's go-live checklist (§3) remains. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
