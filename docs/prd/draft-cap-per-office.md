@@ -1,5 +1,5 @@
 # Draft cap per office — PRD
-Status: READY 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1 being built) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 `/api/generate` allows 3 drafts per device per action per 24 hours
@@ -194,10 +194,10 @@ drafting device should not fall. Worker logs show no `limit_action` or
 
 ## State (updated 2026-11-08, PR #n) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [ ] 1. Per-office cap with template fallback
+  - [~] 1. Per-office cap with template fallback · feat/draft-cap-per-office-per-office-cap
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/draft-cap-per-office-prd` (this PRD)
+- Branch / open PRs: `feat/draft-cap-per-office-per-office-cap`
 - Files changed (file:line map): none yet
 - Tests run + result: none yet
 - Remaining: §1
@@ -205,8 +205,7 @@ drafting device should not fall. Worker logs show no `limit_action` or
 - Known failures / blockers: none; PR #68 (limit messages beside the
   button) is merged, so §1 deletes two of its messages and keeps its
   alert placement for `limit_day` and `limit_ip`
-- Next action: `/implement-prd-section` §1
-
+- Next action: build §1 on `feat/draft-cap-per-office-per-office-cap`
 ## Open questions
 1. Is the cap per office per ask, or per office across all asks?
    Proposal: per office per ask (device + action + target). A
@@ -228,3 +227,4 @@ drafting device should not fall. Worker logs show no `limit_action` or
 ## Changes
 - 2026-11-08 — created; no blocking questions, APPROVED (auto).
 - 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
+- 2026-11-08 — Status READY → IN PROGRESS; §1 build started on `feat/draft-cap-per-office-per-office-cap`.
