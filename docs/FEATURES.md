@@ -15,7 +15,7 @@
 | member-pages | BUILDING | Roster import, member page with contact and position, whip… | [spec](specs/member-pages.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 +1 | 2026-11-08 |
 | on-device-districts | BUILDING | Browser location → district on the device, per-state TopoJS… | [spec](specs/on-device-districts.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 | 2026-11-08 |
 | personalised-documents | BUILDING | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | [one-screen-receipt](prd/one-screen-receipt.md) 0/4 +1 | 2026-11-08 |
-| site-imagery | BUILDING | Site imagery | - | [site-imagery](prd/site-imagery.md) 0/5 | 2026-11-08 |
+| site-imagery | BUILDING | Photo library and manifest, licence policy checked at build… | [spec](specs/site-imagery.md) | [site-imagery](prd/site-imagery.md) 0/5 | 2026-11-08 |
 | social-sharing | BUILDING | On-device 1080×1920 poster after a receipt or a completed l… | [spec](specs/social-sharing.md) | [one-screen-receipt](prd/one-screen-receipt.md) 0/4 +1 | 2026-11-08 |
 | target-cards | BUILDING | One spec 06 card per target (badge, name, role line, call s… | [spec](specs/target-cards.md) | [site-imagery](prd/site-imagery.md) 0/5 | 2026-11-08 |
 | countdown-stamp | SHIPPED | Ticking DD HH MM SS stamp on result cards, `/results` and t… | [spec](specs/countdown-stamp.md) | - | 2026-11-06 |

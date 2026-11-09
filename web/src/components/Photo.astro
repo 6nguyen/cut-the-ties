@@ -1,0 +1,57 @@
+---
+// site-imagery §1: the one way a photo reaches a page. Fills its parent, which must be `relative` and carry the
+// slot's gradient: the layer has zero opacity until the image has loaded, so a blocked or missing photo leaves
+// the slot looking as it did before photos existed. Styles are scoped so a page with no photo ships none of them.
+import { Picture } from 'astro:assets';
+import { TREATMENT, imageById, rowFor } from '../lib/images';
+
+interface Props {
+  /** Manifest id (`web/src/assets/img/manifest.yaml`); an unknown id stops the build. */
+  id: string;
+  /** Output widths in px for this slot; widths above the original's are dropped. */
+  widths: number[];
+  sizes: string;
+  /** True for the one image above the fold: loads eagerly at high priority. */
+  eager?: boolean;
+  class?: string;
+}
+const { id, widths, sizes, eager = false, class: extra } = Astro.props;
+const row = rowFor(id);
+const src = imageById(id);
+const fit = [...new Set(widths.filter((w) => w > 0 && w <= src.width))].sort((a, b) => a - b);
+const outWidths = fit.length ? fit : [src.width];
+const a = TREATMENT.across;
+const u = TREATMENT.up;
+const ink = (alpha: number) => `color-mix(in srgb, ${TREATMENT.ink} ${Math.round(alpha * 100)}%, transparent)`;
+const vars = [
+  `--photo-filter:${TREATMENT.filter}`,
+  `--photo-across:linear-gradient(to right, ${ink(a[0])}, ${ink(a[1])}, ${ink(a[2])})`,
+  `--photo-up:linear-gradient(to top, ${ink(u.foot)}, transparent, rgb(0 0 0 / ${u.head}))`,
+].join(';');
+---
+<div class:list={['photo', extra]} data-photo={id} style={vars}>
+  <Picture
+    src={src}
+    alt={row.alt}
+    formats={['avif', 'webp']}
+    fallbackFormat="jpg"
+    widths={outWidths}
+    sizes={sizes}
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : 'auto'}
+    decoding="async"
+    onload="this.closest('[data-photo]').dataset.loaded='1'"
+  />
+  <div class="photo-layer photo-across"></div>
+  <div class="photo-layer photo-up"></div>
+  <div class="photo-layer halftone"></div>
+</div>
+
+<style>
+  .photo { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; }
+  .photo[data-loaded] { opacity: 1; }
+  .photo :global(picture), .photo-layer { position: absolute; inset: 0; display: block; }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; filter: var(--photo-filter); color: transparent; }
+  .photo-across { background: var(--photo-across); }
+  .photo-up { background: var(--photo-up); }
+</style>

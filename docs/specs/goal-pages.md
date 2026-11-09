@@ -76,7 +76,9 @@ there.
     renders a disabled button reading "link not configured". The header
     carries a Donate button and the footer the self-funding line with a
     Donate link on every page.
-6. **About and privacy.** `/about` says who runs the site (one person,
+6. **About and privacy.** `/about` ends with a generated "Photo credits"
+    section, one line per image a page shows and absent while none does
+    ([site-imagery.md](site-imagery.md)). It says who runs the site (one person,
     not a PAC), what it does, who pays and links to `/donate` and
     `/privacy`. `/privacy` lists what is stored (district only in the
     browser and on the server, never the address; receipts without

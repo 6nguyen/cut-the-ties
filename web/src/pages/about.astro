@@ -1,5 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
+import { publishedGoals } from '../lib/goals';
+import { credits } from '../lib/images';
+// site-imagery §1: one line per image a page shows, written from the manifest; no image in use, no section.
+const photoCredits = credits(publishedGoals());
 ---
 <Base title="About — Cut the Ties" description="Who runs Cut the Ties and how it is paid for.">
   <section class="mx-auto px-4 lg:px-10 py-10 max-w-2xl">
@@ -12,6 +16,16 @@ import Base from '../layouts/Base.astro';
       <p>The site is paid for out of pocket and by <a href="/donate">donations</a>. Donations are not tax-deductible and are not political contributions to any candidate.</p>
       <h2>Your data</h2>
       <p>What is stored, and what is sent where, is on the <a href="/privacy">privacy page</a>.</p>
+      {photoCredits.length > 0 && (
+        <Fragment>
+          <h2 id="photo-credits">Photo credits</h2>
+          <ul>
+            {photoCredits.map((c) => (
+              <li data-credit={c.id}>{c.generated ? c.text : <Fragment>{c.alt}: {c.author}, <a href={c.source_url} rel="noopener">{c.source}</a> ({c.licence_label})</Fragment>}</li>
+            ))}
+          </ul>
+        </Fragment>
+      )}
     </div>
   </section>
 </Base>

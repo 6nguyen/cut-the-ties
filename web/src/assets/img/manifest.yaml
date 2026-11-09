@@ -1,0 +1,60 @@
+# One row per file in this directory, plus the portraits directory row.
+# Rules (checked by web/src/lib/images.test.ts and again at build):
+#   - source_url, author, licence and alt are required on every row.
+#   - licence is one of: us-gov, pd, cc0, cc-by, ai.
+#   - a `subject: person` or `subject: place` row may never be `licence: ai`.
+#   - a `licence: ai` row needs `generator` and `prompt`.
+#   - originals are JPEG or PNG, at most 2000 px on the long side and 600 KB.
+# Read the licence on the file's own source page before adding a row.
+# Not accepted: CC BY-SA, NC, ND, news-agency and stock photos.
+
+- id: capitol-dome-dusk
+  file: capitol-dome-dusk.jpg
+  alt: The US Capitol dome lit at dusk, seen past a bare tree
+  subject: place
+  source_url: https://commons.wikimedia.org/wiki/File:Flickr_-_USCapitol_-_United_States_Capitol_at_Dusk.jpg
+  author: Architect of the Capitol
+  licence: us-gov
+  credit: Architect of the Capitol
+
+- id: house-floor
+  file: house-floor.jpg
+  alt: The empty chamber of the US House of Representatives, seen from the gallery
+  subject: place
+  source_url: https://commons.wikimedia.org/wiki/File:United_States_House_of_Representatives_chamber.jpg
+  author: US House of Representatives, Office of the Speaker
+  licence: us-gov
+
+- id: senate-chamber
+  file: senate-chamber.jpg
+  alt: The empty US Senate chamber, desks in rows around the rostrum
+  subject: place
+  source_url: https://commons.wikimedia.org/wiki/File:United_States_Senate_Floor.jpg
+  author: United States Senate
+  licence: us-gov
+
+- id: hasc-hearing-room
+  file: hasc-hearing-room.jpg
+  alt: The House Armed Services Committee hearing room during a hearing, members at the dais and witnesses at the table
+  subject: place
+  source_url: https://commons.wikimedia.org/wiki/File:Dr._Celeste_A._Wallander_and_Gen._Tod_D._Wolters_testify_at_United_States_House_Committee_on_Armed_Services_220330-D-XI929-2020.jpg
+  author: TSgt. Jack Sanders, US Air Force (Department of Defense)
+  licence: us-gov
+  taken: 2022-03-30
+
+- id: state-capitol
+  file: state-capitol.jpg
+  alt: The Minnesota State Capitol in early morning light
+  subject: place
+  source_url: https://commons.wikimedia.org/wiki/File:Minnesota_State_Capitol_(October_2024).jpg
+  author: Aschbren
+  licence: cc0
+  taken: 2024-10-05
+
+- id: portraits
+  dir: ../portraits
+  alt: Official congressional portraits
+  subject: person
+  source_url: https://github.com/unitedstates/images
+  author: US Government Publishing Office, collected by the unitedstates/images project
+  licence: us-gov
