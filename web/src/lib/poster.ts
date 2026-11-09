@@ -1,5 +1,6 @@
-// social-sharing §2.2: the 1080×1920 poster drawn on the device after a receipt (and after a completed
-// captain list, §4). Text and shapes only, the goal card's palette and faces; nothing identifying on it.
+// social-sharing §2: the 1080×1920 poster drawn on the device after a receipt (and, until one-screen-receipt
+// §4, after a completed captain list). Text and shapes only (Canvas 2D: fills, strokes, one rotation; no
+// filter, Safari has none), the goal card's palette and faces; nothing identifying on it.
 // This module is a lazy chunk: ActForm and YourWeek import it only once a share can be offered.
 import { surname } from '@worker/names';
 
@@ -21,6 +22,7 @@ export const SITE_URL = `https://${SITE}`;
 
 const INK = '#090A0F';
 const NEWSPRINT = '#FAF7F0';
+const PAPER = '#FFFFFF';
 const ACID = '#00E876';
 const CRIMSON = '#E11148';
 const HAZARD = '#FACC15';
@@ -29,21 +31,29 @@ const MONO = "'Space Mono', Menlo, monospace";
 const SANS = "Inter, 'Helvetica Neue', Arial, sans-serif";
 
 export interface PosterSpec {
-  /** "I JUST CALLED" / "I JUST WROTE TO" / "THREE OF US ARE CALLING" */
-  verb: string;
-  /** "REP. CORREA'S OFFICE" / "THE TX TREASURER" / "REP. CASAR'S OFFICE BEFORE DEC 10" */
+  /** The stamp's act line: "I CALLED" for a call; "I WROTE" for a letter, a comment or an emailed script. */
+  act: 'called' | 'wrote';
+  /** "REP. CORREA'S OFFICE" / "THE TX TREASURER": the stamp's office line. */
   target: string;
   title: string;
   /** The goal's one-line `what_we_want`. */
   what: string;
   /** "Nov 8, 2026" */
   date: string;
-  /** Drawn at the foot of the band; defaults to the site host. */
+  /** The address under the call to action; defaults to the site host. */
   url?: string;
+  /**
+   * one-screen-receipt §1.7: the captain-list poster ("THREE OF US ARE CALLING"). With it the verb line and
+   * the target lines stand in place of the stamp. Goes with the captain list in §4.
+   */
+  verb?: string;
 }
 
 /** The subset of CanvasRenderingContext2D the draw uses, so a test can pass a recording stub. */
-export type Ctx = Pick<CanvasRenderingContext2D, 'fillRect' | 'fillText' | 'measureText'> & { fillStyle: string | CanvasGradient | CanvasPattern; font: string; textBaseline: CanvasTextBaseline };
+export type Ctx = Pick<CanvasRenderingContext2D, 'fillRect' | 'fillText' | 'measureText' | 'save' | 'restore' | 'translate' | 'rotate' | 'strokeRect' | 'setLineDash' | 'beginPath' | 'moveTo' | 'lineTo' | 'stroke'> & {
+  fillStyle: string | CanvasGradient | CanvasPattern; strokeStyle: string | CanvasGradient | CanvasPattern;
+  lineWidth: number; lineCap: CanvasLineCap; font: string; textBaseline: CanvasTextBaseline;
+};
 
 /** Greedy wrap by `measureText`; past `max` lines the last one is cut at a word and ends with an ellipsis. */
 export function wrapText(ctx: Ctx, text: string, width: number, max: number): string[] {
@@ -63,14 +73,39 @@ export function wrapText(ctx: Ctx, text: string, width: number, max: number): st
   return out;
 }
 
+/**
+ * The largest size from `from` down to `to`, `step` at a time, at which `text` is no wider than `width`;
+ * `to` when none fits. Swaps the px size in `ctx.font` (set the face first) and leaves it at the answer.
+ */
+export function fitSize(ctx: Ctx, text: string, width: number, from: number, to: number, step: number): number {
+  let s = from;
+  const wide = (): boolean => { ctx.font = ctx.font.replace(/[\d.]+px/, `${s}px`); return ctx.measureText(text).width > width; };
+  while (wide() && s - step >= to) s -= step;
+  return s;
+}
+
 const CHIP = 'CONSTITUENT ACTION · CUT THE TIES';
+export const CTA = 'YOUR TURN. CALL YOUR REP';
 const GUTTER = BAND.right - BAND.left;
+/** The stamp's tilt (−4° on the canvas, whose y axis points down). */
+const TILT = (4 * Math.PI) / 180;
+const SIN = Math.sin(TILT);
+const COS = Math.cos(TILT);
+/** Stamp padding from the box edge to the text (the 14 px border sits inside it). */
+const PAD_X = 44;
+const PAD_Y = 34;
+/** Bebas Neue is capitals only, 0.7 em tall: the stamp's act line and the block text get a 0.8 em box. */
+const CAP = 0.8;
+/** The address baseline sits this far above the band's foot, so a descender stays inside the feed crop. */
+const FOOT = 16;
 
 /**
  * Pure over the context: background, the acid top rule, then inside the band top to bottom the chip line,
- * the verb line, the target line, the title (≤3 lines, 96 px; 84 px when it needs three), the crimson rule,
- * `what_we_want` (44 px, ≤2 lines), the date and the URL. Baselines are alphabetic; each line's box is
- * `size` tall, so the first baseline sits `size` below the band top and the URL's at the band bottom.
+ * the stamp (office, act and tick, date; one box turned −4° about its centre), the title (≤3 lines, 96 px;
+ * 84 px when it needs three), the crimson rule, `what_we_want` (44 px, ≤2 lines) and, anchored to the
+ * band's foot, the call to action: the acid block, then an arrow and the address. Baselines are alphabetic
+ * and a line's box is `size` tall (0.8 em for the capitals-only lines above). The stack clears the block
+ * by ≥24 px: when it would not, the act line steps from 200 px to 160 px.
  */
 export function drawPoster(ctx: Ctx, spec: PosterSpec): void {
   ctx.textBaseline = 'alphabetic';
@@ -84,26 +119,81 @@ export function drawPoster(ctx: Ctx, spec: PosterSpec): void {
     ctx.fillText(text, x, y);
     y += gap;
   };
-  line(CHIP, 40, `700 40px ${MONO}`, HAZARD, 56);
-  line(spec.verb.toUpperCase(), 72, `700 72px ${CONDENSED}`, NEWSPRINT, 8);
-  for (const l of wrapText(ctx, spec.target.toUpperCase(), GUTTER, 2)) line(l, 72, `700 72px ${CONDENSED}`, ACID, 8);
-  y += 40;
+  line(CHIP, 40, `700 40px ${MONO}`, HAZARD, 48);
+
+  // Measured before anything below the chip is drawn: what the stack is, and what it has to clear.
   ctx.font = `700 96px ${CONDENSED}`;
   let title = wrapText(ctx, spec.title.toUpperCase(), GUTTER, 3);
   let size = 96;
   if (title.length === 3) { size = 84; ctx.font = `700 84px ${CONDENSED}`; title = wrapText(ctx, spec.title.toUpperCase(), GUTTER, 3); }
+  ctx.font = `600 44px ${SANS}`;
+  const ask = wrapText(ctx, spec.what, GUTTER, 2);
+  const body = title.length * (size + 6) + 74 + ask.length * 58;
+  ctx.font = `700 120px ${CONDENSED}`;
+  const cta = fitSize(ctx, CTA, GUTTER - 64, 120, 72, 4);
+  const block = BAND.bottom - FOOT - 48 - 24 - (cta + 28);
+
+  if (spec.verb) {
+    line(spec.verb.toUpperCase(), 72, `700 72px ${CONDENSED}`, NEWSPRINT, 8);
+    for (const l of wrapText(ctx, spec.target.toUpperCase(), GUTTER, 2)) line(l, 72, `700 72px ${CONDENSED}`, ACID, 8);
+  } else {
+    const date = spec.date.toUpperCase();
+    const act = spec.act === 'called' ? 'I CALLED' : 'I WROTE';
+    /** The box at act size `s`: `h` tall, `w` wide (its widest line plus padding), `box` tall once turned. */
+    const stamp = (s: number) => {
+      const h = 2 * PAD_Y + 40 + 14 + CAP * s + 18 + 40;
+      const max = Math.floor((GUTTER - h * SIN) / COS) - 2 * PAD_X;
+      ctx.font = `700 40px ${MONO}`;
+      const dw = ctx.measureText(date).width;
+      const os = fitSize(ctx, spec.target.toUpperCase(), max, 40, 32, 2);
+      const office = wrapText(ctx, spec.target.toUpperCase(), max, 1)[0] ?? '';
+      const ow = Math.min(ctx.measureText(office).width, max);
+      ctx.font = `700 ${s}px ${CONDENSED}`;
+      const aw = Math.min(ctx.measureText(act).width, max - 0.675 * s);
+      const w = Math.min(Math.max(ow, aw + 0.675 * s, dw), max) + 2 * PAD_X;
+      return { s, h, w, os, office, ow, aw, dw, box: h * COS + w * SIN };
+    };
+    let t = stamp(200);
+    if (y + t.box + 40 + body + 24 > block) t = stamp(160);
+    ctx.save();
+    ctx.translate(x + GUTTER / 2, y + t.box / 2);
+    ctx.rotate(-TILT);
+    ctx.fillStyle = PAPER; ctx.fillRect(-t.w / 2, -t.h / 2, t.w, t.h);
+    ctx.strokeStyle = CRIMSON; ctx.lineWidth = 14; ctx.setLineDash([36, 18]);
+    ctx.strokeRect(-t.w / 2 + 7, -t.h / 2 + 7, t.w - 14, t.h - 14);
+    ctx.setLineDash([]);
+    ctx.fillStyle = CRIMSON;
+    let ty = -t.h / 2 + PAD_Y + 40;
+    ctx.font = `700 ${t.os}px ${MONO}`; ctx.fillText(t.office, -t.ow / 2, ty, t.ow);
+    ty += 14 + CAP * t.s;
+    const ax = -(t.aw + 0.675 * t.s) / 2;
+    ctx.font = `700 ${t.s}px ${CONDENSED}`; ctx.fillText(act, ax, ty, t.aw);
+    // The tick: neither face has the glyph.
+    const tx = ax + t.aw + 0.12 * t.s;
+    ctx.lineWidth = 0.11 * t.s; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(tx, ty - 0.3 * t.s); ctx.lineTo(tx + 0.18 * t.s, ty - 0.08 * t.s); ctx.lineTo(tx + 0.5 * t.s, ty - 0.62 * t.s); ctx.stroke();
+    ty += 18 + 40;
+    ctx.font = `700 40px ${MONO}`; ctx.fillText(date, -t.dw / 2, ty);
+    ctx.restore();
+    y += t.box;
+  }
+  y += 40;
   for (const l of title) line(l, size, `700 ${size}px ${CONDENSED}`, NEWSPRINT, 6);
   y += 34;
   ctx.fillStyle = CRIMSON; ctx.fillRect(x, y, GUTTER, 6);
   y += 6 + 34;
-  ctx.font = `600 44px ${SANS}`;
-  for (const l of wrapText(ctx, spec.what, GUTTER, 2)) line(l, 44, `600 44px ${SANS}`, NEWSPRINT, 14);
-  // The date and URL anchor to the band's foot so the body never runs into them.
-  const url = spec.url ?? SITE;
-  ctx.font = `700 40px ${MONO}`; ctx.fillStyle = HAZARD;
-  ctx.fillText(spec.date.toUpperCase(), x, BAND.bottom - 48 - 40);
+  for (const l of ask) line(l, 44, `600 44px ${SANS}`, NEWSPRINT, 14);
+
+  // The call to action anchors to the band's foot: the block, then the arrow and the address under it.
+  ctx.fillStyle = ACID; ctx.fillRect(x, block, GUTTER, cta + 28);
+  ctx.font = `700 ${cta}px ${CONDENSED}`; ctx.fillStyle = INK;
+  const cw = Math.min(ctx.measureText(CTA).width, GUTTER - 64);
+  ctx.fillText(CTA, x + (GUTTER - cw) / 2, block + 14 + 0.85 * cta, cw);
+  const base = BAND.bottom - FOOT;
+  ctx.strokeStyle = ACID; ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x + 4, base - 17); ctx.lineTo(x + 68, base - 17); ctx.moveTo(x + 50, base - 35); ctx.lineTo(x + 68, base - 17); ctx.lineTo(x + 50, base + 1); ctx.stroke();
   ctx.font = `700 48px ${MONO}`; ctx.fillStyle = ACID;
-  ctx.fillText(url, x, BAND.bottom);
+  ctx.fillText((spec.url ?? SITE).toUpperCase(), x + 92, base, GUTTER - 92);
 }
 
 /** "Nov 8, 2026" in the user's locale rules fixed to en-US so the poster reads the same everywhere. */
@@ -117,13 +207,18 @@ export function targetLine(role: string, name: string, state?: string | null): s
   return `${role.toUpperCase()} ${surname(name).toUpperCase()}'S OFFICE`;
 }
 
+const whose = (role: string, surname: string): string => (/treasurer/i.test(role) ? `the ${role.trim()}` : `${role.trim()} ${surname.trim()}`);
+
 /** social-sharing §2.4 / §3.1: the share-link text and the fallback caption (the line plus the link). */
 export function captionFor(type: 'call' | 'letter' | 'public_comment', role: string, surname: string, title: string, slug: string): { text: string; url: string; caption: string } {
-  const verb = type === 'call' ? 'called' : 'wrote to';
-  const who = /treasurer/i.test(role) ? `the ${role.trim()}` : `${role.trim()} ${surname.trim()}`;
-  const text = `I just ${verb} ${who}'s office about ${title}. Yours takes two minutes:`;
+  const text = `I just ${type === 'call' ? 'called' : 'wrote to'} ${whose(role, surname)}'s office about ${title}. Yours takes two minutes:`;
   const url = `${SITE_URL}/goals/${slug}?via=share`;
   return { text, url, caption: `${text} ${url}` };
+}
+
+/** The poster image's alt text: the act, the office by role and surname, the goal; nothing else. */
+export function posterAlt(type: 'call' | 'letter' | 'public_comment', role: string, surname: string, title: string): string {
+  return `Poster: I ${type === 'call' ? 'called' : 'wrote to'} ${whose(role, surname)}'s office about ${title}`;
 }
 
 /** §3.2 intent links; each opens in a new tab with rel="noopener". */

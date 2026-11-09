@@ -159,7 +159,7 @@ describe('YourWeek (§2, §3)', () => {
     await mount(); await flush();
     await act(() => { ([...root.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[])[2].click(); }); await flush(); await flush();
     const spec = vi.mocked(posterFile).mock.calls.at(-1)![0];
-    expect(spec).toMatchObject({ verb: 'THREE OF US ARE CALLING', title: 'Strip the section' });
+    expect(spec).toMatchObject({ act: 'called', verb: 'THREE OF US ARE CALLING', title: 'Strip the section' });
     expect(spec.target).toMatch(/^CASAR'S OFFICE BEFORE \S+/);
     expect(`${spec.verb} ${spec.target}`).not.toMatch(/TX|35|Ana|Ben|Cy/);
     await act(() => { [...root.querySelectorAll('[data-share] button')].find((b) => /Share/.test(b.textContent ?? ''))!.dispatchEvent(new MouseEvent('click', { bubbles: true })); });

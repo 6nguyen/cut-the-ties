@@ -46,7 +46,7 @@ export default function YourWeek({ goals }: Props) {
     const due = fmtDay(captain.due).toUpperCase();
     const target = captain.who ? `${(captain.role ?? '').toUpperCase()} ${captain.who.toUpperCase()}'S OFFICE BEFORE ${due}`.trim() : `OUR OFFICES BEFORE ${due}`;
     let live = true;
-    import('../lib/poster').then((m) => m.posterFile({ verb: 'THREE OF US ARE CALLING', target, title: g?.title ?? captain.goal, what: g?.what_we_want ?? '', date: m.posterDate() }, `cut-the-ties-${captain.goal}.png`))
+    import('../lib/poster').then((m) => m.posterFile({ act: 'called', verb: 'THREE OF US ARE CALLING', target, title: g?.title ?? captain.goal, what: g?.what_we_want ?? '', date: m.posterDate() }, `cut-the-ties-${captain.goal}.png`))
       .then((f) => { if (live) setPoster(f); }).catch(() => {});
     return () => { live = false; };
   }, [captain?.receipted, captain?.goal]);

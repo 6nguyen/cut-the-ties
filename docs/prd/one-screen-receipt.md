@@ -1,5 +1,5 @@
 # One-screen receipt: stamped poster, icon share buttons, no funnel steps — PRD
-Status: READY 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1 in review; §2–§4 to build) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The owner's phone test on 2026-11-08 (Chrome on iPhone; Story, Post, Reel
@@ -294,19 +294,19 @@ per week, reports per receipt (expected up once a chip saves on tap) and
 
 ## State (updated 2026-11-08) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [ ] 1. Poster: stamp and call to action
+  - [~] 1. Poster: stamp and call to action · feat/one-screen-receipt-poster-stamp-cta
   - [ ] 2. Receipt screen: one screen
   - [ ] 3. Share buttons: icon and text
   - [ ] 4. Retire the captain list
-- Completed: none
-- Folded: none
-- Branch / open PRs: none (this PRD merged as PR #72; PR #70, which §2 waited on, is merged)
-- Files changed (file:line map): none yet
-- Tests run + result: none yet
-- Remaining: §1–§4
-- Decisions since last update: none
-- Known failures / blockers: none
-- Next action: `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §1)
+- Completed: §1 code, tests and spec fold (in review)
+- Folded: §1 (`social-sharing.md` §Behavior 2, the alt text in §Behavior 4, the `poster.ts` line of §Data & contracts, the poster invariants). Not folded, left for their PRs: §Purpose, §Behavior 3–4 and 6, `POSTER_LABEL` / `verb` / selector removals (§3, §4), and every `commitment-funnel`, `personalised-documents` and `district-counters` entry (§2, §4).
+- Branch / open PRs: feat/one-screen-receipt-poster-stamp-cta (this PRD merged as PR #72)
+- Files changed (file:line map): `web/src/lib/poster.ts` L1–3 header, L25 `PAPER`, L33–56 `PosterSpec` / `Ctx`, L76–85 `fitSize`, L87–100 constants (`CTA`), L102–197 `drawPoster`, L210–222 `whose` / `captionFor` / `posterAlt`; `web/src/components/ShareRow.tsx` L7, L17–20 `receiptSpec`, L85 alt; `web/src/components/YourWeek.tsx` L49 (`act` beside `verb`); tests `web/src/lib/poster.test.ts`, `web/src/components/share.test.tsx`, `web/src/components/funnel.test.ts`
+- Tests run + result: `test-web` PASS, `build` PASS, `prd-lint` PASS, `doc-lint` PASS. Poster chunk 2.7 KB gzip (budget 4 KB); draw + encode 6–15 ms in desktop headless Chrome, web faces and fallback faces.
+- Remaining: §2–§4
+- Decisions since last update: see `## Changes` 2026-11-08 "§1 built" (content-fit stamp width, `maxWidth` at the 72 px floor, capitals address 16 px above the foot, captain-list poster without a date line, `posterAlt` on the fallback image)
+- Known failures / blockers: none. Follow-ups: owner check of the poster on an iPhone (acceptance 3, web faces loaded and blocked); a line that starts with "T" antialiases one pixel column left of x 72 (x 71, the side gutter, not the feed crop; the same before §1).
+- Next action: merge the §1 PR, then `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §2)
 ## Open questions
 1. Retire the captain list entirely, or only take it off the receipt
    screen? Proposal: retire it in §4 (the owner asked on 2026-11-08 for
@@ -331,3 +331,4 @@ per week, reports per receipt (expected up once a chip saves on tap) and
   2B, stamp "I CALLED", no "Counted…" line); no blocking questions,
   APPROVED (auto).
 - 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change. PR #70 and this PRD (PR #72) are merged, so §1–§4 are all buildable.
+- 2026-11-08 — §1 built. Status READY → IN PROGRESS. Decisions the section left open: (1) the stamp box is as wide as its widest line plus padding (44 px each side, 34 px top and bottom), capped so the turned corners stay in the band, not a fixed width; (2) at the 72 px floor a face still too wide for the block is condensed by `fillText`'s `maxWidth` instead of clipped (measured: 104 px with the web faces, 80 px with them blocked, so the floor is not reached in Chrome); (3) the address is drawn in capitals 16 px above the band's foot, with a right-pointing arrow before it; (4) the captain-list poster drops its date line with the others (§1.1) and keeps `verb` as an optional field until §4; (5) the alt text of §1.6 landed on the existing fallback `<img>` through a new `posterAlt`, since the thumbnail is §3. With today's spacing the stack clears the block by ≥100 px even with a three-line title and a two-line ask, so the 160 px step of §1.5 is a guard that no goal in `data/goals/` reaches.
