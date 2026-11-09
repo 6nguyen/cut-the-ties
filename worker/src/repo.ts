@@ -1,6 +1,7 @@
 import type {
   Action, BlockRow, Delegation, GenerationCounts, GenerationRow, Goal, Incoming, IncomingSeat, Member, MemberElect, Office, Position, ReceiptRow, Repo, ReportRow, ScreenClass, ScreeningRow, StateRow, UncalledSeat,
   LatestReport, ReceiptBuckets, ReceiptChannel, ReceiptKind, ReceiptLimitCounts, ReceiptTotal, TokenSum, Visit, VisitRequestRow, VisitRow, VisitStatus, ViaCount } from './types';
+import { STANDARD_MODEL } from './cost';
 
 /** generation-cost §1: group rows by (model, action, first-failure class); the MemoryRepo's `tokensSince` and tests share it. */
 export function sumTokens(rows: GenerationRow[]): TokenSum[] {
@@ -104,25 +105,24 @@ export class D1Repo implements Repo {
     return (await this.db.prepare(`SELECT * FROM states WHERE state = ?`).bind(state).first<StateRow>()) ?? null;
   }
 
-  async generationCounts(deviceHash: string, ipHash: string, actionId: number, now: Date): Promise<GenerationCounts> {
-    const hourAgo = iso(new Date(now.getTime() - HOUR));
+  // draft-cap-per-office §1: one SELECT over the last 24 hours. The two hard limits count every row; the
+  // per-office cap and the global cap count model rows only (a template row costs $0).
+  async generationCounts(deviceHash: string, ipHash: string, actionId: number, targetId: string, now: Date): Promise<GenerationCounts> {
     const dayAgo = iso(new Date(now.getTime() - DAY));
     const row = await this.db
       .prepare(
         `SELECT
-           SUM(device_hash = ?1 AND created_at >= ?4) AS device_hour,
-           SUM(device_hash = ?1 AND created_at >= ?5) AS device_day,
-           SUM(device_hash = ?1 AND action_id = ?3 AND created_at >= ?5) AS device_action_day,
-           SUM(ip_hash = ?2 AND created_at >= ?5) AS ip_day,
-           SUM(created_at >= ?5) AS global_day
+           SUM(device_hash = ?1) AS device_day,
+           SUM(device_hash = ?1 AND action_id = ?3 AND target_id = ?4 AND model != ?6) AS device_target_day,
+           SUM(ip_hash = ?2) AS ip_day,
+           SUM(model != ?6) AS global_day
          FROM generations WHERE created_at >= ?5`,
       )
-      .bind(deviceHash, ipHash, actionId, hourAgo, dayAgo)
+      .bind(deviceHash, ipHash, actionId, targetId, dayAgo, STANDARD_MODEL)
       .first<Record<keyof GenerationCounts, number | null>>();
     return {
-      device_hour: row?.device_hour ?? 0,
       device_day: row?.device_day ?? 0,
-      device_action_day: row?.device_action_day ?? 0,
+      device_target_day: row?.device_target_day ?? 0,
       ip_day: row?.ip_day ?? 0,
       global_day: row?.global_day ?? 0,
     };
@@ -416,16 +416,15 @@ export class MemoryRepo implements Repo {
   async offices(bioguideId: string): Promise<Office[]> { return (this.rows.offices ?? []).filter((o) => o.bioguide_id === bioguideId); }
   async membersElect(state: string): Promise<MemberElect[]> { return (this.rows.membersElect ?? []).filter((e) => e.state === state); }
 
-  async generationCounts(deviceHash: string, ipHash: string, actionId: number, now: Date): Promise<GenerationCounts> {
-    const hourAgo = iso(new Date(now.getTime() - HOUR));
+  async generationCounts(deviceHash: string, ipHash: string, actionId: number, targetId: string, now: Date): Promise<GenerationCounts> {
     const dayAgo = iso(new Date(now.getTime() - DAY));
     const day = this.generations.filter((g) => g.created_at >= dayAgo);
+    const model = day.filter((g) => g.model !== STANDARD_MODEL);
     return {
-      device_hour: day.filter((g) => g.device_hash === deviceHash && g.created_at >= hourAgo).length,
       device_day: day.filter((g) => g.device_hash === deviceHash).length,
-      device_action_day: day.filter((g) => g.device_hash === deviceHash && g.action_id === actionId).length,
+      device_target_day: model.filter((g) => g.device_hash === deviceHash && g.action_id === actionId && g.target_id === targetId).length,
       ip_day: day.filter((g) => g.ip_hash === ipHash).length,
-      global_day: day.length,
+      global_day: model.length,
     };
   }
   async recentShingles(actionId: number, limit: number): Promise<Uint32Array[]> {

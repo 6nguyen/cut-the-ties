@@ -1,12 +1,13 @@
 // §4 acceptance: limits, guardrails, the deterministic output check and shingle uniqueness.
 // Anthropic is a canned fetch stub (SSE for Opus, JSON for Haiku); nothing touches the network.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createApp } from '../src/index';
 import { loadRows } from '../src/load';
 import { MemoryRepo, decodeShingles } from '../src/repo';
 import { ANTHROPIC_URL, DOC_MODEL, SCREEN_MODEL, encodeSse, sseEvents } from '../src/anthropic';
-import { BodyExtractor, checkOutput, docRequest, overlap, parseFormat, parseSchema, sanitize, shapeFields, shingles, wordCount, type Doc, type GenerateContext } from '../src/generate';
+import { BodyExtractor, LIMITS, checkOutput, docRequest, overlap, parseFormat, parseSchema, sanitize, shapeFields, shingles, wordCount, type Doc, type GenerateContext } from '../src/generate';
 import type { GenerationRow, ScreenClass } from '../src/types';
 import { ENV, fakeFetch } from './fixtures';
 import { ABUSIVE, BENIGN } from './fixtures.screen';
@@ -259,28 +260,26 @@ describe('POST /api/generate — rejections before any Anthropic call', () => {
     expect(calls.opus + calls.haiku).toBe(0);
   });
 
-  it('guards reject before the standard script: a blocked device and the hourly limit with no key (generation-cost §4)', async () => {
+  it('guards reject before the standard script: a blocked device and the daily limit with no key (generation-cost §4)', async () => {
     const blocked = app();
     await blocked.repo.block(await sha(DEVICE), new Date(TODAY.getTime() + 3_600_000));
     const res = await blocked.generate({}, ENV as unknown as Record<string, unknown>);
     expect(res.status).toBe(403);
     const limited = app();
     const dh = await sha(DEVICE);
-    limited.repo.generations.push(...Array.from({ length: 5 }, (_, i) => genRow({ device_hash: dh, action_id: 9, created_at: new Date(TODAY.getTime() - (i + 1) * 60_000).toISOString() })));
+    limited.repo.generations.push(...Array.from({ length: 20 }, (_, i) => genRow({ device_hash: dh, action_id: 9, created_at: new Date(TODAY.getTime() - (i + 1) * 60_000).toISOString() })));
     const r2 = await limited.generate({}, ENV as unknown as Record<string, unknown>);
     expect(r2.status).toBe(429);
-    expect(((await r2.json()) as { error: string }).error).toBe('limit_hour');
+    expect(((await r2.json()) as { error: string }).error).toBe('limit_day');
     expect(blocked.calls.opus + blocked.calls.haiku + limited.calls.opus + limited.calls.haiku).toBe(0);
   });
 
-  it('429 past 5/hour, 20/day, 3/action/day and 30/IP/day', async () => {
+  it('429 past 20/day and 30/IP/day, template rows included (draft-cap-per-office §1.8)', async () => {
     const dh = await sha(DEVICE);
     const ih = await sha('203.0.113.9');
     const cases: [string, GenerationRow[]][] = [
-      ['limit_hour', Array.from({ length: 5 }, (_, i) => genRow({ device_hash: dh, action_id: 9, created_at: new Date(TODAY.getTime() - (i + 1) * 60_000).toISOString() }))],
-      ['limit_day', Array.from({ length: 20 }, (_, i) => genRow({ device_hash: dh, action_id: 9, created_at: new Date(TODAY.getTime() - 2 * 3_600_000 - i * 60_000).toISOString() }))],
-      ['limit_action', Array.from({ length: 3 }, (_, i) => genRow({ device_hash: dh, action_id: 2, created_at: new Date(TODAY.getTime() - 2 * 3_600_000 - i * 60_000).toISOString() }))],
-      ['limit_ip', Array.from({ length: 30 }, (_, i) => genRow({ device_hash: `d${i}`, ip_hash: ih, created_at: new Date(TODAY.getTime() - 2 * 3_600_000 - i * 60_000).toISOString() }))],
+      ['limit_day', Array.from({ length: 20 }, (_, i) => genRow({ device_hash: dh, action_id: 9, model: i % 2 ? 'standard' : DOC_MODEL, created_at: new Date(TODAY.getTime() - 2 * 3_600_000 - i * 60_000).toISOString() }))],
+      ['limit_ip', Array.from({ length: 30 }, (_, i) => genRow({ device_hash: `d${i}`, ip_hash: ih, model: 'standard', created_at: new Date(TODAY.getTime() - 2 * 3_600_000 - i * 60_000).toISOString() }))],
     ];
     for (const [error, seed] of cases) {
       const { generate, repo, calls } = app();
@@ -296,9 +295,28 @@ describe('POST /api/generate — rejections before any Anthropic call', () => {
     }
     // One under each limit still generates.
     const { generate, repo, calls } = app();
-    repo.generations.push(...Array.from({ length: 4 }, () => genRow({ device_hash: dh, action_id: 9 })));
+    repo.generations.push(...Array.from({ length: 19 }, () => genRow({ device_hash: dh, action_id: 9 })), ...Array.from({ length: 10 }, (_, i) => genRow({ device_hash: `d${i}`, ip_hash: ih })));
     expect(doneOf(await events(await generate()))).toBeDefined();
     expect(calls.opus).toBe(1);
+  });
+
+  it('the hourly and per-action limits are gone: 5 drafts in an hour, or 3 for the ask on another office, are not rejected (draft-cap-per-office §1.7)', async () => {
+    const dh = await sha(DEVICE);
+    expect(LIMITS).not.toHaveProperty('device_hour');
+    expect(LIMITS).not.toHaveProperty('device_action_day');
+    expect(LIMITS).toMatchObject({ device_day: 20, device_target_day: 3, ip_day: 30 });
+    const seeds: GenerationRow[][] = [
+      Array.from({ length: 5 }, (_, i) => genRow({ device_hash: dh, action_id: 9, created_at: new Date(TODAY.getTime() - (i + 1) * 60_000).toISOString() })),
+      Array.from({ length: 3 }, (_, i) => genRow({ device_hash: dh, action_id: 2, target_id: 'P000145', created_at: new Date(TODAY.getTime() - 2 * 3_600_000 - i * 60_000).toISOString() })),
+    ];
+    for (const seed of seeds) {
+      const { generate, repo, calls } = app();
+      repo.generations.push(...seed);
+      const evs = await events(await generate());
+      expect(evs[0]).toEqual({ event: 'status', data: { stage: 'drafting' } });
+      expect(doneOf(evs)!.standard).toBe(false);
+      expect(calls.opus).toBe(1);
+    }
   });
 });
 
@@ -429,6 +447,272 @@ describe('POST /api/generate — standard script (generation-cost §4)', () => {
     const { generate } = app({ screen: () => ({ class: 'off_topic', reason: 'not about this goal' }) });
     const res = await generate();
     expect(res.status).toBe(422);
+  });
+});
+
+describe('POST /api/generate — per-office cap with template fallback (draft-cap-per-office §1)', () => {
+  const NOKEY = ENV as unknown as Record<string, unknown>;
+  const NDAA = 2; // ndaa-1217-call, target_scope both: a Californian has three offices on it
+  const PADILLA = 'P000145';
+  const SCHIFF = 'S001150';
+  const IP = '203.0.113.9';
+  const MIN = 60_000;
+  const H = 60 * MIN;
+  /** A model draft that passes the check for whichever office <facts> names; a blocks action echoes its starting script. */
+  const officeDoc = (req: Record<string, unknown>, n: number): Doc => {
+    const content = String((req.messages as { content: string }[])[0].content);
+    const script = content.match(/<starting_script>\n?([\s\S]*?)\n?<\/starting_script>/);
+    if (script) return { subject: '', body: script[1] ?? '', facts_used: [] };
+    const who = content.match(/Target: (Rep\.|Sen\.) ([^(\n]+?) \(/);
+    const why = content.match(/Why this matters to you: (.*)/);
+    const doc = validDoc({ ...FIELDS, why: why?.[1] ?? FIELDS.why }, n * 100_000 + 7);
+    return { ...doc, body: doc.body.replace('Rep. Correa', who ? `${who[1]} ${(who[2] ?? '').split(' ').pop()}` : 'Rep. Correa') };
+  };
+  /** `app()` with a clock the test moves (`at(ms after TODAY)`) and a different `why` on every request. */
+  function capApp(opts: StubOpts = {}) {
+    const f = stubFetch({ doc: officeDoc, ...opts });
+    const repo = new MemoryRepo(rows);
+    let now = TODAY;
+    let n = 0;
+    const a = createApp({ repo: () => repo, fetch: f.impl, now: () => now });
+    const generate = (over: Record<string, unknown> = {}, env: Record<string, unknown> = KEYED, ip = IP) => {
+      const fields = { ...FIELDS, why: `${BENIGN[n % BENIGN.length]} ${filler(n + 500, 3)}` };
+      n++;
+      return a.request('/api/generate', { method: 'POST', body: JSON.stringify({ action: 'ndaa-1217-call', target: CORREA, fields, device: DEVICE, ...over }), headers: { 'content-type': 'application/json', 'CF-Connecting-IP': ip } }, env);
+    };
+    return { repo, generate, calls: f.calls, at: (ms: number) => { now = new Date(TODAY.getTime() + ms); } };
+  }
+  /** A model draft: no `standard` status, `done.standard` false. */
+  async function personalised(res: Response) {
+    const evs = await events(res);
+    expect(evs.some((e) => e.event === 'status' && e.data.stage === 'standard')).toBe(false);
+    const done = doneOf(evs);
+    expect(done, JSON.stringify(evs.at(-1))).toBeDefined();
+    expect(done!.standard).toBe(false);
+    return { done: done!, evs };
+  }
+  /** The template script on the same stream: status standard/limit, one delta, done {standard: true, reason: limit}. */
+  async function limited(res: Response) {
+    const evs = await events(res);
+    expect(evs[0]).toEqual({ event: 'status', data: { stage: 'standard', reason: 'limit' } });
+    const deltas = evs.filter((e) => e.event === 'delta');
+    expect(deltas).toHaveLength(1);
+    const done = doneOf(evs)!;
+    expect(done.standard).toBe(true);
+    expect(done.reason).toBe('limit');
+    expect(done.body).toBe(deltas[0].data.text);
+    expect(done.body).not.toMatch(/\{\{|\}\}/);
+    return { done, evs };
+  }
+
+  it('a three-office ask: nine drafts inside one hour, three per office, none rejected and all personalised', async () => {
+    const { generate, repo, calls, at } = capApp();
+    let i = 0;
+    for (let round = 0; round < 3; round++) {
+      for (const [target, name] of [[CORREA, 'Correa'], [PADILLA, 'Padilla'], [SCHIFF, 'Schiff']] as const) {
+        at(i++ * 5 * MIN); // 0 … 40 minutes
+        const res = await generate({ target });
+        expect(res.status, `request ${i}`).toBe(200);
+        expect((await personalised(res)).done.body).toContain(name);
+      }
+    }
+    expect(repo.generations).toHaveLength(9);
+    expect(repo.generations.every((g) => g.model === DOC_MODEL && g.check_fail === null)).toBe(true);
+    expect(calls.opus).toBe(9);
+    const dh = await sha(DEVICE);
+    for (const target of [CORREA, PADILLA, SCHIFF]) expect((await repo.generationCounts(dh, await sha(IP), NDAA, target, new Date(TODAY.getTime() + 40 * MIN))).device_target_day).toBe(3);
+  });
+
+  it('the fourth request for one office and ask: 200, the standard script with reason limit, no Anthropic request, one model=standard row; another office and another ask stay personalised', async () => {
+    const { generate, repo, calls } = capApp();
+    for (let i = 0; i < 3; i++) await personalised(await generate());
+    const before = calls.bodies.length;
+    const t0 = performance.now();
+    const res = await generate();
+    expect(res.status).toBe(200);
+    const { done } = await limited(res);
+    expect(performance.now() - t0).toBeLessThan(3000); // the template path sits inside "first streamed token ≤3 s"
+    expect(done.body).toContain('Correa');
+    expect(done.body).toContain('integration section');
+    expect(done.variant).toBeUndefined(); // a plain template: the same fields give the same text
+    expect(done.words).toBe(wordCount(done.body));
+    expect(calls.bodies).toHaveLength(before); // the injected fetch saw neither a screen nor a draft request
+    expect(repo.generations).toHaveLength(4);
+    expect(repo.generations[3]).toMatchObject({ action_id: NDAA, target_id: CORREA, model: 'standard', input_tokens: 0, output_tokens: 0, attempt: 1, check_fail: null });
+    expect(repo.generations[3].shingles.length).toBe(0);
+
+    // §1.5: each office on an ask has its own count, and so does the same office on another ask.
+    expect((await personalised(await generate({ target: PADILLA }))).done.body).toContain('Padilla');
+    expect((await personalised(await generate({ action: 'house-caucus-call' }))).done.body).toContain('Correa');
+    // …while the capped office stays on the template, and none of it was a rejection.
+    await limited(await generate());
+    expect(repo.generations.map((g) => g.model === 'standard')).toEqual([false, false, false, true, false, false, true]);
+  });
+
+  it('past the cap on a blocks action each new seed still returns a different template script (§1.6)', async () => {
+    const { generate, repo, calls } = capApp();
+    const dh = await sha(DEVICE);
+    repo.generations.push(...Array.from({ length: 3 }, () => genRow({ device_hash: dh, action_id: 1 })));
+    const a = (await limited(await generate({ action: 'house-caucus-call', variant: 1 }))).done;
+    const b = (await limited(await generate({ action: 'house-caucus-call', variant: 2 }))).done;
+    expect(a.variant).toBeDefined();
+    expect(a.variant).not.toBe(b.variant);
+    expect(a.body).not.toBe(b.body);
+    expect(calls.bodies).toHaveLength(0);
+  });
+
+  it('template rows never count: two model rows and five template rows leave the next request personalised', async () => {
+    const { generate, repo, calls } = capApp();
+    const dh = await sha(DEVICE);
+    repo.generations.push(...Array.from({ length: 2 }, () => genRow({ device_hash: dh })), ...Array.from({ length: 5 }, () => genRow({ device_hash: dh, model: 'standard' })));
+    await personalised(await generate());
+    expect(calls.opus).toBe(1);
+    await limited(await generate()); // that draft was the third model row
+    expect(calls.opus).toBe(1);
+  });
+
+  it('the count rolls: 24 hours after the first of three model drafts the next request is personalised again', async () => {
+    const { generate, calls, at } = capApp();
+    for (const h of [0, 1, 2]) { at(h * H); await personalised(await generate()); }
+    at(23 * H);
+    await limited(await generate());
+    at(24 * H); // the window is [now − 24 h, now]: the first draft is still inside it
+    await limited(await generate());
+    at(24 * H + 1000);
+    await personalised(await generate());
+    expect(calls.opus).toBe(4);
+    await limited(await generate()); // drafts at +1 h, +2 h and +24 h: capped again until +25 h
+    at(25 * H + 1000);
+    await personalised(await generate());
+  });
+
+  it('refused model drafts count: they cost tokens (open question 4)', async () => {
+    const { generate, repo, calls } = capApp({ doc: () => ({ subject: '', body: 'Read https://example.org before you call 555-010-9999 today.', facts_used: [] }) });
+    for (let i = 0; i < 3; i++) {
+      const evs = await events(await generate());
+      expect((evs.at(-1)?.data as { error: string }).error).toBe('refused');
+    }
+    expect(repo.generations.map((g) => g.model)).toEqual([DOC_MODEL, DOC_MODEL, DOC_MODEL]);
+    expect(repo.generations.every((g) => g.check_fail !== null && g.input_tokens > 0)).toBe(true);
+    const spent = calls.bodies.length;
+    expect((await limited(await generate())).done.body).toContain('Correa'); // the template always passes for valid fields
+    expect(calls.bodies).toHaveLength(spent);
+  });
+
+  it('reason precedence: budget, then unconfigured, then limit, then capacity', async () => {
+    const dh = await sha(DEVICE);
+    const pastCap = () => Array.from({ length: 3 }, () => genRow({ device_hash: dh }));
+    const full = () => Array.from({ length: 20 }, () => genRow({ input_tokens: 900, output_tokens: 200 })); // the day's cap (floor 20) reached
+    const cases: [Record<string, unknown>, string][] = [
+      [{ ...KEYED, LLM_MONTHLY_BUDGET_USD: '0' }, 'budget'],
+      [{ ...NOKEY, LLM_MONTHLY_BUDGET_USD: '0' }, 'budget'],
+      [NOKEY, 'unconfigured'],
+    ];
+    for (const [env, reason] of cases) {
+      const { generate, repo, calls } = capApp();
+      repo.generations.push(...pastCap(), ...full());
+      const evs = await events(await generate({}, env));
+      expect(evs[0], reason).toEqual({ event: 'status', data: { stage: 'standard', reason } });
+      expect(doneOf(evs)!.reason).toBe(reason);
+      expect(calls.bodies).toHaveLength(0);
+    }
+    const both = capApp();
+    both.repo.generations.push(...pastCap(), ...full());
+    await limited(await both.generate({}, { ...KEYED, LLM_MONTHLY_BUDGET_USD: '1' }));
+    const capped = capApp();
+    capped.repo.generations.push(...full());
+    const evs = await events(await capped.generate({}, { ...KEYED, LLM_MONTHLY_BUDGET_USD: '1' }));
+    expect(evs[0]).toEqual({ event: 'status', data: { stage: 'standard', reason: 'capacity' } });
+    expect(both.calls.bodies.length + capped.calls.bodies.length).toBe(0);
+  });
+
+  it("template rows do not move the global count: the day's cap at 20, 19 model rows and 50 template rows → still personalised", async () => {
+    const env = { ...KEYED, MAX_GENERATIONS_PER_DAY: '2' }; // below the floor, so the cap is 20
+    const { generate, repo, calls } = capApp();
+    repo.generations.push(...Array.from({ length: 19 }, () => genRow({})), ...Array.from({ length: 50 }, () => genRow({ model: 'standard' })));
+    expect((await repo.generationCounts(await sha(DEVICE), await sha(IP), NDAA, CORREA, TODAY)).global_day).toBe(19);
+    await personalised(await generate({}, env));
+    expect(calls.opus).toBe(1);
+    // That draft was the 20th model row: the cap is reached by model rows alone.
+    const evs = await events(await generate({ target: PADILLA }, env));
+    expect(evs[0]).toEqual({ event: 'status', data: { stage: 'standard', reason: 'capacity' } });
+    expect(calls.opus).toBe(1);
+  });
+
+  it('a looped client: 20 requests for one office are answered (3 drafts, then 17 template scripts), the 21st is 429 limit_day', async () => {
+    const { generate, repo, calls } = capApp();
+    const seen: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      const res = await generate();
+      expect(res.status, `request ${i + 1}`).toBe(200);
+      seen.push(JSON.stringify((i < 3 ? await personalised(res) : await limited(res)).evs));
+    }
+    expect(calls.opus).toBe(3);
+    expect(repo.generations.filter((g) => g.model === 'standard')).toHaveLength(17);
+    const res = await generate();
+    expect(res.status).toBe(429);
+    const body = (await res.json()) as { error: string; message: string };
+    expect(body.error).toBe('limit_day');
+    expect(body.message).toContain(String(LIMITS.device_day));
+    seen.push(JSON.stringify(body));
+    // A second office is not a way round the hard limit either.
+    const other = await generate({ target: PADILLA });
+    expect(other.status).toBe(429);
+    seen.push(await other.text());
+    expect(repo.generations).toHaveLength(20);
+    expect(seen.join('\n')).not.toMatch(/limit_hour|limit_action/);
+  });
+
+  it('the 31st request from one IP in 24 hours is 429 limit_ip, whatever the device; limit_hour and limit_action exist nowhere in the Worker', async () => {
+    const { generate, repo } = capApp();
+    for (let i = 0; i < 30; i++) {
+      const res = await generate({ device: `device-${Math.floor(i / 3)}-0123456789` }); // ten devices, three drafts each
+      expect(res.status, `request ${i + 1}`).toBe(200);
+      await events(res);
+    }
+    expect(repo.generations).toHaveLength(30);
+    const res = await generate({ device: 'device-new-0123456789' });
+    expect(res.status).toBe(429);
+    const body = (await res.json()) as { error: string; message: string };
+    expect(body.error).toBe('limit_ip');
+    expect(body.message).toContain(String(LIMITS.ip_day));
+    for (const file of ['generate.ts', 'index.ts', 'repo.ts', 'types.ts']) {
+      expect(readFileSync(join(__dirname, '..', 'src', file), 'utf8'), file).not.toMatch(/limit_hour|limit_action|device_hour|device_action_day/);
+    }
+  });
+
+  it('prepare() issues one counts query per request, keyed by device, IP, action and target', async () => {
+    const { generate, repo } = capApp();
+    const dh = await sha(DEVICE);
+    const ih = await sha(IP);
+    // Two model rows and one template row for this office from this device, one model row from this IP on another device.
+    repo.generations.push(genRow({ device_hash: dh, target_id: PADILLA }), genRow({ device_hash: dh, target_id: PADILLA }), genRow({ device_hash: dh, target_id: PADILLA, model: 'standard' }), genRow({ ip_hash: ih }));
+    const spy = vi.spyOn(repo, 'generationCounts');
+    await personalised(await generate({ target: PADILLA }));
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(dh, ih, NDAA, PADILLA, TODAY);
+    expect(await spy.mock.results[0].value).toEqual({ device_day: 3, device_target_day: 2, ip_day: 1, global_day: 3 });
+    await limited(await generate({ target: PADILLA }));
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(await repo.generationCounts('nobody', 'nowhere', NDAA, PADILLA, TODAY)).toEqual({ device_day: 0, device_target_day: 0, ip_day: 0, global_day: 4 });
+  });
+
+  it('a state target and a member-elect follow the same count by target_id (§1.10)', async () => {
+    const dh = await sha(DEVICE);
+    const state = capApp();
+    state.repo.generations.push(...Array.from({ length: 3 }, () => genRow({ device_hash: dh, action_id: 5, target_id: 'TX' })));
+    const tx = { action: 'state-bonds-call', target: 'TX', fields: { ...FIELDS, city: 'Austin' } };
+    expect((await limited(await state.generate(tx))).done.target.name).toBeTruthy();
+    const pa = await events(await state.generate({ ...tx, target: 'PA', fields: { ...FIELDS, city: 'Erie' } }));
+    expect(pa[0]).toEqual({ event: 'status', data: { stage: 'drafting' } }); // another state starts at zero
+    expect(state.calls.opus).toBeGreaterThan(0);
+
+    const elect = capApp();
+    elect.repo.generations.push(...Array.from({ length: 3 }, () => genRow({ device_hash: dh, action_id: 1, target_id: 'AZ-1-shah' })));
+    const shah = { action: 'house-caucus-call', target: 'AZ-1-shah', fields: { ...FIELDS, city: 'Phoenix' } };
+    expect((await limited(await elect.generate(shah))).done.body).toContain('Shah');
+    expect(elect.calls.bodies).toHaveLength(0);
+    expect((await personalised(await elect.generate({ ...shah, target: 'AZ-6-mendoza' }))).done.body).toContain('Mendoza');
   });
 });
 

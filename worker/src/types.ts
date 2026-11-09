@@ -197,8 +197,12 @@ export interface BlockRow { device_hash: string; until: string }
 /** social-sharing §5: one day's count of `/api/route` calls that carried a `via` tag; no request row exists. */
 export interface ViaCount { via: string; n: number }
 
-/** Counts the §4.7 limits read; every window is [since, now]. */
-export interface GenerationCounts { device_hour: number; device_day: number; device_action_day: number; ip_day: number; global_day: number }
+/**
+ * Counts the §4.7 limits read; every window is the last 24 hours, rolling. `device_day` and `ip_day` count
+ * every row; `device_target_day` (this device, action and target) and `global_day` count model rows only
+ * (`model != 'standard'`), because a template row costs $0 (draft-cap-per-office §1.1, §1.9).
+ */
+export interface GenerationCounts { device_day: number; device_target_day: number; ip_day: number; global_day: number }
 
 /** Read-only data access; D1 in production, in-memory in tests and seed. */
 export interface Repo {
@@ -217,7 +221,7 @@ export interface Repo {
   // leadership-routing §1.3: a state's members-elect (route.ts builds the incoming delegation from them).
   membersElect(state: string): Promise<MemberElect[]>;
   // §4 writes and counters (worker/src/generate.ts is the only caller)
-  generationCounts(deviceHash: string, ipHash: string, actionId: number, now: Date): Promise<GenerationCounts>;
+  generationCounts(deviceHash: string, ipHash: string, actionId: number, targetId: string, now: Date): Promise<GenerationCounts>;
   recentShingles(actionId: number, limit: number): Promise<Uint32Array[]>;
   insertGeneration(row: GenerationRow): Promise<void>;
   // generation-cost §1: one query behind the daily cap and the digest's spend block.
