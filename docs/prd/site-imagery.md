@@ -1,5 +1,5 @@
 # Site imagery — PRD
-Status: READY 2026-11-08 (auto) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1 in review; §2–§5 to build) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The Stitch screens (`design/stitch/screens/`) put a photograph behind every
@@ -259,23 +259,22 @@ Lighthouse mobile LCP and transferred bytes for `/` before and after §2,
 quoted in the PR. Success is the budget holding; there is no engagement
 metric a static site can read without analytics, and the site has none.
 
-## State (updated 2026-11-08, PR #n) — ≤30 lines
+## State (updated 2026-11-08) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [ ] 1. Image library, policy and credits
+  - [~] 1. Image library, policy and credits · feat/site-imagery-image-library-policy · PR #80
   - [ ] 2. Landing and results heroes
   - [ ] 3. Goal pages
   - [ ] 4. Portraits: picks, targets and member pages
   - [ ] 5. Share cards
-- Completed: none
-- Folded: none
-- Branch / open PRs: `docs/site-imagery-prd` (this PRD)
-- Files changed (file:line map): none yet
-- Tests run + result: none yet
-- Remaining: §1–§5
-- Decisions since last update: none
-- Known failures / blockers: none
-- Next action: `/implement-prd-section` §1
-
+- Completed: §1 built, in review: five sourced originals and `manifest.yaml`, the policy check (a bad row fails `build` with the row named), `Photo.astro`, `/about` "Photo credits" (absent while no page shows a photo)
+- Folded: §1 entries only: ADDED `docs/specs/site-imagery.md` (library, policy and check, `Photo` treatment, credits); MODIFIED `docs/specs/goal-pages.md` §Behavior 6 (`/about` credits). The §2–§5 parts of the delta are not folded.
+- Branch / open PRs: feat/site-imagery-image-library-policy · PR #80 (open)
+- Files changed (file:line map): web/src/assets/img/ (5 jpg, manifest.yaml) · web/src/lib/images.ts:1-184 · web/src/lib/images.test.ts:1-152 · web/src/components/Photo.astro:1-57 · web/src/pages/about.astro:3-6,19-28 · docs/specs/site-imagery.md · docs/specs/README.md:36 · docs/specs/goal-pages.md:79-81
+- Tests run + result: test-web PASS (26 files, 213 tests) · build PASS · landing `/` 38,402 B gzip (HTML + CSS + JS) before and after · a build with two bad rows fails and names both · preview build: 5 of 5 photos load, 0 of 5 with images blocked
+- Remaining: §2–§5
+- Decisions since last update: Changes 2026-11-08 (the five picks; six deviations)
+- Known failures / blockers: none. Owner review: the Architect of the Capitol usage notice on `capitol-dome-dusk`; `house-floor` (1080 px) and `senate-chamber` (946 px) are narrower than a desktop hero
+- Next action: merge PR #80, then /implement-prd-section docs/prd/site-imagery.md (next: §2. Landing and results heroes)
 ## Open questions
 1. Which exact Capitol, House, Senate, hearing-room and state-capitol
    photos? Proposal: the implementing session picks the highest-resolution
@@ -301,3 +300,5 @@ metric a static site can read without analytics, and the site has none.
 ## Changes
 - 2026-11-08 — created; no blocking questions, APPROVED (auto).
 - 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
+- 2026-11-08 — §1 built. Open question 1 decided as proposed; the five picks, each from its Wikimedia Commons file page with the licence read from that page: `capitol-dome-dusk` (Architect of the Capitol, US government work), `house-floor` (Office of the Speaker, US government work), `senate-chamber` (United States Senate, US government work), `hasc-hearing-room` (TSgt. Jack Sanders, Department of Defense, US government work), `state-capitol` (Minnesota State Capitol, Aschbren, CC0). For the owner: the Architect of the Capitol asks for the credit "Architect of the Capitol" (recorded) and its own page limits use to educational, scholarly, news or personal purposes; `house-floor` is 1080 px wide and `senate-chamber` 946 px wide, the largest public-domain files found, so a hero wider than that upscales them; the Capitol photo is portrait.
+- 2026-11-08 — §1 deviations from the text. (a) The policy check runs when `web/src/lib/images.ts` loads, which `/about` imports, so the `build` target fails on a bad row without a change to `web/package.json`; the vitest file runs the same check under `test-web`. (b) The `portraits` row carries an `author`, which the contract row lacked and the policy requires. (c) The category defaults of §3 item 4 ship now as `imageIdFor(goal)`, because the credits need to know which image a goal page will show; the goal `image` field and its loader check stay in §3 (the loader is `worker/src/load.ts`, not `loader.ts`). (d) "In use" is read from page sources: a literal `<Photo id>` or a call to `imageFor(`. (e) Without JavaScript a photo slot keeps its gradient; the photo appears only after its `load` event. (f) No page places a photo in §1, so `/about` has no credits section until §2.
