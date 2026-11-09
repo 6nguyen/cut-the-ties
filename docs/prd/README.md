@@ -71,7 +71,7 @@ it is generated from the same markers.
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [one-screen-receipt.md](one-screen-receipt.md) | IN PROGRESS (§1 poster in review; §2–§4 to build) | — | Poster stamp "I CALLED" + "YOUR TURN. CALL YOUR REP" call to action, one-screen receipt (save-on-tap office response, one filled button), Instagram / Copy link / Message icon buttons, captain list retired; §2–§4 buildable once §1 merges |
+| 1 | [one-screen-receipt.md](one-screen-receipt.md) | IN PROGRESS (§1 poster merged, PR #77; §2 receipt screen in review; §3–§4 to build) | — | Poster stamp "I CALLED" + "YOUR TURN. CALL YOUR REP" call to action, one-screen receipt (save-on-tap office response, one filled button), Instagram / Copy link / Message icon buttons, captain list retired; §3–§4 buildable once §2 merges |
 | 2 | [site-imagery.md](site-imagery.md) | IN PROGRESS (§1 library, policy and credits in review; §2–§5 to build) | — | `web/src/assets/img/` + manifest, `Photo.astro`, landing/results/goal heroes, portraits on targets and member pages, share-card photo; §2–§5 buildable once §1 merges |
 | 3 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
 | 4 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |

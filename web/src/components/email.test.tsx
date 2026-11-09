@@ -107,7 +107,7 @@ describe('email step (email-button §1)', () => {
     expect(q('[data-output-side]')!.textContent).toMatch(/I did it/);
   });
 
-  it('"I sent it" posts one receipt: the call shape plus channel email, no name or city; the funnel asks for a call by a date', async () => {
+  it('"I sent it" posts one receipt: the call shape plus channel email, no name or city; the stamp reads "I wrote" and the reminder link asks for a call', async () => {
     await mount(done(), OPEN);
     await click('[data-email-link]');
     await click('[data-sent]');
@@ -117,9 +117,10 @@ describe('email step (email-button §1)', () => {
     expect(receipts[0].body).toEqual({ goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110', state: 'CA', district: 46, device: expect.any(String), channel: 'email' });
     expect(JSON.stringify(receipts[0].body)).not.toMatch(/Maria|Santa Ana|Line one/);
     expect(q('[data-email-step]')).toBeNull();
-    expect(root.textContent).toMatch(/Counted\. No name, no address: just this goal, this office, today\./);
-    expect(root.textContent).toMatch(/Will you call by/);
-    expect(root.textContent).not.toMatch(/Will you call again before the vote/);
+    expect(q('[data-receipt-stamp]')!.getAttribute('aria-label')).toBe("I wrote to Rep. Correa's office, Nov 2");
+    expect(q('[data-receipt-stamp]')!.textContent).toMatch(/^I WROTE/);
+    await vi.waitFor(() => expect(q('[data-remind]')).not.toBeNull());
+    expect(q('[data-remind]')!.textContent).toBe('Remind me to call (.ics)');
   });
 
   it('after an emailed receipt the share caption says "wrote to", matching the poster, not "called"', async () => {
@@ -127,24 +128,24 @@ describe('email step (email-button §1)', () => {
     await click('[data-email-link]');
     await click('[data-sent]');
     await flush();
-    for (let i = 0; i < 2; i++) await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'Skip')!.click(); });
     await vi.waitFor(() => expect(q('[data-share-row]')).not.toBeNull());
     const x = [...root.querySelectorAll('a')].find((a) => a.href.startsWith('https://x.com/intent/'))!;
     expect(decodeURIComponent(x.href)).toMatch(/text=I just wrote to Rep\. Correa's office about Strip 1217\./);
   });
 
-  it('a call receipt is unchanged (no channel key), and no_answer adds "Email it instead" beside "Try again"', async () => {
+  it('a call receipt is unchanged (no channel key), and no_answer adds a bordered "Email it instead" beside "Try again"', async () => {
     await mount(done(), OPEN);
     await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'I did it')!.click(); });
     await flush();
     expect(calls.filter((c) => c.url === '/api/receipt')[0].body).not.toHaveProperty('channel');
-    expect(root.textContent).toMatch(/Will you call again before the vote/);
-    await act(() => { (root.querySelector('input[name=outcome][value=no_answer]') as HTMLInputElement).click(); });
+    expect(q('[data-receipt-stamp]')!.getAttribute('aria-label')).toBe("I called Rep. Correa's office, Nov 2");
+    await vi.waitFor(() => expect(q('[data-remind]')?.textContent).toBe('Remind me before the vote (.ics)'));
+    await click('[data-chip=no_answer]');
     await flush(); await flush();
     expect(texts('button')).toContain('Try again');
     const btn = q('[data-email-instead]')!;
     expect(btn.textContent).toBe('Email it instead');
-    expect(btn.className).toMatch(/btn-primary/);
+    expect(btn.className).toMatch(/btn-ghost/); // one-screen-receipt §2.5: bordered, never a second filled button
     expect(q('[data-put-in-writing]')).toBeNull();
     await click('[data-email-instead]');
     expect(q('[data-email-step]')).not.toBeNull();
@@ -155,9 +156,8 @@ describe('email step (email-button §1)', () => {
     await mount(done(), OPEN);
     await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'I did it')!.click(); });
     await flush();
-    await act(() => { (root.querySelector('input[name=outcome][value=will_support]') as HTMLInputElement).click(); });
     expect(q('[data-put-in-writing]')).toBeNull();
-    await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'Send')!.click(); });
+    await click('[data-chip=will_support]');
     await flush();
     const link = q('[data-put-in-writing]')!;
     expect(link.textContent).toBe('Put it in writing (2 min)');
@@ -227,11 +227,11 @@ describe('a rejected receipt is said beside the button that was pressed', () => 
     expect(alert.textContent).toBe('That one is already counted. Try again in ten minutes.');
     expect(alert.getAttribute('role')).toBe('alert');
     expect(alert.previousElementSibling).toBe(didIt()); // directly under the button, inside the receipt card
-    expect(root.textContent).not.toMatch(/Counted\./);
+    expect(q('[data-receipt-stamp]')).toBeNull();
     expect(root.querySelectorAll('[role=alert]').length).toBe(1); // not also in the page-level alert above the script
     await act(() => { didIt()!.click(); }); await flush();
     expect(q('[data-receipt-error]')).toBeNull();
-    expect(root.textContent).toMatch(/Counted\. No name, no address/);
+    expect(q('[data-receipt-stamp]')).not.toBeNull();
   });
 
   it('a network failure says so instead of failing silently, and a second tap while one is pending posts nothing', async () => {

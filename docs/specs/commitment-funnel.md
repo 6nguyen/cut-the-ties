@@ -1,26 +1,28 @@
 # Commitment funnel
 
 ## Purpose
-After a receipt, asks the user for one private commitment (a call by a
-date) and one captain list (three first names they will ask to call),
-keeps both only in the browser, shows them as a checklist on the next
-visit and offers a share only after the private steps. It stops at the
+After a receipt, offers one private reminder (a call by a date, stored
+by one tap), keeps it only in the browser, shows it as a checklist on
+the next visit and offers a share only after the receipt. A captain list
+(three first names) saved before `one-screen-receipt` §2 stays on "Your
+week" until that PRD's §4 retires it. It stops at the
 device: the Worker learns that a list was completed in a district, never
 who was on it. The receipt itself and the share sheet are in
 `personalised-documents.md`; the landing page in `action-router.md`.
 
 ## Behavior
-1. **Commitment line.** On the receipt screen, before any share
-   affordance, one line: "Will you call by <date>?" for a letter, a
-   comment or an emailed script (`personalised-documents.md` §4 email
-   step, receipt `channel 'email'`), "Will you call again before the
-   vote?" for a call. A date
-   input (10:00 local; 10:00 anywhere in the US falls inside DC office
-   hours, `call-follow-through`) defaults to the next weekday, never
-   later than the goal's decision date; the user may move it up to seven days out
-   (a repeat call may use the whole window to the decision date). "Yes,
-   I'll call" stores the commitment locally and moves on; "Skip" is one
-   tap. Nothing is sent and no counter moves.
+1. **Reminder link** (`one-screen-receipt` §2.6). On the receipt
+   screen, the first of its three text links (`[data-remind]`): "Remind
+   me to call (.ics)" after a letter, a comment or an emailed script
+   (`personalised-documents.md` §4 email step, receipt `channel
+   'email'`), "Remind me before the vote (.ics)" after a call. One tap
+   downloads the `.ics` of §3 for the default date (10:00 local on the
+   next weekday, never later than the goal's decision date; 10:00
+   anywhere in the US falls inside DC office hours,
+   `call-follow-through`), stores the same commitment locally and
+   replaces the link with "Reminder saved". There is no date input and
+   no "Skip"; the date moves later from "Your week" (§6). Nothing is
+   sent and no counter moves.
 2. **Captain list.** Next, "Name three people in <STATE-NN> you'll ask to
    call by <due>" (the district is omitted when none is stored): three
    first-name fields (≤20 characters; letters, spaces, hyphens and
@@ -83,19 +85,22 @@ who was on it. The receipt itself and the share sheet are in
    Done / Not yet / Still on? controls as a call. A retry never posts
    anything; nothing counts until a new receipt.
 
-10. **Next office and echo** (`call-follow-through` §3–4). Once the
-    commitment and captain steps are answered or skipped, and before
-    "Share", the receipt screen shows "Next: <Role Name>" for each target
+10. **Next office and echo** (`call-follow-through` §3–4,
+    `one-screen-receipt` §2.2 and §2.4). Under the share row the receipt
+    screen shows "Next: call <Role Name>'s office →" for each target
     of the goal with no receipt from this device in the last 24 h (local
     log `cut-ties:receipts`, written when `/api/receipt` succeeds), each
-    linking to `/goals/<slug>/act/<action>?target=<id>`; when every target
-    has one it reads "All three called this week." (two targets: "All of
-    your targets called this week."); a goal with one target shows
-    nothing. Below it, with a stored place, the `Counts` island in `echo`
-    mode: "You're one of <N> constituents in <STATE-NN> who called this
-    week", the state line when the district is under threshold, else
-    "Counted." (`district-counters.md` §6). Both load with the receipt
-    screen, after the act page's own bundle.
+    linking to `/goals/<slug>/act/<action>?target=<id>`. The first
+    (`[data-next-primary]`) is the screen's one filled button and the
+    rest are bordered; while the email step shows "I sent it" that
+    button holds the fill and the first drops to bordered. When every
+    target has a receipt it reads "All three called this week." (two
+    targets: "All of your targets called this week."); a goal with one
+    target shows nothing. Above the share row, with a stored place, the
+    `Counts` island in `echo` mode: "You're one of <N> constituents in
+    <STATE-NN> who called this week", the state line when the district
+    is under threshold, else nothing (`district-counters.md` §6). Both
+    load with the receipt screen, after the act page's own bundle.
 
 ## Data & contracts
 - `localStorage` `cut-ties:commitments` = `[{v: 1, goal, action, target,
