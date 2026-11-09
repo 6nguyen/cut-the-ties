@@ -113,10 +113,10 @@ describe('target cards (spec 06)', () => {
     expect(roleLine(targetsFor(stateGoal, undefined, delegation(cell(FIXTURE[0])), [])[0])).toBe('Treasurer · MD');
     expect(roleLine({ role: 'Sen.' })).toBe('Senator'); // an older cached route without the fields degrades to the role alone
   });
-  it('renders a bordered, shadowed card: party badge, name line, role line, status line, then a 44 px call square', () => {
+  it('renders a bordered, shadowed card: portrait over the party badge, name line, role line, status line, then a 44 px call square', () => {
     const out = render(h(Target, { t: cards[0] }));
     expect(out).toMatch(/^<li class="bg-paper border-2 border-ink shadow-brutal-sm p-3\.5 hover:bg-hazard\/10"/);
-    expect(out).toContain('w-10 h-10 shrink-0 border-2 border-ink shadow-brutal-sm');
+    expect(out).toContain('portrait w-12 h-12 border-2 border-cobalt shadow-brutal-sm');
     expect(out).toContain('>Lou Correa</p>');
     expect(out).toMatch(/data-role-line[^>]*>Representative · CA-46</);
     expect(out).toContain('No recorded vote yet');

@@ -123,6 +123,13 @@ export function imageIds(path: string | null): Set<string> {
   if (!Array.isArray(rows)) throw new Error(`${MANIFEST_FILE}: not a list of rows`);
   return new Set(rows.filter((r): r is { id: string; file: string } => !!r && typeof r.id === 'string' && typeof r.file === 'string' && r.file !== '').map((r) => r.id));
 }
+/** site-imagery §4: a pick's optional `bioguide_id` must be a `members.csv` row, so the prep page can show that member's portrait and party colour. The roster is read only when a pick names one. */
+export function checkPicks(g: { slug: string; our_picks: string }, memberIds: () => Set<string>): void {
+  for (const [i, p] of (JSON.parse(g.our_picks) as { bioguide_id?: unknown }[]).entries()) {
+    if (p.bioguide_id === undefined || p.bioguide_id === null || p.bioguide_id === '') continue;
+    if (typeof p.bioguide_id !== 'string' || !memberIds().has(p.bioguide_id)) throw new Error(`goal ${g.slug}: our_picks[${i}] bioguide_id ${String(p.bioguide_id)} is not in members.csv`);
+  }
+}
 /** A goal's optional `image` must be a manifest id, so a typo fails the seed and the build instead of shipping a page with no photo. The manifest is read only when a goal names an image. */
 export function checkImage(g: Pick<Goal, 'slug' | 'image'>, ids: () => Set<string>): void {
   if (g.image === null) return;
@@ -241,6 +248,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
   const registry = readIds(dataDir);
   const goalIds = new Set<number>();
   let photoIds: Set<string> | null = null;
+  let rosterIds: Set<string> | null = null;
   const actionIds = new Set<number>();
   const goals: Goal[] = readdirSync(join(dataDir, 'goals'))
     .filter((f) => f.endsWith('.yaml'))
@@ -286,6 +294,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
       if (wordCount(g.summary) > 60) throw new Error(`goal ${g.slug}: summary is ${wordCount(g.summary)} words, max 60 (§2.1)`);
       if ((g.status === 'completed' || g.status === 'expired') && !g.outcome_note) throw new Error(`goal ${g.slug}: a ${g.status} goal needs outcome_note (§2.1)`);
       checkJsonList(g.slug, 'our_picks', g.our_picks, ['name', 'rationale', 'source_url'], 3);
+      checkPicks(g, () => (rosterIds ??= new Set(parseCsv(readFileSync(join(dataDir, 'members.csv'), 'utf8')).map((r) => r.bioguide_id))));
       checkJsonList(g.slug, 'sources', g.sources, ['title', 'url']);
       checkReasons(g.slug, g.reasons);
       checkPrep(g.slug, g.prep_md);

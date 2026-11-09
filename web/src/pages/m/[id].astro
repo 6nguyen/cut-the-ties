@@ -6,11 +6,15 @@ import Offices from '../../components/Offices.astro';
 import Counts from '../../components/Counts';
 import Visits from '../../components/Visits';
 import OpenChip from '../../components/OpenChip';
+import { PARTY_CLASS, portraitSrc } from '../../components/Target';
+import { TREATMENT, hasPortraitFile } from '../../lib/images';
 // One static page per sitting member; unknown ids fall through to the 404 page.
 export function getStaticPaths() {
   return members().map((m) => ({ params: { id: m.bioguide_id }, props: { member: m } }));
 }
 const { member: m } = Astro.props as { member: Member };
+// site-imagery §4.3: a member the import found no portrait for gets no slot and no gap.
+const portrait = hasPortraitFile(m.bioguide_id);
 const goals = goalsFor(m);
 const first = goals[0];
 const title = first ? `${m.name} on ${first.goal.title}` : `${role(m)} ${m.name}`;
@@ -22,6 +26,14 @@ const POS: Record<string, string> = { for: 'bg-acid text-ink', uncommitted: 'bg-
   <section class="relative hero-gradient text-newsprint overflow-hidden" data-member data-state={m.state} data-district={m.chamber === 'house' ? m.district : ''} data-chamber={m.chamber}>
     <div class="absolute inset-0 halftone pointer-events-none"></div>
     <div class="relative mx-auto max-w-[1360px] px-4 lg:px-10 py-12 lg:py-16">
+      <div class="sm:flex sm:items-start sm:gap-6" data-member-head>
+        {portrait && (
+          <span class={`portrait w-[120px] h-[150px] mb-5 sm:mb-0 border-2 border-newsprint font-condensed text-[64px] ${PARTY_CLASS(m.party)}`} data-portrait={m.bioguide_id}>
+            <span aria-hidden="true">{m.party}</span>
+            <img src={portraitSrc(m.bioguide_id)} alt="" width="120" height="150" decoding="async" style={`filter:contrast(${TREATMENT.contrast})`} onload="this.parentNode.dataset.loaded='1'" />
+          </span>
+        )}
+        <div class="min-w-0">
       <div class="flex flex-wrap gap-2 mb-4">
         <span class="chip bg-hazard text-ink border-ink">{PARTY[m.party]} · {seat(m)}</span>
         <span class="chip bg-newsprint text-ink border-ink">{m.chamber === 'house' ? 'House' : 'Senate'}</span>
@@ -29,10 +41,12 @@ const POS: Record<string, string> = { for: 'bg-acid text-ink', uncommitted: 'bg-
       </div>
       <h1 class="display-lg max-w-4xl">{role(m)} {m.name}</h1>
       <p class="mt-5 text-lg max-w-2xl">{m.state}{m.chamber === 'house' ? ` · District ${m.district === 0 ? 'at large' : m.district}` : ' · Senator'} · {PARTY[m.party]}</p>
+        </div>
+      </div>
       <div class="mt-6 flex flex-wrap gap-3">
         {m.dc_phone && <span class="flex items-center gap-2"><a href={tel(m.dc_phone)} class="btn btn-primary">Call DC office · {m.dc_phone}</a><OpenChip client:load /></span>}
-        {m.district_phone && <span class="flex items-center gap-2"><a href={tel(m.district_phone)} class="btn btn-ghost">District office · {m.district_phone}</a><OpenChip client:load state={m.state} /></span>}
-        {contactLabel(m) && <a href={m.contact_form_url} rel="noopener" class="btn btn-ghost">{contactLabel(m)} ↗</a>}
+        {m.district_phone && <span class="flex items-center gap-2"><a href={tel(m.district_phone)} class="btn bg-newsprint text-ink hover:bg-paper">District office · {m.district_phone}</a><OpenChip client:load state={m.state} /></span>}
+        {contactLabel(m) && <a href={m.contact_form_url} rel="noopener" class="btn bg-newsprint text-ink hover:bg-paper">{contactLabel(m)} ↗</a>}
       </div>
       {m.district_office_address && <p class="mt-4 text-sm label-ticker" data-office>District office: {m.district_office_address}{m.district_office_city ? `, ${m.district_office_city}` : ''}</p>}
     </div>

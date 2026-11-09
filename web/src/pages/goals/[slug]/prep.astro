@@ -3,8 +3,10 @@ import { getImage } from 'astro:assets';
 import Base from '../../../layouts/Base.astro';
 import Photo from '../../../components/Photo.astro';
 import PrepAction from '../../../components/PrepAction';
-import { actionsFor, CATEGORY, fmtDate, picks, prepGoals, prepHtml, prepSections, sources, unifiedAsk, type Goal } from '../../../lib/goals';
-import { HERO, PHOTO_OUTPUT, heroWidths, imageFor, imageIdFor } from '../../../lib/images';
+import { PARTY_CLASS, portraitSrc } from '../../../components/Target';
+import { actionsFor, CATEGORY, fmtDate, pickBadge, picks, prepGoals, prepHtml, prepSections, sources, unifiedAsk, type Goal } from '../../../lib/goals';
+import { HERO, PHOTO_OUTPUT, hasPortraitFile, heroWidths, imageFor, imageIdFor } from '../../../lib/images';
+import { members } from '../../../lib/members';
 export function getStaticPaths() {
   return prepGoals().map((g) => ({ params: { slug: g.slug }, props: { goal: g } }));
 }
@@ -17,6 +19,8 @@ const heroW = heroWidths(heroFile.width);
 const heroPreload = await getImage({ src: heroFile, format: 'avif', widths: heroW, quality: PHOTO_OUTPUT.quality });
 const sections = prepSections(goal.prep_md);
 const ranked = picks(goal).slice(0, 3);
+// site-imagery §4: each pick's slot is a party-coloured initial badge with the member's portrait drawn over it once loaded.
+const badges = ranked.map((p) => pickBadge(p, members(), hasPortraitFile));
 const leadership = goal.category === 'leadership';
 const pickDate = ranked.map((p) => p.signal_date ?? '').sort().pop() || null;
 const ask = unifiedAsk(goal.what_we_want, ranked[0]?.name);
@@ -54,7 +58,12 @@ const actions = open ? actionsFor(goal).map((a) => ({ slug: a.slug, label: verbs
             <>
               <ol class="mt-4 flex flex-col gap-3 max-w-2xl">
                 {ranked.map((p, i) => (
-                  <li class="card p-5">
+                  <li class="card p-5 flex items-start gap-4" data-pick>
+                    <span class={`portrait w-20 h-[100px] border-2 border-ink font-condensed text-[44px] ${PARTY_CLASS(badges[i].party)}`} data-pick-badge={badges[i].party ?? 'none'}>
+                      <span aria-hidden="true">{badges[i].initial}</span>
+                      {badges[i].portrait && <img src={portraitSrc(p.bioguide_id!)} alt="" width="80" height="100" loading="lazy" decoding="async" onload="this.parentNode.dataset.loaded='1'" />}
+                    </span>
+                    <div class="min-w-0 flex-1">
                     <p class="label-code">Pick {i + 1}</p>
                     <h3 class="headline-md mt-1">{p.name}</h3>
                     <p class="mt-3">{p.rationale}</p>
@@ -62,6 +71,7 @@ const actions = open ? actionsFor(goal).map((a) => ({ slug: a.slug, label: verbs
                       <a href={p.source_url} rel="noopener" class="underline">Source</a>
                       {p.signal ? ` · ${p.signal}` : ''}{p.signal_date ? ` · ${fmtDate(p.signal_date)}` : ''}
                     </p>
+                    </div>
                   </li>
                 ))}
               </ol>

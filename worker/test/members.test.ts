@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { caucusOf, checkMembers, checkMembersElect, loadRows, parseCsv } from '../src/load';
 import { districtError, isDelegate } from '../src/districts';
 import { applyFilters, isMovable, latestPosition, updatedAt, whipCounts, whipRows, whipTargets } from '../src/whip';
-import { merge, rosterRows, toCsv } from '../scripts/import-members';
+import { PORTRAIT, encodePortrait, importPortraits, merge, portraitSources, rosterRows, toCsv, type PortraitIo } from '../scripts/import-members';
 import { MemoryRepo } from '../src/repo';
 import { createApp } from '../src/index';
 import { ENV, fakeFetch } from './fixtures';
@@ -182,5 +182,68 @@ describe('caucus column and members_elect.csv seed checks (leadership-routing §
   it('the import keeps caucus as the last column', () => {
     expect(toCsv([{ bioguide_id: 'K000383', name: 'King', caucus: 'D' }]).split('\n')[0].endsWith(',left_office,caucus')).toBe(true);
     expect(toCsv([{ bioguide_id: 'K000383', name: 'King', caucus: 'D' }]).split('\n')[1].endsWith(',D')).toBe(true);
+  });
+});
+
+describe('import-members --portraits (site-imagery §4.1)', () => {
+  const [primary, fallback] = [(id: string) => portraitSources(id)[0], (id: string) => portraitSources(id)[1]];
+  /** An in-memory directory and a fake network: `sources` maps a URL to its HTTP status, or to 'offline' for a fetch that throws; anything else is a 404. */
+  const rig = (sources: Record<string, number | 'offline'>, files: Record<string, Uint8Array | string> = {}) => {
+    const fetched: string[] = [];
+    const written: string[] = [];
+    const io: PortraitIo = {
+      fetch: async (url) => {
+        fetched.push(url);
+        const s = sources[url] ?? 404;
+        if (s === 'offline') throw new Error('offline');
+        return { ok: s === 200, status: s, arrayBuffer: async () => new TextEncoder().encode(url).buffer as ArrayBuffer };
+      },
+      exists: (p) => p in files,
+      read: (p) => String(files[p]),
+      write: (p, b) => { written.push(p); files[p] = b; },
+      encode: async (src) => { if (new TextDecoder().decode(src).includes('N000009')) throw new Error('not an image'); return new Uint8Array([82, 73, 70, 70]); },
+    };
+    return { io, files, fetched, written };
+  };
+
+  it('reads the 225×275 portrait from unitedstates/images first and the Bioguide photo second', () => {
+    expect(portraitSources('P000145')).toEqual(['https://unitedstates.github.io/images/congress/225x275/P000145.jpg', 'https://bioguide.congress.gov/bioguide/photo/P/P000145.jpg']);
+  });
+
+  it('writes one file per member with a source portrait and lists the ids with none', async () => {
+    const t = rig({ [primary('A000001')]: 200, [fallback('B000002')]: 200, [primary('N000009')]: 200 });
+    const res = await importPortraits(['C000003', 'A000001', 'B000002', 'N000009', 'A000001'], '/p', t.io, 1);
+    expect(res).toEqual({ written: ['A000001', 'B000002'], fallback: ['B000002'], missing: ['C000003', 'N000009'], failed: [], kept: [] });
+    expect(Object.keys(t.files).sort()).toEqual(['/p/A000001.webp', '/p/B000002.webp', '/p/missing.json']);
+    expect(t.files['/p/missing.json']).toBe('["C000003","N000009"]\n');
+  });
+
+  it('a second run keeps every existing file untouched and changes no bytes', async () => {
+    const t = rig({ [primary('A000001')]: 200 });
+    await importPortraits(['A000001', 'C000003'], '/p', t.io);
+    const before = JSON.stringify(Object.entries(t.files).map(([k, v]) => [k, typeof v === 'string' ? v : [...v]]));
+    t.written.length = 0;
+    t.fetched.length = 0;
+    const again = await importPortraits(['A000001', 'C000003'], '/p', t.io);
+    expect(again).toMatchObject({ written: [], kept: ['A000001'], missing: ['C000003'], failed: [] });
+    expect(t.written).toEqual([]);
+    expect(t.fetched.filter((u) => u.includes('A000001'))).toEqual([]);
+    expect(JSON.stringify(Object.entries(t.files).map(([k, v]) => [k, typeof v === 'string' ? v : [...v]]))).toBe(before);
+  });
+
+  it('a network failure is not "no portrait", and an offline run leaves missing.json as it was', async () => {
+    const t = rig({ [primary('A000001')]: 'offline', [fallback('A000001')]: 'offline', [primary('C000003')]: 'offline', [fallback('C000003')]: 500 }, { '/p/missing.json': '["C000003"]\n' });
+    const res = await importPortraits(['A000001', 'C000003'], '/p', t.io);
+    expect(res).toMatchObject({ failed: ['A000001'], missing: ['C000003'], written: [] });
+    expect(t.written).toEqual([]);
+  });
+
+  it('encodes to a 160×200 WebP of at most 8 KB and refuses bytes that are not an image', async () => {
+    const sharp = (await import('sharp')).default;
+    const jpg = await sharp({ create: { width: 225, height: 275, channels: 3, background: { r: 120, g: 90, b: 60 } } }).jpeg().toBuffer();
+    const out = await encodePortrait(new Uint8Array(jpg));
+    expect(await sharp(out).metadata()).toMatchObject({ format: 'webp', width: PORTRAIT.width, height: PORTRAIT.height });
+    expect(out.byteLength).toBeLessThanOrEqual(PORTRAIT.maxBytes);
+    await expect(encodePortrait(new TextEncoder().encode('<html>not found</html>'))).rejects.toThrow();
   });
 });

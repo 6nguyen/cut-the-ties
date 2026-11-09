@@ -63,6 +63,12 @@
   &:focus { outline: none; box-shadow: var(--shadow-focus); }
 }
 @utility hero-gradient { background: linear-gradient(160deg, #1E2028 0%, #090A0F 55%, #2a1a1f 100%); }
+/* site-imagery §4: a portrait slot. The party-coloured badge (its letter or initial) is the base layer; the image and
+   the corner tag are drawn over it only once the image has loaded, so a blocked or missing file leaves the badge. */
+.portrait { position: relative; display: flex; flex: none; align-items: center; justify-content: center; overflow: clip; line-height: 1; }
+.portrait > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; }
+.portrait > .portrait-tag { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; opacity: 0; }
+.portrait[data-loaded] > img, .portrait[data-loaded] > .portrait-tag { opacity: 1; }
 @utility halftone { background-image: radial-gradient(#FAF7F0 0.75px, transparent 0.75px); background-size: 8px 8px; opacity: 0.12; }
 
 /* Maintainer markdown on goal pages (§2.2). */

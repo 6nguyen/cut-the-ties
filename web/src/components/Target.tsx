@@ -1,9 +1,10 @@
 import type preact from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { GoalCard, TargetCard } from '../lib/api';
 import type { RecordLine } from '@worker/electoral';
 import { RESEARCH_URL } from '@worker/state-copy';
 import { BIOGUIDE, visitLine, visitsFor, type VisitPublic } from '../lib/visits';
+import NO_PORTRAIT from '../assets/portraits/missing.json';
 
 export const CATEGORY: Record<GoalCard['category'], string> = { federal_vote: 'Vote in Congress', leadership: 'Who leads the Democrats', state: 'Your state', electoral: 'Election' };
 const POSITION: Record<TargetCard['position'], string> = { for: 'With us', uncommitted: 'Uncommitted', against: 'Against', unknown: 'No stated position' };
@@ -17,7 +18,37 @@ export function fmtDate(d: string | null): string | null {
 
 const ROLE: Record<string, string> = { 'Rep.': 'Representative', 'Sen.': 'Senator' };
 /** Party badge: D cobalt, R crimson, anyone else hazard (owner, 2026-11-08: the D was acid green). */
-const PARTY_CLASS = (party: string | null) => (party === 'D' ? 'bg-cobalt text-paper' : party === 'R' ? 'bg-crimson text-paper' : 'bg-hazard');
+export const PARTY_CLASS = (party: string | null) => (party === 'D' ? 'bg-cobalt text-paper' : party === 'R' ? 'bg-crimson text-paper' : 'bg-hazard text-ink');
+const PARTY_BORDER = (party: string | null) => (party === 'D' ? 'border-cobalt' : party === 'R' ? 'border-crimson' : 'border-hazard');
+
+/** site-imagery §4: where a sitting member's portrait is served, on the site's own origin (`pages/portraits/[id].webp.ts`). */
+export const portraitSrc = (id: string): string => `/portraits/${id}.webp`;
+const WITHOUT: ReadonlySet<string> = new Set(NO_PORTRAIT as string[]);
+/** True when the card asks for a portrait: a sitting member (a Bioguide id, never a member-elect or a treasurer) the import wrote a file for. */
+export function showsPortrait(t: Pick<TargetCard, 'bioguide_id' | 'elect'>, without: ReadonlySet<string> = WITHOUT): boolean {
+  return !t.elect && BIOGUIDE.test(t.bioguide_id ?? '') && !without.has(t.bioguide_id);
+}
+
+/**
+ * site-imagery §4.2: the head of a target card. With a portrait it is a 48 px box with a 2 px party-coloured border; the
+ * party badge is its base layer and the photo and the 16 px party tag are drawn over it only once the image has loaded
+ * (`.portrait` in global.css), so a blocked or missing file shows the badge and never a broken image. Without one
+ * (member-elect, treasurer, a member the import found no photo for) it is the 40 px party badge.
+ */
+export function Avatar({ t }: { t: TargetCard }) {
+  const [loaded, setLoaded] = useState(false);
+  const img = useRef<HTMLImageElement>(null);
+  // An image that finished loading before this component mounted never fires `load` here.
+  useEffect(() => { const i = img.current; if (i && i.complete && i.naturalWidth > 0) setLoaded(true); }, []);
+  if (!showsPortrait(t)) return <span class={`w-10 h-10 shrink-0 border-2 border-ink shadow-brutal-sm flex items-center justify-center font-condensed text-[20px] leading-none ${PARTY_CLASS(t.party)}`}>{t.party ?? '·'}</span>;
+  return (
+    <span class={`portrait w-12 h-12 border-2 ${PARTY_BORDER(t.party)} shadow-brutal-sm font-condensed text-[20px] ${PARTY_CLASS(t.party)}`} data-portrait={t.bioguide_id} data-loaded={loaded ? '1' : undefined}>
+      {t.party ?? '·'}
+      <img ref={img} src={portraitSrc(t.bioguide_id)} alt="" width={48} height={48} loading="lazy" decoding="async" onLoad={() => setLoaded(true)} />
+      <span aria-hidden="true" class={`portrait-tag font-mono font-bold text-[10px] ${PARTY_CLASS(t.party)}`} data-party-tag>{t.party ?? '·'}</span>
+    </span>
+  );
+}
 
 /** urgency-and-readability §7.3: "Senator · VA", "Representative · KY-04", "Representative-elect · NY-10", "Treasurer · MD". */
 export function roleLine(t: Pick<TargetCard, 'role' | 'state' | 'district'>): string {
@@ -37,7 +68,7 @@ const SQUARE = 'w-11 h-11 shrink-0 border-2 border-ink shadow-brutal-sm flex ite
 
 /**
  * One target card (urgency-and-readability §7, style-guide spec 06): paper, 2 px ink border, small shadow. Header row =
- * party badge, name over the role line, the prior-vote status line, and a 44 px call square (or a hazard contact square
+ * portrait or party badge (`Avatar`), name over the role line, the prior-vote status line, and a 44 px call square (or a hazard contact square
  * for a member-elect). Below it, in order: elect line, district line, position chip, holdings, visit, "On the record".
  * Every value is a data/ row.
  */
@@ -45,7 +76,7 @@ export function Target({ t, partner }: { t: TargetCard; partner?: string | null 
   return (
     <li class="bg-paper border-2 border-ink shadow-brutal-sm p-3.5 hover:bg-hazard/10" data-target={t.bioguide_id ?? t.name}>
       <div class="flex items-start gap-3">
-        <span class={`w-10 h-10 shrink-0 border-2 border-ink shadow-brutal-sm flex items-center justify-center font-condensed text-[20px] leading-none ${PARTY_CLASS(t.party)}`}>{t.party ?? '·'}</span>
+        <Avatar t={t} />
         <div class="min-w-0 flex-1">
           <p class="font-condensed uppercase tracking-wide text-2xl leading-none">{t.name}</p>
           <p class="font-mono text-xs uppercase tracking-[0.08em] mt-1" data-role-line>{roleLine(t)}</p>

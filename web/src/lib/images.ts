@@ -3,6 +3,8 @@
 // resolves an id or a goal to its file, and writes the `/about` credit lines for the images pages use.
 import { parse } from 'yaml';
 import type { ImageMetadata } from 'astro';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import manifestText from '../assets/img/manifest.yaml?raw';
 
 export const LICENCES = ['us-gov', 'pd', 'cc0', 'cc-by', 'ai'] as const;
@@ -188,13 +190,25 @@ export function creditsFor(ids: readonly string[]): CreditLine[] {
 
 // What the site's own pages show. Tests are left out so a fixture string never earns a credit line.
 const PAGE_SOURCES = import.meta.glob<string>(['../{pages,components,layouts}/**/*.{astro,tsx}', '!../**/*.test.tsx'], { eager: true, query: '?raw', import: 'default' });
-const PORTRAITS = import.meta.glob('../assets/portraits/*.webp');
+/**
+ * site-imagery §4: the committed portraits, one `<bioguide_id>.webp` per sitting member, written by
+ * `import-members --portraits`. Read from disk (the build and the tests run in `web/`), never globbed: a glob would
+ * hash 538 files into `_astro/` and a URL map into whatever imports it. `pages/portraits/[id].webp.ts` serves each
+ * file at `/portraits/<id>.webp`.
+ */
+export const PORTRAIT = { dir: join(process.cwd(), 'src', 'assets', 'portraits'), width: 160, height: 200, maxBytes: 8192, maxTotalBytes: 4.5 * 1024 * 1024 } as const;
+let portraitSet: Set<string> | null = null;
+const portraits = (): Set<string> => (portraitSet ??= new Set(existsSync(PORTRAIT.dir) ? readdirSync(PORTRAIT.dir).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)).sort() : []));
+/** Ids with a portrait file, sorted. */
+export function portraitIds(): string[] { return [...portraits()]; }
+/** True when the member's portrait file exists; a page asks before it writes the `<img>`. */
+export const hasPortraitFile = (id: string | null | undefined): boolean => !!id && portraits().has(id);
 /** Sources of every page, component and layout, by path relative to this file. */
 export function pageSources(): Record<string, string> { return PAGE_SOURCES; }
 
 /** `/about` "Photo credits": one line per image in use, empty when no page shows one. `goals` are the published goals; their images count once a page resolves a goal's image. */
 export function credits(goals: readonly GoalImage[] = []): CreditLine[] {
   const ids = usedIds(Object.values(PAGE_SOURCES), goals.map(imageIdFor));
-  if (Object.keys(PORTRAITS).length > 0) ids.push('portraits');
+  if (portraitIds().length > 0) ids.push('portraits');
   return creditsFor(ids);
 }

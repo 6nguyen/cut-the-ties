@@ -6,7 +6,7 @@ import { render } from 'preact-render-to-string';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { GoalCard, TargetCard } from '../lib/api';
 import { Card, bandHtml, soonest } from './Results';
-import { Target } from './Target';
+import { Target, showsPortrait } from './Target';
 
 const wiener: TargetCard = {
   bioguide_id: 'CA-11-wiener', name: 'Scott Wiener', party: 'D', role: 'Representative-elect', phone: null, position: 'unknown',
@@ -132,5 +132,45 @@ describe('site-imagery §2.3 photo band', () => {
     expect(out).not.toContain('<img');
     expect(out).not.toContain('data-photo=');
     expect(html(goal({}))).not.toContain('data-band');
+  });
+});
+
+describe('site-imagery §4: portraits on target cards', () => {
+  const img = (out: string) => out.match(/<img[^>]*>/)?.[0] ?? '';
+  it('a sitting member gets a 48 px lazy portrait over the party badge, with the party border and corner tag', () => {
+    const out = render(h(Target, { t: padilla }));
+    expect(img(out)).toContain('src="/portraits/P000145.webp"');
+    expect(img(out)).toMatch(/\balt(=""|[\s/>])/);
+    expect(img(out)).toContain('width="48"');
+    expect(img(out)).toContain('height="48"');
+    expect(img(out)).toContain('loading="lazy"');
+    expect(out).toMatch(/class="portrait w-12 h-12 border-2 border-cobalt [^"]*bg-cobalt text-paper"/);
+    expect(out).toMatch(/class="portrait-tag [^"]*bg-cobalt text-paper"[^>]*data-party-tag[^>]*>D</);
+    expect(out).not.toContain('data-loaded'); // the badge is what shows until the image has loaded
+  });
+  it('the border and the tag carry the party colour: R crimson, anyone else hazard', () => {
+    expect(render(h(Target, { t: { ...padilla, party: 'R' } }))).toMatch(/class="portrait [^"]*border-crimson [^"]*bg-crimson text-paper"/);
+    expect(render(h(Target, { t: { ...padilla, party: 'I' } }))).toMatch(/class="portrait [^"]*border-hazard [^"]*bg-hazard text-ink"/);
+  });
+  it('a member-elect, a treasurer and a member with no portrait file keep the 40 px badge and ask for no image', () => {
+    const treasurer = { ...padilla, bioguide_id: null, party: null, role: 'Treasurer' } as unknown as TargetCard;
+    for (const t of [wiener, treasurer]) {
+      const out = render(h(Target, { t }));
+      expect(out).not.toContain('<img');
+      expect(out).not.toContain('data-party-tag');
+      expect(out).toContain('class="w-10 h-10 shrink-0 border-2 border-ink');
+    }
+    expect(showsPortrait(padilla)).toBe(true);
+    expect(showsPortrait(padilla, new Set(['P000145']))).toBe(false);
+    expect(showsPortrait(wiener)).toBe(false);
+  });
+  it('every other line of the card is as before', () => {
+    const out = render(h(Target, { t: padilla }));
+    expect(out).toContain('>Alex Padilla</p>');
+    expect(out).toMatch(/data-role-line[^>]*>Senator</);
+    expect(out).toContain('No recorded vote yet');
+    expect(out).toContain('aria-label="Call Alex Padilla"');
+    expect(out).toContain('href="tel:2022243553"');
+    expect(out).toContain('w-11 h-11 shrink-0 border-2 border-ink shadow-brutal-sm');
   });
 });

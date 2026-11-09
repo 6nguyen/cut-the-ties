@@ -3,10 +3,10 @@
 import { join } from 'node:path';
 import { marked } from 'marked';
 import { loadRows } from '@worker/load';
-import type { Action, Goal } from '@worker/types';
+import type { Action, Goal, Member } from '@worker/types';
 
 export type { Action, Goal };
-export interface Pick { name: string; rationale: string; source_url: string; signal?: string; signal_date?: string }
+export interface Pick { name: string; rationale: string; source_url: string; signal?: string; signal_date?: string; /** site-imagery §4: a `members.csv` id (the loader checks it); the pick then shows that member's portrait and party colour. */ bioguide_id?: string }
 export interface Source { title: string; url: string }
 /** personalised-documents §1: one angle of the act form's reasons panel. */
 export interface Reason { angle: string; points: string[] }
@@ -47,4 +47,11 @@ export function fmtDate(d: string | null): string | null {
   if (!d) return null;
   const t = Date.parse(d + 'T00:00:00');
   return Number.isNaN(t) ? d : new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** site-imagery §4: what a pick's 80 px slot shows. The initial is always the base layer; `party` is the member row's (null without a `bioguide_id`, so the badge is hazard); `portrait` is true when that member's file exists. */
+export interface PickBadge { initial: string; party: Member['party'] | null; portrait: boolean }
+export function pickBadge(p: Pick, roster: readonly { bioguide_id: string; party: Member['party'] }[], hasFile: (id: string) => boolean): PickBadge {
+  const m = p.bioguide_id ? roster.find((r) => r.bioguide_id === p.bioguide_id) : undefined;
+  return { initial: p.name.trim().charAt(0).toUpperCase(), party: m?.party ?? null, portrait: !!m && hasFile(m.bioguide_id) };
 }

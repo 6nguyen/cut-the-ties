@@ -110,7 +110,7 @@ export interface Goal {
   decision_date_confirmed: number; // 0/1: the countdown says "Decides" instead of "Expected"
   priority: number; // impact, 1–5 (§3): 1 state, 2 leadership, 3 a federal vote deciding now
   eligibility: string; // JSON rule, see ranking.ts
-  our_picks: string; // JSON [{name, rationale, source_url, signal, signal_date}]
+  our_picks: string; // JSON [{name, rationale, source_url, signal, signal_date, bioguide_id?}]; bioguide_id is a members.csv row (site-imagery §4)
   sources: string; // JSON [{title, url}]
   reasons: string; // JSON [{angle, points[]}]: first-person starting points for the act form's "why" field
   decider: string | null; // who decides, one line (§2.2)
