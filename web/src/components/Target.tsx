@@ -44,7 +44,7 @@ export function Avatar({ t }: { t: TargetCard }) {
   return (
     <span class={`portrait w-12 h-12 border-2 ${PARTY_BORDER(t.party)} shadow-brutal-sm font-condensed text-[20px] ${PARTY_CLASS(t.party)}`} data-portrait={t.bioguide_id} data-loaded={loaded ? '1' : undefined}>
       {t.party ?? '·'}
-      <img ref={img} src={portraitSrc(t.bioguide_id)} alt="" width={48} height={48} loading="lazy" decoding="async" onLoad={() => setLoaded(true)} />
+      <img ref={img} loading="lazy" fetchpriority="low" decoding="async" src={portraitSrc(t.bioguide_id)} alt="" width={48} height={48} onLoad={() => setLoaded(true)} />
       <span aria-hidden="true" class={`portrait-tag font-mono font-bold text-[10px] ${PARTY_CLASS(t.party)}`} data-party-tag>{t.party ?? '·'}</span>
     </span>
   );

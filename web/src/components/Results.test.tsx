@@ -144,6 +144,7 @@ describe('site-imagery §4: portraits on target cards', () => {
     expect(img(out)).toContain('width="48"');
     expect(img(out)).toContain('height="48"');
     expect(img(out)).toContain('loading="lazy"');
+    expect(img(out)).toContain('fetchpriority="low"'); // a card portrait never competes with the hero photo
     expect(out).toMatch(/class="portrait w-12 h-12 border-2 border-cobalt [^"]*bg-cobalt text-paper"/);
     expect(out).toMatch(/class="portrait-tag [^"]*bg-cobalt text-paper"[^>]*data-party-tag[^>]*>D</);
     expect(out).not.toContain('data-loaded'); // the badge is what shows until the image has loaded

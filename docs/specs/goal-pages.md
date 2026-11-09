@@ -55,8 +55,12 @@ there.
    links to it ("Prep: what to say"). Hero with a "Take action" anchor;
    for a `leadership` goal the page leads with "Our picks / Who we would
    back instead": up to three
-   `our_picks` in order (name, rationale, source link, signal, signal date,
-   plus "as of" the latest signal date) and "What to ask for, in one
+   `our_picks` in order, each a card with an 80×100 box
+   (`data-pick-badge`) beside the name, rationale, source link, signal and
+   signal date (plus "as of" the latest signal date). The box holds the
+   pick's initial on the party colour of its `bioguide_id` member (hazard
+   without one) and, over it once loaded, that member's portrait when a
+   file exists; never a placeholder face. Then "What to ask for, in one
    line" = `what_we_want` followed by "Our first pick: <name>." (just
    `what_we_want` with no picks; a leadership goal with no picks says so
    instead of naming anyone). Then the six `prep_md` sections as numbered
@@ -126,7 +130,10 @@ there.
   (`worker/schema.sql`) are regenerated from `data/` by
   `npm run seed -w worker`; the seed validates slugs, categories,
   priorities, summary length (≤60 words), `outcome_note` on closed goals,
-  `our_picks` (≤3 rows with name, rationale, source_url), `prep_md` (when
+  `our_picks` (≤3 rows with name, rationale, source_url and an optional
+  `bioguide_id`, which must be a `members.csv` row or the load stops with
+  `goal <slug>: our_picks[<i>] bioguide_id <id> is not in members.csv`),
+  `prep_md` (when
   non-empty: exactly the six `##` headings of `worker/src/prep.ts` in
   order, each non-empty, "Where things stand" carrying an ISO date),
   `sources`
