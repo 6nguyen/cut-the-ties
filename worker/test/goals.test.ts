@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/index';
-import { activateSuccessors, loadRows } from '../src/load';
+import { MANIFEST_FILE, activateSuccessors, checkImage, imageIds, loadRows, manifestPath } from '../src/load';
 import { MemoryRepo } from '../src/repo';
 import { buildRoute } from '../src/route';
 import type { Goal } from '../src/types';
@@ -167,3 +167,30 @@ describe('urgency-and-readability §4.1: decision_at and decision_date_confirmed
   });
 });
 
+
+describe('site-imagery §3: a goal\'s image', () => {
+  const withImage = (id: string) => (y: string) => y.replace(/^priority: /m, `image: ${id}\npriority: `);
+
+  it('the two NDAA goals name the hearing room; every other goal leaves the category default', () => {
+    const goals = loadRows(DATA, '2026-11-04T00:00:00Z').goals;
+    expect(goals.filter((g) => g.image !== null).map((g) => [g.slug, g.image])).toEqual([['ndaa-1217', 'hasc-hearing-room'], ['ndaa-report-vote', 'hasc-hearing-room']]);
+  });
+
+  it('an id with no manifest row fails the seed, naming the goal and the id', () => {
+    expect(() => loadRows(dataWith({ 'state-bonds': withImage('no-such-photo') }))).toThrow(`goal state-bonds: image no-such-photo has no file row in ${MANIFEST_FILE}`);
+    expect(loadRows(dataWith({ 'state-bonds': withImage('state-capitol') })).goals.find((g) => g.slug === 'state-bonds')!.image).toBe('state-capitol');
+  });
+
+  it('the portraits directory row is not a photo a goal can show', () => {
+    expect(() => loadRows(dataWith({ 'house-caucus': withImage('portraits') }))).toThrow(/goal house-caucus: image portraits has no file row/);
+  });
+
+  it('reads the manifest beside data/, and only when a goal names an image', () => {
+    expect(manifestPath(DATA)).toBe(join(DATA, '..', ...MANIFEST_FILE.split('/')));
+    expect([...imageIds(manifestPath(DATA))]).toEqual(['capitol-dome-dusk', 'house-floor', 'senate-chamber', 'hasc-hearing-room', 'state-capitol']);
+    expect(() => imageIds(null)).toThrow(/manifest\.yaml not found/);
+    const never = () => { throw new Error('manifest read'); };
+    expect(() => checkImage({ slug: 'a', image: null }, never)).not.toThrow();
+    expect(() => checkImage({ slug: 'a', image: 'x' }, never)).toThrow('manifest read');
+  });
+});

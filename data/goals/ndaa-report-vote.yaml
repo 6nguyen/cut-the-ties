@@ -10,6 +10,7 @@ window_end: 2026-12-31
 decision_date: ""   # set to the floor vote date when scheduled
 priority: 3
 eligibility: {"any": [{"house": {}}, {"senator": {}}]}
+image: hasc-hearing-room   # site-imagery §3: the two NDAA goals show the committee room, not the landing's Capitol
 our_picks: []
 sources: []
 decider: Every member of the House and Senate, in one yes-or-no vote on the final bill

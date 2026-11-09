@@ -60,10 +60,16 @@ export const TREATMENT = {
 export const PHOTO_OUTPUT = { formats: ['avif', 'webp'], fallback: 'jpg', quality: 30 } as const;
 /** The 16:9 card band (landing goal cards, result cards): its widths and a lower quality, so the bands a phone loads with the landing fit the page's byte budget. */
 export const BAND = { widths: [480, 768], quality: 22 } as const;
+/** The full-bleed hero of a goal page and its prep page (the landing hero uses the same four widths). Under 768 px the slot is declared at half the screen: the text covers the whole photo there and the photo is dimmed, so a phone takes the 640 px file. */
+export const HERO = { widths: [640, 960, 1440, 1920], sizes: '(max-width: 767px) 49vw, 100vw' } as const;
 /** The widths a slot can serve from an original `original` px wide: unique, ascending, never wider than the file (no upscaling); the file's own width when none fits. */
 export function fitWidths(original: number, widths: readonly number[]): number[] {
   const fit = [...new Set(widths.filter((w) => w > 0 && w <= original))].sort((a, b) => a - b);
   return fit.length ? fit : [original];
+}
+/** Hero widths for an original `original` px wide. A file narrower than the widest hero width also serves its own width, so a wide screen gets every pixel the file has instead of a smaller copy stretched further. */
+export function heroWidths(original: number): number[] {
+  return fitWidths(original, original < Math.max(...HERO.widths) ? [...HERO.widths, original] : HERO.widths);
 }
 
 const LICENCE_LABEL: Record<Licence, string> = {
