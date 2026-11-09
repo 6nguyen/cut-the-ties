@@ -16,6 +16,17 @@ export function soonest(goals: GoalCard[], now = Date.now()): { g: GoalCard; tar
   return best;
 }
 
+/**
+ * site-imagery §2.3: the markup of a card's photo band. `/results` holds one `<template data-photo-band="<image id>">`
+ * per image, rendered by `Photo.astro` at build; this returns that template's markup for the card to place in its
+ * header. No id, no template or no document (tests, a goal published after the build) → null: the header keeps
+ * its gradient.
+ */
+export function bandHtml(id: string | undefined, doc: Pick<Document, 'querySelector'> | undefined = typeof document === 'undefined' ? undefined : document): string | null {
+  if (!id || !doc || !/^[a-z0-9-]+$/.test(id)) return null;
+  return doc.querySelector(`template[data-photo-band="${id}"]`)?.innerHTML || null;
+}
+
 const CHAMBER: Record<Chamber, string> = { house: 'House', senate: 'Senate' };
 
 /** The ask, the "Get my script" CTA, then the targets box and counter line of one goal; a leadership card renders one per chamber block. */
@@ -37,7 +48,8 @@ function Block({ g, state, district, label }: { g: GoalCard; state: string; dist
  * leadership-routing §2.3–2.5: a leadership card holds the House block, then the Senate block (`also` carries the
  * second goal); a seat whose race is not called shows one line in place of a block. Other cards are one block.
  */
-export function Card({ g, n, state, district }: { g: GoalCard; n: number; state: string; district: number }) {
+export function Card({ g, n, state, district, photo }: { g: GoalCard; n: number; state: string; district: number; photo?: string }) {
+  const band = bandHtml(photo);
   const date = fmtDate(g.decision_date);
   const split = g.chamber !== undefined && (g.also !== undefined || (g.uncalled?.length ?? 0) > 0);
   const chambers: Chamber[] = ['house', 'senate'];
@@ -50,8 +62,9 @@ export function Card({ g, n, state, district }: { g: GoalCard; n: number; state:
         <Countdown at={stamp.g.decision_at} date={stamp.g.decision_date} confirmed={stamp.g.decision_date_confirmed} id={stamp.g.slug}
           title={split && stamp.g.chamber ? CHAMBER[stamp.g.chamber] : null} class="absolute -top-6 right-3.5 z-10" />
       )}
-      <div class={`relative hero-gradient text-newsprint p-5 min-h-[180px] flex flex-col justify-end ${stamp ? 'pt-16' : ''}`}>
+      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end ${stamp ? 'pt-16' : ''}`} data-band={photo}>
         <div class="absolute inset-0 halftone pointer-events-none" />
+        {band && <div class="contents" dangerouslySetInnerHTML={{ __html: band }} />}
         <div class="relative flex gap-2 mb-3">
           <span class="chip bg-hazard text-ink border-ink">{CATEGORY[g.category]}</span>
           <span class="chip bg-ink text-newsprint border-newsprint">Action {n}</span>
@@ -79,8 +92,8 @@ export function Card({ g, n, state, district }: { g: GoalCard; n: number; state:
   );
 }
 
-/** §1.3 results: exactly two cards for the stored district; §1.5 "change address". */
-export default function Results() {
+/** §1.3 results: exactly two cards for the stored district; §1.5 "change address". `photos` maps a goal slug to its image id (site-imagery §2.3). */
+export default function Results({ photos = {} }: { photos?: Record<string, string> }) {
   const [data, setData] = useState<RouteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,7 +135,7 @@ export default function Results() {
         </div>
       ) : (
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-8">
-          {data.goals.map((g, i) => <Card g={g} n={i + 1} state={data.state} district={data.district} />)}
+          {data.goals.map((g, i) => <Card g={g} n={i + 1} state={data.state} district={data.district} photo={photos[g.slug]} />)}
         </div>
       )}
       <p class="mt-8"><a href="/goals" class="label-code underline underline-offset-4">See all goals →</a></p>

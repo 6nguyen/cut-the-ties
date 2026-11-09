@@ -1,19 +1,33 @@
 ---
+import { getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
 import AddressForm from '../components/AddressForm';
 import YourWeek from '../components/YourWeek';
 import { activeGoals, publishedGoals, CATEGORY } from '../lib/goals';
 import { configuredProvider } from '../lib/suggest';
+import { BAND, PHOTO_OUTPUT, fitWidths, imageById, imageIdFor } from '../lib/images';
 const goals = activeGoals();
 // commitment-funnel §2: the "Your week" card needs every published goal's status to drop closed items with their outcome.
 const weekGoals = publishedGoals().map((g) => ({ slug: g.slug, title: g.title, status: g.status, decision_date: g.decision_date, outcome_note: g.outcome_note, what_we_want: g.what_we_want }));
 const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
 // address-autocomplete §1: `none` keeps today's field; the flag is read once at build so a missing token warns here.
 const suggestProvider = configuredProvider();
+// site-imagery §2.1: the hero photo is the LCP element, so the head preloads the AVIF files the hero `Photo` below
+// asks for. Same id, widths and sizes as that tag; a browser without AVIF skips the link by its type.
+const heroWidths = [640, 960, 1440, 1920];
+const heroFile = imageById('capitol-dome-dusk');
+const heroPreload = await getImage({ src: heroFile, format: 'avif', widths: fitWidths(heroFile.width, heroWidths), quality: PHOTO_OUTPUT.quality });
+// §2.2: one card column of the grid below (3, then 2 columns inside the 1360 px page). Under 768 px the card is
+// 92vw wide but the slot is declared at 36vw, so a phone at any pixel density takes the 480 px file: up to four
+// bands load with the page there and the photo sits under the ink layers.
+const cardSizes = '(min-width: 1360px) 411px, (min-width: 1024px) 31vw, (min-width: 768px) 46vw, 36vw';
 ---
 <Base title="Cut the Ties — find the two things you can do this week">
+  <link slot="head" rel="preload" as="image" type="image/avif" imagesrcset={heroPreload.srcSet.attribute} imagesizes="100vw" fetchpriority="high" />
   <section class="relative hero-gradient text-newsprint overflow-hidden">
     <div class="absolute inset-0 halftone pointer-events-none"></div>
+    <Photo id="capitol-dome-dusk" widths={heroWidths} sizes="100vw" eager class="hero-photo" />
     <div class="relative mx-auto max-w-[1360px] px-4 lg:px-10 py-14 lg:py-24">
       <p class="label-code text-hazard mb-4">Call your people in Congress · US military ties with Israel</p>
       <h1 class="display-xl max-w-4xl">Find the two things you can do <span class="text-acid">this week</span></h1>
@@ -31,8 +45,9 @@ const suggestProvider = configuredProvider();
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
       {goals.map((g) => (
         <article class="card flex flex-col">
-          <div class="relative hero-gradient text-newsprint p-4 min-h-[140px] flex flex-col justify-end">
+          <div class="relative hero-gradient text-newsprint p-4 aspect-video overflow-clip flex flex-col justify-end">
             <div class="absolute inset-0 halftone pointer-events-none"></div>
+            <Photo id={imageIdFor(g)} widths={[...BAND.widths]} sizes={cardSizes} quality={BAND.quality} />
             <span class="relative chip bg-hazard text-ink self-start mb-2">{CATEGORY[g.category]}</span>
             <h3 class="relative headline-md">{g.title}</h3>
           </div>
@@ -46,3 +61,11 @@ const suggestProvider = configuredProvider();
     <p class="mt-6"><a href="/goals" class="label-code underline underline-offset-4">All goals →</a></p>
   </section>
 </Base>
+
+<style>
+  /* site-imagery §2.1: on a phone the hero text runs the full width, over the lightest side of the photo. Dimming
+     the loaded photo there keeps the paragraph at 4.5:1 over its lightest pixel (3.67:1 without). */
+  @media (max-width: 767px) {
+    :global(.hero-photo) { filter: brightness(0.75); }
+  }
+</style>

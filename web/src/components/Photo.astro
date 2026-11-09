@@ -3,7 +3,7 @@
 // slot's gradient: the layer has zero opacity until the image has loaded, so a blocked or missing photo leaves
 // the slot looking as it did before photos existed. Styles are scoped so a page with no photo ships none of them.
 import { Picture } from 'astro:assets';
-import { TREATMENT, imageById, rowFor } from '../lib/images';
+import { PHOTO_OUTPUT, TREATMENT, fitWidths, imageById, rowFor } from '../lib/images';
 
 interface Props {
   /** Manifest id (`web/src/assets/img/manifest.yaml`); an unknown id stops the build. */
@@ -13,13 +13,14 @@ interface Props {
   sizes: string;
   /** True for the one image above the fold: loads eagerly at high priority. */
   eager?: boolean;
+  /** Encoder quality, 1 to 100; the library default when absent. */
+  quality?: number;
   class?: string;
 }
-const { id, widths, sizes, eager = false, class: extra } = Astro.props;
+const { id, widths, sizes, eager = false, quality = PHOTO_OUTPUT.quality, class: extra } = Astro.props;
 const row = rowFor(id);
 const src = imageById(id);
-const fit = [...new Set(widths.filter((w) => w > 0 && w <= src.width))].sort((a, b) => a - b);
-const outWidths = fit.length ? fit : [src.width];
+const outWidths = fitWidths(src.width, widths);
 const a = TREATMENT.across;
 const u = TREATMENT.up;
 const ink = (alpha: number) => `color-mix(in srgb, ${TREATMENT.ink} ${Math.round(alpha * 100)}%, transparent)`;
@@ -33,8 +34,9 @@ const vars = [
   <Picture
     src={src}
     alt={row.alt}
-    formats={['avif', 'webp']}
-    fallbackFormat="jpg"
+    formats={[...PHOTO_OUTPUT.formats]}
+    fallbackFormat={PHOTO_OUTPUT.fallback}
+    quality={quality}
     widths={outWidths}
     sizes={sizes}
     loading={eager ? 'eager' : 'lazy'}

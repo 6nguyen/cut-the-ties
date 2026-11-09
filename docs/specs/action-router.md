@@ -8,28 +8,27 @@ two goal cards. The goal overview, goal detail and prep pages, `/donate`,
 documents, receipts and reports are in `personalised-documents.md`.
 
 ## Behavior
-1. **Landing (`/`).** One address field ("Street address, city, state"),
-   the button "Find my actions", the line "Full street address, or use
-   your location: nothing is stored." and a link to
-   all goals. Below it, every active goal as a card linking to
-   `/goals/<slug>`. Under the field, only when the browser offers
-   `navigator.geolocation`, the control "Use my location instead"
-   (`on-device-districts.md`).
-   When the Pages build sets `PUBLIC_SUGGEST_PROVIDER` (`mapbox` or
-   `geoapify`, with `PUBLIC_SUGGEST_TOKEN`), the field is a combobox
-   (`role="combobox"`, `aria-expanded`, `aria-controls`,
-   `aria-activedescendant`, `autocomplete="off"`, a polite live count):
-   three or more typed characters followed by 250 ms idle request up to
-   five US street addresses, each shown as "street, city, ST ZIP" built
-   from the provider's structured fields (a result missing a house
-   number, city, two-letter state, ZIP or point is dropped); the open
-   list shows the provider's attribution under it; ArrowDown/ArrowUp
-   move the highlight, Enter or a tap picks it (§3), Escape or blur
-   closes. A new keystroke aborts the request in
-   flight; a failure, a 429 or a 2 s timeout closes the list with no
-   message. With `none` (the default, also a provider without a token,
-   which the build warns about) the plain field renders unchanged.
-   A return visitor with a stored district and an open
+1. **Landing (`/`).** The hero is the `capitol-dome-dusk` photo, full
+   bleed, under the ink treatment (`site-imagery.md`). One address field
+   ("Street address, city, state"), the button "Find my actions", the line
+   "Full street address, or use your location: nothing is stored." and a
+   link to all goals. Below it, every active goal as a card linking to
+   `/goals/<slug>`; these and the result cards (§5) carry a 16:9 photo
+   band, there above the CTA. Under the field, only when the browser
+   offers `navigator.geolocation`, the control "Use my location instead"
+   (`on-device-districts.md`). When the Pages build sets
+   `PUBLIC_SUGGEST_PROVIDER` (`mapbox` or `geoapify`, with
+   `PUBLIC_SUGGEST_TOKEN`), the field is a combobox (`role="combobox"`,
+   `aria-expanded`, `aria-controls`, `aria-activedescendant`,
+   `autocomplete="off"`, a polite live count): three or more typed
+   characters followed by 250 ms idle request up to five US street
+   addresses, each shown as "street, city, ST ZIP" built from the
+   provider's structured fields; the open list shows the provider's
+   attribution under it; ArrowDown/ArrowUp move the highlight, Enter or a
+   tap picks it (§3), Escape or blur closes. A new keystroke aborts the
+   request in flight; a failure, a 429 or a 2 s timeout closes the list
+   with no message. With `none` (§Data & contracts) the plain field
+   renders unchanged. A return visitor with a stored district and an open
    commitment or captain list sees the "Your week" card above the field
    (`commitment-funnel.md` §5) instead of the redirect in §6.
 2. **ZIP or partial input.** A bare ZIP (`\d{5}(-\d{4})?`) is refused
@@ -241,10 +240,10 @@ documents, receipts and reports are in `personalised-documents.md`.
 
 
 ## Performance budget
-Landing ≤100 KB transferred including the combobox (measured 2026-11-06
-after address-autocomplete §2–§4: 29.2 KB gzip for HTML, CSS and every JS
-chunk the page loads eagerly, fonts excluded; the `pip` chunk, 1.0 KB
-gzip, loads only on a pick or a location tap; no third-party script);
+Landing ≤100 KB transferred on a phone, ≤170 KB on desktop, fonts
+excluded (2026-11-08, combobox and photos in: 94.9 and 98.8 KB; the
+`pip` chunk, 1.0 KB gzip, loads only on a pick or a location tap; no
+third-party script);
 LCP ≤1.5 s on a mid-range phone over 4G; `/api/route` ≤2 s p95;
 suggestions ≤800 ms p95 from the browser; infra cost excluding LLM and
 domain = $0/month.

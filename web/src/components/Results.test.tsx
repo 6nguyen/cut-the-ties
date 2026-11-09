@@ -5,7 +5,7 @@ import { h } from 'preact';
 import { render } from 'preact-render-to-string';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { GoalCard, TargetCard } from '../lib/api';
-import { Card, soonest } from './Results';
+import { Card, bandHtml, soonest } from './Results';
 import { Target } from './Target';
 
 const wiener: TargetCard = {
@@ -96,5 +96,41 @@ describe('urgency-and-readability §4 stamps', () => {
     expect(soonest([far, nested])?.g.slug).toBe('sen');
     expect(soonest([goal({ decision_date: '2026-01-01' }), goal({ decision_date: null })])).toBeNull();
     expect(soonest([goal({ decision_at: '2026-11-07T12:00:00-05:00', decision_date: '2026-11-07' }), goal({ slug: 'date-only', decision_date: '2026-11-07' })])?.g.slug).toBe('date-only'); // 09:00 New York beats 12:00
+  });
+});
+
+// site-imagery §2.3: the card's header is a 16:9 photo band copied from the template `/results` builds per image.
+describe('site-imagery §2.3 photo band', () => {
+  const PHOTO = '<div data-photo="house-floor"><picture><img alt="The House chamber"></picture></div>';
+  const doc = { querySelector: (sel: string) => (sel === 'template[data-photo-band="house-floor"]' ? { innerHTML: PHOTO } : null) } as unknown as Document;
+
+  it('copies the markup of the template for the card’s image; no id or no template gives nothing', () => {
+    expect(bandHtml('house-floor', doc)).toBe(PHOTO);
+    expect(bandHtml('state-capitol', doc)).toBeNull();
+    expect(bandHtml(undefined, doc)).toBeNull();
+    expect(bandHtml('house-floor"],body', doc)).toBeNull();
+    expect(bandHtml('house-floor')).toBeNull(); // no document under node
+  });
+
+  it('places the photo in the header, over the gradient and above the title and the CTA', () => {
+    vi.stubGlobal('document', doc);
+    try {
+      const out = render(h(Card, { g: goal({ chamber: 'house' }), n: 1, state: 'CA', district: 11, photo: 'house-floor' }));
+      const band = out.indexOf('data-band="house-floor"'), photo = out.indexOf(PHOTO), title = out.indexOf('Kick out Hakeem Jeffries'), cta = out.indexOf('Get my script');
+      expect(band).toBeGreaterThan(-1);
+      expect(photo).toBeGreaterThan(band);
+      expect(title).toBeGreaterThan(photo);
+      expect(cta).toBeGreaterThan(title);
+      expect(out.slice(band - 200, band)).toContain('hero-gradient');
+      expect(out.slice(band - 200, band)).toContain('aspect-video');
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it('a card whose image has no template keeps the gradient header: no photo, no broken image', () => {
+    const out = render(h(Card, { g: goal({}), n: 1, state: 'CA', district: 11, photo: 'house-floor' }));
+    expect(out).toContain('hero-gradient');
+    expect(out).not.toContain('<img');
+    expect(out).not.toContain('data-photo=');
+    expect(html(goal({}))).not.toContain('data-band');
   });
 });

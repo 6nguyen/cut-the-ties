@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { publishedGoals } from './goals';
-import { FILE_NAMES, LICENCES, MANIFEST, TREATMENT, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
+import { BAND, FILE_NAMES, LICENCES, MANIFEST, PHOTO_OUTPUT, TREATMENT, fitWidths, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
 
 const DIR = fileURLToPath(new URL('../assets/img/', import.meta.url));
 const good: ImageRow = { id: 'x', file: 'x.jpg', alt: 'A room', subject: 'place', source_url: 'https://example.gov/x', author: 'An agency', licence: 'us-gov' };
@@ -110,7 +110,7 @@ describe('credit lines', () => {
   it('writes "<alt>: <author>, <source> (<licence>)" in manifest order, with the source link', () => {
     const lines = creditsFor(['state-capitol', 'capitol-dome-dusk']);
     expect(lines.map((l) => l.id)).toEqual(['capitol-dome-dusk', 'state-capitol']);
-    expect(lines[0]!.text).toBe('The US Capitol dome lit at dusk, seen past a bare tree: Architect of the Capitol, Wikimedia Commons (US government work, public domain)');
+    expect(lines[0]!.text).toBe('The US Capitol lit at dusk under a clouded sky, seen from the Library of Congress: Architect of the Capitol, Wikimedia Commons (US government work, public domain)');
     expect(lines[1]).toMatchObject({ author: 'Aschbren', source: 'Wikimedia Commons', licence: 'cc0', generated: false, source_url: 'https://commons.wikimedia.org/wiki/File:Minnesota_State_Capitol_(October_2024).jpg' });
   });
 
@@ -148,5 +148,43 @@ describe('treatment', () => {
   it('is the ink treatment the spec names', () => {
     expect(TREATMENT.filter).toBe(`grayscale(${String(TREATMENT.gray).replace(/^0/, '')}) contrast(${TREATMENT.contrast}) brightness(${String(TREATMENT.brightness).replace(/^0/, '')})`);
     expect(TREATMENT).toMatchObject({ gray: 0.35, contrast: 1.15, brightness: 0.95, ink: '#090A0F', across: [1, 0.85, 0.4], up: { foot: 1, head: 0.4 } });
+  });
+});
+
+// site-imagery §2: the slots' widths, the hero original and the preload link.
+describe('photo output', () => {
+  it('never upscales: widths above the original are dropped, and a file narrower than every width serves its own', () => {
+    expect(fitWidths(2000, [1920, 640, 960, 1440, 640])).toEqual([640, 960, 1440, 1920]);
+    expect(fitWidths(946, [480, 768, 1440])).toEqual([480, 768]);
+    expect(fitWidths(400, [480, 768])).toEqual([400]);
+  });
+
+  it('encodes AVIF, then WebP, with a JPEG fallback; the card band is 480 and 768 px at a lower quality', () => {
+    expect(PHOTO_OUTPUT).toEqual({ formats: ['avif', 'webp'], fallback: 'jpg', quality: 30 });
+    expect(BAND).toEqual({ widths: [480, 768], quality: 22 });
+  });
+
+  it('the landing hero original is landscape and at least as wide as the widest hero source', async () => {
+    const meta = await sharp(join(DIR, rowFor('capitol-dome-dusk').file!)).metadata();
+    expect(meta.width!).toBeGreaterThanOrEqual(1920);
+    expect(meta.width!).toBeGreaterThan(meta.height!);
+  });
+
+  it('every original a goal can show covers both card-band widths', async () => {
+    for (const r of MANIFEST.filter((x) => x.file)) expect((await sharp(join(DIR, r.file!)).metadata()).width!, r.id).toBeGreaterThanOrEqual(768);
+  });
+
+  it('the landing preloads the image its hero shows, eagerly, and its cards and the result cards take the goal image', () => {
+    const page = (name: string) => Object.entries(pageSources()).find(([p]) => p.endsWith(`/pages/${name}.astro`))![1];
+    const hero = /<Photo id="([^"]+)"[^>]*\beager\b/.exec(page('index'))?.[1];
+    expect(hero).toBe('capitol-dome-dusk');
+    expect(page('index')).toContain(`imageById('${hero}')`);
+    expect(page('index')).toMatch(/<link slot="head" rel="preload" as="image" type="image\/avif"[^>]*fetchpriority="high"/);
+    expect(page('index')).toContain('<Photo id={imageIdFor(g)} widths={[...BAND.widths]} sizes={cardSizes} quality={BAND.quality} />');
+    // §2.1: the phone hero is dimmed so the paragraph over the photo's lightest side keeps 4.5:1.
+    expect(page('index')).toContain('<Photo id="capitol-dome-dusk" widths={heroWidths} sizes="100vw" eager class="hero-photo" />');
+    expect(page('index')).toMatch(/@media \(max-width: 767px\) \{\s*:global\(\.hero-photo\) \{ filter: brightness\(0\.75\); \}/);
+    expect(page('results')).toContain('<template data-photo-band={id}><Photo id={id} widths={[...BAND.widths]} sizes={bandSizes} quality={BAND.quality} /></template>');
+    expect(usedIds([page('results')], ['state-capitol'])).toEqual(['state-capitol']);
   });
 });
