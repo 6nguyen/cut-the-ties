@@ -64,28 +64,40 @@ no share affordance before the private commitment and captain steps
    call to action and no date line. Never on the poster: the user's
    name, city, district, phone, the generated text or anything from the
    office response.
-3. **The share row** (after the funnel steps, in place of the old
-   "Share" button) reads, in order: the poster button (`POSTER_LABEL`,
-   "Share poster" until the owner's device matrix sets it) only when a
-   file exists and `canShare({files})` is true; "Share link"; "Your other
-   action". The poster button calls `navigator.share` synchronously in
-   the tap handler with the cached file and the `SHARE_PAYLOAD` shape
-   (`files` alone, or with `title: ''`); `AbortError` is ignored, any
-   other error replaces the button with the fallback row (4). "Share
-   link" hands the sheet text and URL only: "I just called <Role
-   Surname>'s office about <goal title>. Yours takes two minutes:" ("I
-   just wrote to" for a letter or comment; "the <State> Treasurer" for a
-   treasurer target) with `https://cutthetiesmovement.org/goals/<slug>?via=share`;
-   without a share API it copies line + link and reads "Link copied".
-4. **Fallback row.** When a file exists but `canShare({files})` is false,
-   `navigator.share` is absent, or the poster share threw: the poster
-   shows inline (`<img>` from a blob URL, 270 px wide, alt "Poster: I called
-   <Role Surname>'s office about <goal title>", "I wrote to …" for a
-   letter or comment) with "Download poster" (`<a download="cut-the-ties-<slug>.png">`;
-   on iOS a note says the image opens for long-press save), "Copy
-   caption" (the line from 3 plus the link; reads "Caption copied") and
-   "Open Instagram ↗" (`https://www.instagram.com/`, new tab,
-   `rel="noopener"`).
+3. **The share block** (on the receipt screen, after the count line) is
+   a 96 px wide thumbnail of the poster (`<img>` from a blob URL, alt
+   "Poster: I called <Role Surname>'s office about <goal title>", "I
+   wrote to …" for a letter or comment) beside a column of bordered
+   buttons, each a 20 px monochrome inline SVG icon (ink, no brand
+   colour) plus text, in this order:
+   - Instagram glyph (rounded square, circle, dot) + "Share", only when
+     a file exists and `canShare({files})` is true. It calls
+     `navigator.share` synchronously in the tap handler with the cached
+     file and the `SHARE_PAYLOAD` shape (`files` alone, or with `title:
+     ''`); `AbortError` is ignored, any other error replaces the button
+     as in 4. One hint line follows the block: "Pick Instagram, then
+     Story, Post, Reel or Message."
+   - Link icon + "Copy link", always. It copies the line "I just called
+     <Role Surname>'s office about <goal title>. Yours takes two
+     minutes:" ("I just wrote to" for a letter or comment; "the <State>
+     Treasurer" for a treasurer target) plus
+     `https://cutthetiesmovement.org/goals/<slug>?via=share`, and reads
+     "Link copied" for 2 s.
+   - Speech-bubble icon + "Message", only when `navigator.share` exists.
+     It hands the sheet that line and URL only.
+
+   No share control is filled: the one filled button on the receipt
+   screen is the next office (`commitment-funnel.md` §10).
+4. **No file share.** When a file exists but `canShare({files})` is
+   false, `navigator.share` is absent, or the poster share threw: a
+   download icon + "Save poster" (`<a download="cut-the-ties-<slug>.png">`
+   on the thumbnail's blob URL) takes the Instagram button's place, the
+   hint line gives way to a note that on iPhone the poster lands in
+   Files and a long press on the image saves it to Photos, and a text
+   link "Open Instagram ↗" (`https://www.instagram.com/`, new tab,
+   `rel="noopener"`) follows the block. With no file (still drawing, or
+   the draw failed) there is no thumbnail and the block is "Copy link"
+   and "Message" alone.
 5. **Intent links.** From 1024 px, or whenever `navigator.share` is
    absent, four links follow the row: Facebook `sharer.php?u=<link>`, X
    `x.com/intent/tweet?text=&url=`, Threads
@@ -111,7 +123,7 @@ no share affordance before the private commitment and captain steps
 
 ## Data & contracts
 - `web/src/lib/poster.ts` (lazy chunk): `SHARE_PAYLOAD: 'files' |
-  'files+title'`, `POSTER_LABEL`, `W = 1080`, `H = 1920`, `BAND`,
+  'files+title'`, `W = 1080`, `H = 1920`, `BAND`,
   `drawPoster(ctx, {act: 'called' | 'wrote', target, title, what, date,
   url?, verb?})` (`verb` marks the captain-list poster and leaves with
   it), `CTA = 'YOUR TURN. CALL YOUR REP'`, `fitSize(ctx, text, width,
@@ -127,9 +139,11 @@ no share affordance before the private commitment and captain steps
   `moveTo`, `lineTo`, `stroke`, `fillStyle`, `strokeStyle`, `lineWidth`,
   `lineCap`, `font`, `textBaseline`.
 - `web/src/components/ShareRow.tsx`: `preparePoster(spec, slug)`,
-  `receiptSpec(type, role, name, state, title, what)`, the row itself
-  (`[data-share-row]`, `[data-share-poster]`, `[data-share-link]`,
-  `[data-share-fallback]`, `[data-share-intents]`).
+  `receiptSpec(type, role, name, state, title, what)`, the block itself
+  (`[data-share-row]`, `[data-share-thumb]`, `[data-share-buttons]`,
+  `[data-share-poster]`, `[data-share-save]`, `[data-share-copy]`,
+  `[data-share-message]`, `[data-share-hint]`, `[data-share-fallback]`
+  for the note and the Instagram link, `[data-share-intents]`).
 - `web/src/lib/api.ts`: `validVia(search?)`, `viaQuery(search?)`;
   `route()` body gains optional `via`.
 - `POST /api/route` optional `via` (`action-router.md`); `Repo.bumpVia(via,
@@ -153,12 +167,15 @@ no share affordance before the private commitment and captain steps
       for every goal in `data/goals/` no two text boxes overlap and the
       stack clears the block by ≥24 px.
 - [ ] The poster share payload holds the file only (plus `title: ''` if
-      `SHARE_PAYLOAD` says so); "Share link" holds text and URL only, and
-      the link ends in `?via=share`.
-- [ ] With `canShare` false the fallback row renders a PNG download named
-      `cut-the-ties-<slug>.png`, a caption equal to the line plus link,
-      and "Open Instagram"; without a share API the four intent links
-      carry the encoded line and link and open with `rel="noopener"`.
+      `SHARE_PAYLOAD` says so); "Message" holds text and URL only; "Copy
+      link" copies the line plus link; the link ends in `?via=share`.
+- [ ] Every share control is bordered with a 20 px inline SVG icon; none
+      is filled, in any state.
+- [ ] With `canShare` false "Save poster" downloads a PNG named
+      `cut-the-ties-<slug>.png` and "Open Instagram ↗" follows the block;
+      the page holds one poster `<img>`, 96 px wide; without a share API
+      "Message" is absent and the four intent links carry the encoded
+      line and link and open with `rel="noopener"`.
 - [ ] The captain-list share attaches the 9:16 poster; its text is
       unchanged.
 - [ ] No request leaves the page between receipt and share.

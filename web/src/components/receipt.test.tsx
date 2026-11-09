@@ -35,8 +35,8 @@ const click = (sel: string) => act(() => { (root.querySelector(sel) as HTMLEleme
 const type = (sel: string, value: string) => act(() => { const el = root.querySelector(sel) as HTMLInputElement; el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); });
 const q = (sel: string) => root.querySelector(sel);
 const reports = () => calls.filter((c) => c.url === '/api/report');
-/** Filled buttons §2 owns. The share block is left out: its "Share poster" keeps the fill where the browser can share files, until §3 swaps in the icon buttons. */
-const filled = () => [...root.querySelectorAll('[data-output-side] .btn-primary')].filter((b) => !b.closest('[data-share-row]'));
+/** Filled buttons on the whole receipt side, the share block included (§3.1: every share control is bordered; `share.test.tsx` covers its file-share state). */
+const filled = () => [...root.querySelectorAll('[data-output-side] .btn-primary')];
 const chip = (v: string) => q(`[data-chip=${v}]`) as HTMLButtonElement;
 
 async function mount(now = OPEN, type_: 'call' | 'letter' = 'call') {

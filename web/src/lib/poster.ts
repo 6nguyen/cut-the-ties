@@ -5,13 +5,12 @@
 import { surname } from '@worker/names';
 
 /**
- * social-sharing §1.2: the two constants the owner's device matrix sets (docs/prd/social-sharing.md §1).
+ * social-sharing §1.2: the constant the owner's device matrix sets (docs/prd/social-sharing.md §1).
  * `SHARE_PAYLOAD` — `'files'` hands the OS sheet the poster alone; `'files+title'` adds `title: ''` for
- * sheets that need it. `POSTER_LABEL` — "Share to Instagram" once Story is offered on both platforms.
- * Defaults until the matrix runs: files only, "Share poster".
+ * sheets that need it. Default until the matrix runs: files only. The button's label is fixed
+ * (one-screen-receipt §3: the Instagram glyph and "Share").
  */
 export const SHARE_PAYLOAD: 'files' | 'files+title' = 'files';
-export const POSTER_LABEL = 'Share poster';
 
 export const W = 1080;
 export const H = 1920;
