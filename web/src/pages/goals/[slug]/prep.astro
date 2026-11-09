@@ -39,7 +39,7 @@ const actions = open ? actionsFor(goal).map((a) => ({ slug: a.slug, label: verbs
       <p class="mt-4 label-code text-hazard">Decision: {fmtDate(goal.decision_date) ?? 'not yet scheduled'}</p>
       <div class="mt-6 flex flex-wrap gap-3">
         {actions.length > 0 && <a href="#take-action" class="btn btn-primary">Take action →</a>}
-        <a href={`/goals/${goal.slug}`} class="btn btn-ghost">About this goal</a>
+        <a href={`/goals/${goal.slug}`} class="btn bg-newsprint text-ink hover:bg-paper">About this goal</a>
       </div>
     </div>
   </section>
