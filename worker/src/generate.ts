@@ -11,9 +11,13 @@ import { surname } from './names';
 export interface FormField { name: string; label: string; max: number; required: boolean; multiline?: boolean; hint?: string }
 export interface DocFormat { kind: 'call_script' | 'letter' | 'public_comment'; min_words: number; max_words: number; mentions: string[]; ask: string }
 
-/** §4.7 numbers. */
+/**
+ * §4.7 numbers. `device_day` and `ip_day` are hard (429, every row counts). `device_target_day` is the
+ * per-office cap (draft-cap-per-office §1): that many model drafts for one device, action and target in
+ * 24 hours, then the standard script.
+ */
 export const LIMITS = {
-  device_hour: 5, device_day: 20, device_action_day: 3, ip_day: 30,
+  device_day: 20, device_target_day: 3, ip_day: 30,
   max_tokens: 1500, call_max_tokens: 700, recent: 200, overlap: 0.3, block_after: 3, block_hours: 24, note_max: 140,
 } as const;
 
@@ -472,7 +476,7 @@ export interface GenerateDeps { repo: Repo; fetch: typeof fetch; now: () => Date
 export interface GenerateInput { action: unknown; target: unknown; fields: unknown; device: unknown; variant?: unknown; ip: string | undefined; verify: () => Promise<boolean> }
 export interface Reject { status: 400 | 403 | 422 | 429; error: string; message: string }
 /** Why a request gets the code-built standard script instead of a model draft (generation-cost §4). */
-export type StandardReason = 'capacity' | 'unconfigured' | 'upstream' | 'budget';
+export type StandardReason = 'capacity' | 'unconfigured' | 'upstream' | 'budget' | 'limit';
 export interface GenerateContext {
   action: Action; goal: Goal; fmt: DocFormat; schema: FormField[]; target: Target; fields: Record<string, string>;
   deviceHash: string; ipHash: string; facts: string; check: CheckContext; standard: StandardReason | null;
@@ -504,20 +508,20 @@ export async function prepare(deps: GenerateDeps, input: GenerateInput): Promise
   const until = await repo.blockedUntil(deviceHash);
   if (until && until.getTime() > now.getTime()) return reject(403, 'blocked', 'Drafting is paused on this device for 24 hours after repeated misuse.');
 
-  const counts = await repo.generationCounts(deviceHash, ipHash, action.id, now);
+  const counts = await repo.generationCounts(deviceHash, ipHash, action.id, target.id, now);
   const fmt = parseFormat(action);
-  // Each message says what was used, what the limit is and when the next one opens: the windows roll, so a slot
-  // comes back when the oldest draft in the window ages out.
-  const noun = { call_script: 'call scripts', letter: 'letters', public_comment: 'comments' }[fmt.kind];
-  if (counts.device_hour >= LIMITS.device_hour) return reject(429, 'limit_hour', `You have written ${LIMITS.device_hour} drafts in the last hour, and ${LIMITS.device_hour} is the limit. You can write another one hour after the first.`);
+  // The two hard limits (draft-cap-per-office §1.8) count every row, template rows included, so a looped client
+  // cannot write unbounded rows. Each message says what was used, what the limit is and when the next one opens:
+  // the windows roll, so a slot comes back when the oldest draft in the window ages out.
   if (counts.device_day >= LIMITS.device_day) return reject(429, 'limit_day', `You have written ${LIMITS.device_day} drafts in the last 24 hours, and ${LIMITS.device_day} is the limit. You can write another 24 hours after the first.`);
-  if (counts.device_action_day >= LIMITS.device_action_day) return reject(429, 'limit_action', `You have written ${LIMITS.device_action_day} ${noun} for this ask in the last 24 hours, and ${LIMITS.device_action_day} is the limit. You can write another 24 hours after the first.`);
   if (counts.ip_day >= LIMITS.ip_day) return reject(429, 'limit_ip', `Your network has reached the limit of ${LIMITS.ip_day} drafts in 24 hours. Try again tomorrow.`);
 
-  // generation-cost §1/§4: no key, a zero budget or a used-up day means the standard script and no Anthropic call at all.
+  // generation-cost §1/§4 and draft-cap-per-office §1.3–1.4: a zero budget, no key, this caller's per-office cap
+  // or a used-up day means the standard script and no Anthropic call at all. The per-office cap never rejects.
   let standard: StandardReason | null = null;
   if (!(deps.budgetUsd > 0)) standard = 'budget';
   else if (!deps.apiKey) standard = 'unconfigured';
+  else if (counts.device_target_day >= LIMITS.device_target_day) standard = 'limit';
   else if (counts.global_day >= (await currentCap(repo, now, deps.budgetUsd, deps.globalCap)).cap) standard = 'capacity';
 
   if (standard === null) {

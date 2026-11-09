@@ -147,40 +147,40 @@ says what happened and that the script in front of them is usable now.
   `limit`.
 
 ## Acceptance criteria
-- [ ] On a three-office ask, one device drafts three personalised
+- [x] On a three-office ask, one device drafts three personalised
       scripts for each office (nine requests) inside one hour and none
       is rejected.
-- [ ] The fourth request for the same office and ask within 24 hours
+- [x] The fourth request for the same office and ask within 24 hours
       returns 200, streams the standard script with `reason: limit`,
       makes no Anthropic request (asserted on the injected fetch) and
       writes one `generations` row with `model = 'standard'` and zero
       tokens.
-- [ ] After that fourth request, a request for a different office on the
+- [x] After that fourth request, a request for a different office on the
       same ask, and one for the same office on a different ask, are both
       personalised.
-- [ ] Any number of template rows for an office leaves its count
+- [x] Any number of template rows for an office leaves its count
       unchanged: with two model rows and five template rows in 24 h, the
       next request is personalised.
-- [ ] 24 hours after the first of three model drafts, the next request
+- [x] 24 hours after the first of three model drafts, the next request
       for that office is personalised.
-- [ ] A budget of 0 or a missing key reports `budget` or `unconfigured`,
+- [x] A budget of 0 or a missing key reports `budget` or `unconfigured`,
       not `limit`, for a device past its cap.
-- [ ] Template rows do not move the global count: with the day's cap at
+- [x] Template rows do not move the global count: with the day's cap at
       20 and 19 model rows plus 50 template rows, the next request under
       its own cap is personalised.
-- [ ] The 21st request from one device in 24 hours, template rows
+- [x] The 21st request from one device in 24 hours, template rows
       included, returns 429 `limit_day`; the 31st from one IP returns
       429 `limit_ip`; no response anywhere carries `limit_hour` or
       `limit_action`.
-- [ ] Act page, past the cap: the script is shown with the label
+- [x] Act page, past the cap: the script is shown with the label
       "Standard script — not personalised today" and the §1.3 why line;
       no alert is rendered. On `house-caucus-call` the button reads
       "Another version" and a press returns a different script; on
       `ndaa-1217-call` no regenerate button is rendered and Copy and
       Download work.
-- [ ] Every number in the why line and in the limit decisions comes from
+- [x] Every number in the why line and in the limit decisions comes from
       `LIMITS` and the SQL count; none from a model.
-- [ ] Performance: `prepare()` still issues one counts query; the
+- [x] Performance: `prepare()` still issues one counts query; the
       template path meets "first streamed token ≤3 s p95" and makes zero
       Anthropic requests; `scripts/quiet-check.sh test` and `tsc` pass.
 
@@ -195,17 +195,30 @@ drafting device should not fall. Worker logs show no `limit_action` or
 ## State (updated 2026-11-08, PR #n) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [~] 1. Per-office cap with template fallback · feat/draft-cap-per-office-per-office-cap
-- Completed: none
-- Folded: none
+- Completed: §1 built (code, tests, specs), awaiting merge
+- Folded: §1
 - Branch / open PRs: `feat/draft-cap-per-office-per-office-cap`
-- Files changed (file:line map): none yet
-- Tests run + result: none yet
-- Remaining: §1
-- Decisions since last update: none
-- Known failures / blockers: none; PR #68 (limit messages beside the
-  button) is merged, so §1 deletes two of its messages and keeps its
-  alert placement for `limit_day` and `limit_ip`
-- Next action: build §1 on `feat/draft-cap-per-office-per-office-cap`
+- Files changed (file:line map): `worker/src/generate.ts:14-21` (`LIMITS`),
+  `:479` (`StandardReason`), `:511-526` (limits and standard decision);
+  `worker/src/repo.ts:110-126` (D1 counts query), `:419-431`
+  (`MemoryRepo`); `worker/src/types.ts:200-205,224`;
+  `web/src/components/ActForm.tsx:41-42` (`STANDARD_WHY.limit`), `:356`
+  (regenerate button); `worker/test/generate.test.ts:219-322,453-718`;
+  `web/src/components/limit.test.tsx:1-138`;
+  `docs/specs/personalised-documents.md` §Behavior 2, §Behavior 5, §Data
+  & contracts, §Invariants; `docs/specs/standard-scripts.md` §Behavior 1,
+  §Behavior 4
+- Tests run + result: `tsc` PASS (0 type errors); `test` PASS (372
+  passed, 26 files); `test-web` PASS (179 passed, 2 skipped, 25 files);
+  `build` PASS; `prd-lint` PASS; `doc-lint` PASS. Template path asserted
+  under 3000 ms with zero Anthropic requests and one counts query; the
+  D1 `SELECT` checked against sqlite3 with a scratch table
+- Remaining: none
+- Decisions since last update: the why line's 3 is a literal in
+  `ActForm.tsx` (no worker code in the web bundle); `limit.test.tsx`
+  asserts it equals `LIMITS.device_target_day`
+- Known failures / blockers: none
+- Next action: merge the PR; nothing left to build (next: none)
 ## Open questions
 1. Is the cap per office per ask, or per office across all asks?
    Proposal: per office per ask (device + action + target). A
@@ -228,3 +241,4 @@ drafting device should not fall. Worker logs show no `limit_action` or
 - 2026-11-08 — created; no blocking questions, APPROVED (auto).
 - 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
 - 2026-11-08 — Status READY → IN PROGRESS; §1 build started on `feat/draft-cap-per-office-per-office-cap`.
+- 2026-11-08 — §1 built as specified: `device_hour` and `device_action_day` removed, `device_target_day: 3` added, reason `limit` served from the template, global cap counts model rows only. Spec delta folded into `docs/specs/personalised-documents.md` and `docs/specs/standard-scripts.md`. No scope change.

@@ -38,9 +38,10 @@ stores identifies them. Address routing, goals and ranking are in
    order, all before any Opus call: request shape → action and goal
    active → target on file for the action's scope → field shape and
    stripping (markup, URLs, emails, phones, control characters) →
-   Turnstile → device block → per-device and per-IP limits → standard
-   decision (`standard-scripts.md`: `LLM_MONTHLY_BUDGET_USD` 0, no
-   `ANTHROPIC_API_KEY`, or today's count ≥ `dailyCap(...)`) →
+   Turnstile → device block → per-device-day and per-IP limits →
+   standard decision (`standard-scripts.md`: budget 0, no key, 3 model
+   drafts for this device, action and target in 24 h, or today's
+   model-draft count ≥ `dailyCap(...)`) →
    `claude-haiku-5-5` screen (`ok | off_topic | injection | harmful`,
    logged by device hash and class only; a screen that throws falls
    through to the standard script with `reason: upstream`). The global
@@ -139,14 +140,10 @@ stores identifies them. Address routing, goals and ranking are in
    "I sent it" posts the call receipt's body plus `channel: 'email'`; the
    funnel then runs as for a letter. A refused draft, a letter or a
    comment action has no email step.
-5. **Standard script.** When no model may run — the day's cap is
-   reached (`reason: capacity`), `ANTHROPIC_API_KEY` is unset
-   (`unconfigured`), `LLM_MONTHLY_BUDGET_USD` is 0 (`budget`), or the
-   screen or both model attempts threw (`upstream`) — the route serves
-   the action's standard script (`standard-scripts.md`) on the same SSE
-   stream, makes no Anthropic request, and records a `generations` row
-   with `model = 'standard'`; receipt, commitment, captain, share and
-   report are unchanged.
+5. **Standard script.** When no model may run, the route streams the
+   action's standard script with a `reason` (`budget | unconfigured |
+   limit | capacity | upstream`; `limit` is the caller's own per-office
+   cap) and one why line: `standard-scripts.md` Behavior 1.
 
 ## Data & contracts
 - `POST /api/generate` body `{action, target, fields, device,
@@ -162,12 +159,13 @@ stores identifies them. Address routing, goals and ranking are in
   `variant` is present only on a standard script composed from blocks.
   Rejections are JSON `{error, message}`: 400 `bad_json | bad_request |
   no_action | no_target | bad_fields`, 403 `turnstile | blocked`, 422
-  `screened`, 429 `limit_hour | limit_day | limit_action | limit_ip`.
+  `screened`, 429 `limit_day | limit_ip`.
   No 503 or 502 (the standard script replaces them). Limits (`LIMITS`
-  in `worker/src/generate.ts`): 5 per device per hour, 20 per day, 3
-  per device per action per day, 30 per IP per day, `dailyCap(...)`
-  globally with `MAX_GENERATIONS_PER_DAY` (default 500) as the ceiling
-  and 20 as the floor while the budget is above zero, `max_tokens` 700
+  in `worker/src/generate.ts`, rolling 24 h): 20 per device and 30 per
+  IP (hard, every row); over model rows only, 3 per device per action
+  per target (then the standard script) and `dailyCap(...)` globally
+  with `MAX_GENERATIONS_PER_DAY` (default 500) as the ceiling and 20 as
+  the floor while the budget is above zero; `max_tokens` 700
   for call scripts and 1500 otherwise; three screened-out attempts in
   24 h block the device for 24 h.
 - `POST /api/receipt` `{goal, action, target, state?, district?,
@@ -224,10 +222,12 @@ stores identifies them. Address routing, goals and ranking are in
       so do a budget of 0 and a reached cap; every 400/403/429
       rejection and every screened-out input also makes no Opus call
       (`worker/test/generate.test.ts`).
+- [ ] The fourth request for one office on one ask in 24 h streams the
+      standard script with `reason: limit` and makes no Anthropic call;
+      another office on the same ask is still personalised.
 - [ ] No number in the digest or the cap comes from a model: `dailyCap`
       and `costUsd` are arithmetic over stored token sums
       (`worker/test/cost.test.ts`).
-
 - [ ] 40 abusive inputs (injection, threats, off-topic) produce zero
       documents; 20 benign inputs with unusual phrasing all pass; the
       third screened-out attempt blocks the device for 24 h; screenings
