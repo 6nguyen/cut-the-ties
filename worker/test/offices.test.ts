@@ -108,6 +108,9 @@ describe('contact-form fallback (§2)', () => {
     expect(contactFor({ type: 'rep', url: 'https://roy.house.gov/' })).toEqual({ contact_form_url: 'https://roy.house.gov/contact', contact_kind: 'zip_gate' });
     expect(contactFor({ type: 'rep', contact_form: 'https://roy.house.gov/email', url: 'https://roy.house.gov' })).toEqual({ contact_form_url: 'https://roy.house.gov/email', contact_kind: 'form' });
     expect(contactFor({ type: 'rep' })).toEqual({ contact_form_url: '', contact_kind: '' });
+    // A roster form that is the homepage (with or without www.) is not a form.
+    expect(contactFor({ type: 'sen', contact_form: 'https://alsobrooks.senate.gov/', url: 'https://www.alsobrooks.senate.gov' }, senate[0])).toEqual({ contact_form_url: 'https://www.alsobrooks.senate.gov', contact_kind: 'homepage' });
+    expect(contactFor({ type: 'rep', contact_form: 'https://roy.house.gov/', url: 'https://www.roy.house.gov' })).toEqual({ contact_form_url: 'https://www.roy.house.gov/contact', contact_kind: 'zip_gate' });
     // A roster form that is not an http(s) URL (the dataset's `hhttps://fine.house.gov/…`) is ignored, so it cannot replace a hand-set link.
     expect(contactFor({ type: 'rep', contact_form: 'hhttps://fine.house.gov/address_authentication?form=/contact/email-me', url: 'https://fine.house.gov' })).toEqual({ contact_form_url: 'https://fine.house.gov/contact', contact_kind: 'zip_gate' });
   });
