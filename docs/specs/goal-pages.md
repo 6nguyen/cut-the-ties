@@ -46,7 +46,8 @@ there.
    and Twitter share metadata with a 1200×630 card at
    `/goals/<slug>/card.png` (other pages use `/card.png`). The card shows
    the goal's photo (`/card.png`: `capitol-dome-dusk`) behind the two ink
-   gradients the page hero uses, cropped about its centre with the `Photo`
+   gradients the page hero uses, cropped about its centre (`/card.png`:
+   `CARD_CROP`, so the dome sits right of the title) with the `Photo`
    filter and no halftone. The top bar, category line, title, rule,
    what-we-want line and logo mark are where they were before photos; only
    the ground behind them changed. Over the lightest point of any library

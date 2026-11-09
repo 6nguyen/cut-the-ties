@@ -9,7 +9,7 @@ import { readFileSync as readText } from 'node:fs';
 import { parseCsv as csvRows } from '@worker/load';
 import { pickBadge, publishedGoals } from './goals';
 import { PORTRAIT, hasPortraitFile, portraitIds } from './images';
-import { CARD, WEB_ROOT, originalPath, sharpTreatment } from './images';
+import { CARD, CARD_CROP, WEB_ROOT, originalPath, sharpTreatment } from './images';
 import { existsSync } from 'node:fs';
 import { BAND, FILE_NAMES, HERO, heroWidths, LICENCES, MANIFEST, PHOTO_OUTPUT, TREATMENT, fitWidths, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
 
@@ -319,6 +319,18 @@ describe('site-imagery §5: what the share-card renderer reads', () => {
     expect(t.linear[0]).toBeCloseTo(TREATMENT.contrast * TREATMENT.brightness, 10);
     expect(t.linear[0] * 127.5 + t.linear[1]).toBeCloseTo(127.5 * TREATMENT.brightness, 10);
     expect(TREATMENT.filter).toBe(`grayscale(${String(TREATMENT.gray).replace(/^0/, '')}) contrast(${TREATMENT.contrast}) brightness(${String(TREATMENT.brightness).replace(/^0/, '')})`);
+  });
+
+  it('a card-only crop names a library photo and is a card-sized window inside its original', async () => {
+    expect(Object.keys(CARD_CROP)).toContain('capitol-dome-dusk');
+    for (const [id, c] of Object.entries(CARD_CROP)) {
+      const meta = await sharp(originalPath(id)).metadata();
+      expect([id, c.width, c.height]).toEqual([id, CARD.width, CARD.height]);
+      expect(c.left, id).toBeGreaterThanOrEqual(0);
+      expect(c.top, id).toBeGreaterThanOrEqual(0);
+      expect(c.left + c.width, id).toBeLessThanOrEqual(meta.width!);
+      expect(c.top + c.height, id).toBeLessThanOrEqual(meta.height!);
+    }
   });
 
   it('the card is an 8-bit palette PNG: sharp writes 16 colours for `colours` of 128 or fewer', () => {

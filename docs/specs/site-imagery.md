@@ -127,9 +127,10 @@ results and `/goals`, and the share cards.
     80×100, lazy (`goal-pages.md` §Behavior 4). Members-elect, treasurers
     and state officials have no portrait.
 16. **Share cards.** `/card.png` (`capitol-dome-dusk`) and each goal's
-    card put the photo under the text: centre cover crop, the Behavior 5
-    filter and both gradients, no halftone (`goal-pages.md` §Behavior 2).
-    Member cards carry no photo.
+    card put the photo under the text: centre cover crop (the Capitol:
+    `CARD_CROP`, dome right of title), the Behavior 5 filter, both
+    gradients, no halftone (`goal-pages.md` §Behavior 2). Member cards
+    carry no photo.
 
 ## Data & contracts
 - `manifest.yaml` row: `id`, `file` | `dir`, `alt`, `subject`
@@ -218,8 +219,8 @@ results and `/goals`, and the share cards.
   three members of one `/results` page, whose LCP element stays a card
   band (1.56 s before, 1.60 s after, Slow 4G with CPU 4x, localhost).
 - Share card ≤200 KB (palette PNG). Built 2026-11-08: `/card.png`
-  81.9 KB, goal cards 105.8 to 169.6 KB; title at least 3.2:1 over the
-  photo's lightest pixel (large text, 3:1), other lines 10.7:1 or more.
+  104.5 KB, goal cards 105.8 to 169.6 KB; title ≥3.18:1 over the
+  photo's lightest pixel (large text, 3:1), other lines ≥8.8:1.
 - A page without a photo transfers no extra bytes. Tailwind scans these
   source files, so a bare utility name in a comment or a key adds CSS to
   every page; keep them out.

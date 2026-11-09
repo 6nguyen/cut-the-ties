@@ -232,6 +232,14 @@ export function sharpTreatment(): { recomb: [[number, number, number], [number, 
  * palette; `colours` at or under 128 would make `sharp` write a 16-colour file.
  */
 export const CARD = { width: 1200, height: 630, maxBytes: 200_000, position: 'centre', png: { palette: true, colours: 256, quality: 80, dither: 0.5, effort: 10 } } as const;
+/**
+ * Card-only crops, in the original's pixels and at the card's own size (no scaling). The centre crop puts the Capitol's
+ * dome under the title, where the ink is at least 85% opaque and the building cannot be seen; this window puts it
+ * two thirds of the way across.
+ */
+export const CARD_CROP: Readonly<Record<string, { left: number; top: number; width: number; height: number }>> = {
+  'capitol-dome-dusk': { left: 0, top: 175, width: 1200, height: 630 },
+};
 
 /** `/about` "Photo credits": one line per image in use, empty when no page shows one. `goals` are the published goals; their images count once a page resolves a goal's image. */
 export function credits(goals: readonly GoalImage[] = []): CreditLine[] {

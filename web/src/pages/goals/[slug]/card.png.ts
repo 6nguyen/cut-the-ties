@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 import sharp from 'sharp';
 import { join } from 'node:path';
 import { CATEGORY, publishedGoals, type Goal } from '../../../lib/goals';
-import { CARD, TREATMENT, WEB_ROOT, imageIdFor, originalPath, sharpTreatment } from '../../../lib/images';
+import { CARD, CARD_CROP, TREATMENT, WEB_ROOT, imageIdFor, originalPath, sharpTreatment } from '../../../lib/images';
 
 export function getStaticPaths() {
   return publishedGoals().map((g) => ({ params: { slug: g.slug }, props: { goal: g } }));
@@ -64,7 +64,8 @@ export async function renderCard(svg: string, imageId?: string): Promise<Buffer>
   if (!svg.includes(BACKDROP)) throw new Error('renderCard: the card has no BACKDROP to put a photo behind');
   const t = sharpTreatment();
   // Treated on its own first: in one pipeline `sharp` would run `linear` after `composite`, over the text as well.
-  const photo = await sharp(originalPath(imageId)).resize(CARD.width, CARD.height, { fit: 'cover', position: CARD.position }).removeAlpha()
+  const original = sharp(originalPath(imageId));
+  const photo = await (CARD_CROP[imageId] ? original.extract(CARD_CROP[imageId]) : original).resize(CARD.width, CARD.height, { fit: 'cover', position: CARD.position }).removeAlpha()
     .recomb(t.recomb).linear(t.linear[0], t.linear[1]).raw().toBuffer({ resolveWithObject: true });
   return sharp(photo.data, { raw: photo.info })
     .composite([{ input: Buffer.from(svg.replace(BACKDROP, inkLayers())) }, stamp]).png({ ...CARD.png }).toBuffer();
