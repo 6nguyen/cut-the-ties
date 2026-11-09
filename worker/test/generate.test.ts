@@ -573,6 +573,10 @@ describe('checkOutput, sanitize, shapeFields, BodyExtractor (unit)', () => {
     expect(checkOutput(ok, ctx)).toEqual({ ok: true, words: wordCount(ok.body) });
     expect(checkOutput({ ...ok, body: `${ok.body} Email me at a@b.org.` }, ctx)).toMatchObject({ ok: false, cls: 'contact' });
     expect(checkOutput({ ...ok, body: ok.body.replace('Correa', 'Congressman') }, ctx)).toMatchObject({ ok: false, reason: 'does not name the target' });
+    // A suffixed member is named by surname: "Rep. Pallone" passes, and the suffix alone is not the name.
+    const jr = { ...ctx, targetName: 'Frank Pallone, Jr.' };
+    expect(checkOutput({ ...ok, body: ok.body.replace(/Correa/g, 'Pallone') }, jr)).toMatchObject({ ok: true });
+    expect(checkOutput({ ...ok, body: ok.body.replace(/Correa/g, 'Jr.') }, jr)).toMatchObject({ ok: false, reason: 'does not name the target' });
     expect(checkOutput({ ...ok, body: ok.body.replace('integration section, section 1217', 'that bill') }, ctx)).toMatchObject({ ok: false, reason: 'does not name the section or vote' });
     expect(checkOutput({ ...ok, body: ok.body.replace('drop the integration section', 'remove the integration section') }, ctx)).toMatchObject({ ok: false, reason: 'ask wording missing' });
     expect(checkOutput({ ...ok, body: `${ok.body} Please end aid now.` }, ctx)).toMatchObject({ ok: false, reason: 'contains "end aid"' });

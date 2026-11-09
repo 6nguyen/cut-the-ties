@@ -1,6 +1,7 @@
 // social-sharing §2.2: the 1080×1920 poster drawn on the device after a receipt (and after a completed
 // captain list, §4). Text and shapes only, the goal card's palette and faces; nothing identifying on it.
 // This module is a lazy chunk: ActForm and YourWeek import it only once a share can be offered.
+import { surname } from '@worker/names';
 
 /**
  * social-sharing §1.2: the two constants the owner's device matrix sets (docs/prd/social-sharing.md §1).
@@ -112,9 +113,8 @@ export function posterDate(d: Date = new Date()): string {
 
 /** social-sharing §2.2 target line from the office. */
 export function targetLine(role: string, name: string, state?: string | null): string {
-  const surname = name.trim().split(/\s+/).pop() ?? name;
   if (/treasurer/i.test(role)) return `THE ${(state ?? '').toUpperCase()} TREASURER`.replace(/\s+/g, ' ');
-  return `${role.toUpperCase()} ${surname.toUpperCase()}'S OFFICE`;
+  return `${role.toUpperCase()} ${surname(name).toUpperCase()}'S OFFICE`;
 }
 
 /** social-sharing §2.4 / §3.1: the share-link text and the fallback caption (the line plus the link). */
