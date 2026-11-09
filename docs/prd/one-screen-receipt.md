@@ -1,5 +1,5 @@
 # One-screen receipt: stamped poster, icon share buttons, no funnel steps — PRD
-Status: IN PROGRESS 2026-11-08 (§1–§2 merged, PR #77 and #79; §3 in review; §4 to build) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1–§2 merged, PR #77 and #79; §3 in review, PR #81; §4 to build) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The owner's phone test on 2026-11-08 (Chrome on iPhone; Story, Post, Reel
@@ -296,17 +296,17 @@ per week, reports per receipt (expected up once a chip saves on tap) and
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [x] 1. Poster: stamp and call to action · feat/one-screen-receipt-poster-stamp-cta · PR #77 merged
   - [x] 2. Receipt screen: one screen · feat/one-screen-receipt-receipt-screen · PR #79 merged
-  - [~] 3. Share buttons: icon and text · feat/one-screen-receipt-share-buttons
+  - [~] 3. Share buttons: icon and text · feat/one-screen-receipt-share-buttons · PR #81
   - [ ] 4. Retire the captain list
-- Completed: §1 (merged, PR #77); §2 (merged, PR #79); §3 code, tests and spec fold (in review)
+- Completed: §1 (merged, PR #77); §2 (merged, PR #79); §3 code, tests and spec fold (in review, PR #81)
 - Folded: §1 (`social-sharing.md` §Behavior 2, the alt text in §Behavior 4, the `poster.ts` line of §Data & contracts, the poster invariants); §2 (`commitment-funnel.md` §Purpose, §Behavior 1 and 10; `personalised-documents.md` §Behavior receipt tail; `district-counters.md` §Behavior 6–7); §3 (`social-sharing.md` §Behavior 3–4, `POSTER_LABEL` out of §Data & contracts, `[data-share-link]` out and the new selectors in, the share-payload and no-file-share invariants, one new invariant "every share control is bordered"). Not folded, left for §4: `social-sharing.md` §Purpose, §Behavior 6, `verb`, the captain-list lines in §Behavior 2 and §Performance budget, the invariants "nor before the commitment and captain steps" and the captain-list share; `commitment-funnel.md` §Behavior 2, 4 and 8, the captain list in §Behavior 5–6 and its invariants.
-- Branch / open PRs: feat/one-screen-receipt-share-buttons (§1 merged as PR #77, §2 as PR #79; this PRD merged as PR #72)
-- Files changed (file:line map), §3: `web/src/components/ShareRow.tsx` L35–46 `ICONS` / `Icon` / `BTN`, L48–92 state, the blob URL for thumbnail and "Save poster", the 2 s "Link copied" timer, `sharePoster` / `copyLink` / `message`, L94–119 the block (`[data-share-thumb]`, `[data-share-buttons]`, `[data-share-poster]`, `[data-share-save]`, `[data-share-copy]`, `[data-share-message]`, `[data-share-hint]`, `[data-share-fallback]`, `[data-share-intents]`); `web/src/lib/poster.ts` L7–13 (`POSTER_LABEL` removed); tests `web/src/components/share.test.tsx` (rewritten), `receipt.test.tsx` L38–39 (`filled()` counts the share block). §2: `ActForm.tsx`, `ReceiptExtras.tsx`, `Counts.tsx`. §1: `web/src/lib/poster.ts`.
+- Branch / open PRs: feat/one-screen-receipt-share-buttons · PR #81 open (§1 merged as PR #77, §2 as PR #79; this PRD merged as PR #72)
+- Files changed (file:line map), §3: `web/src/components/ShareRow.tsx` L35–46 `ICONS` / `Icon` / `BTN`, L48–91 state, the blob URL for thumbnail and "Save poster", the 2 s "Link copied" timer, `sharePoster` / `copyLink` / `message`, L93–119 the block (`[data-share-thumb]`, `[data-share-buttons]`, `[data-share-poster]`, `[data-share-save]`, `[data-share-copy]`, `[data-share-message]`, `[data-share-hint]`, `[data-share-fallback]`, `[data-share-intents]`); `web/src/lib/poster.ts` L7–13 (`POSTER_LABEL` removed); tests `web/src/components/share.test.tsx` (rewritten), `receipt.test.tsx` L38–39 (`filled()` counts the share block). §2: `ActForm.tsx`, `ReceiptExtras.tsx`, `Counts.tsx`. §1: `web/src/lib/poster.ts`.
 - Tests run + result: `test-web` PASS (27 files, 225 tests, 2 skipped), `build` PASS, `prd-lint` PASS, `doc-lint` PASS. Headless Chrome at 390×844 and 1280×800 with a stubbed share sheet: "Share" hands over `{files}` alone (one 217 KB PNG), "Message" `{text, url}`, "Copy link" the line plus the `?via=share` link and reads "Link copied" for 2 s; without file share "Save poster" downloads `cut-the-ties-ndaa-1217.png`; one filled button on the receipt side in every share state (the next office); no horizontal overflow; receipt to share block makes only `POST /api/receipt` and `GET /api/counts`. Poster chunk 2.7 KB gzip (budget 4 KB, unchanged), `ShareRow` chunk 1.8 KB, `ActForm` 7.7 KB.
 - Remaining: §4
 - Decisions since last update: see `## Changes` 2026-11-08 "§3 built" (buttons in one column beside the thumbnail, no-file block, `[data-share-fallback]` kept, "Copy link" always copies, `other` prop left for §4, invariants folded)
 - Known failures / blockers: none. Follow-ups: owner check of the share block on an iPhone and an Android phone (the real sheet, Instagram's Story / Post / Reel / Message targets, the long-press save); the screenshots were taken but not looked at, so the block's look is checked by measured boxes only; §4.1 deletes the unrendered `Funnel.tsx` steps and `ShareRow`'s unused `other` prop; act page LCP not measured; §1's follow-ups (poster on an iPhone, the stamp's look) still open.
-- Next action: merge the §3 PR, then `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §4. Retire the captain list)
+- Next action: merge PR #81, then `/implement-prd-section docs/prd/one-screen-receipt.md` (next: §4. Retire the captain list)
 ## Open questions
 1. Retire the captain list entirely, or only take it off the receipt
    screen? Proposal: retire it in §4 (the owner asked on 2026-11-08 for
