@@ -60,9 +60,11 @@ imported on 2026-11-05 from `unitedstates/congress-legislators`
 (downloads the roster when no path is given). The dataset supplies
 `party`, `chamber`, `state`, `district`, `dc_phone` (the office number),
 `contact_form_url` and `contact_kind` (`form` from the roster or the
-Senate XML, `homepage` for the 14 senators whose office lists no form,
-`zip_gate` for `<house site>/contact`, which usually asks for a ZIP
-first); `money_url`, `district_office_address`, `district_office_city`,
+Senate XML, `homepage` for a senator whose office publishes no contact
+page, `zip_gate` for `<house site>/contact`, which usually asks for a ZIP
+first). Where the dataset had no working link, the link is hand-set from
+the office's own site and survives re-import: 13 senators and 8
+representatives on 2026-11-08, leaving 1 `homepage` row; `money_url`, `district_office_address`, `district_office_city`,
 `not_returning` (hand-set from the 2026-11-03 results, each change with its
 AP or state-election-office URL in the commit body), `caucus` and every
 flag column stay as they are in the file and are empty until sourced. `district_phone`

@@ -122,6 +122,7 @@ export function checkMembers(rows: Record<string, string>[]): void {
       if (err) throw new Error(`members.csv: ${r.bioguide_id}: ${err}`);
     }
     if (r.contact_kind && !(CONTACT_KINDS as readonly string[]).includes(r.contact_kind)) throw new Error(`members.csv: ${r.bioguide_id}: unknown contact_kind ${r.contact_kind}`);
+    if (r.contact_form_url && !/^https:\/\//.test(r.contact_form_url)) throw new Error(`members.csv: ${r.bioguide_id}: contact_form_url is not an https URL (${r.contact_form_url})`);
     if (r.contact_form_url && !r.contact_kind) throw new Error(`members.csv: ${r.bioguide_id}: contact_form_url without contact_kind`);
     if (r.left_office && !/^\d{4}-\d{2}-\d{2}$/.test(r.left_office)) throw new Error(`members.csv: ${r.bioguide_id}: left_office is not an ISO date (${r.left_office})`);
     // leadership-routing §1.1: D/R derive their caucus; an independent must say, so a new one can't drop out of leadership routing.
