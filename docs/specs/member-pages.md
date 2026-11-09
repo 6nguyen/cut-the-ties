@@ -98,7 +98,7 @@ never by this capability, and nothing here calls an LLM.
    the goal cards: category stripe, "<Name> on <goal title>" and the
    position line ("Rep. Lou Correa (D, CA-46): unknown on …"). Members
    without an open goal get "Rep./Sen. Name" and "no open decision right
-   now". Built by `renderCard`, so it carries the logo mark. The page's
+   now". Built by `renderCard`: the logo mark, no photo. The page's
    Open Graph tags point at it.
 7. **Unknown ids.** The build emits only sitting members: a row with
    `left_office` is not built, listed in the sitemap, given a share card

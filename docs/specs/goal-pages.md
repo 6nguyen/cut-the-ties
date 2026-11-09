@@ -44,7 +44,15 @@ there.
    A closed goal shows its outcome
    block instead of targets and actions. Every page carries Open Graph
    and Twitter share metadata with a 1200×630 card at
-   `/goals/<slug>/card.png` (other pages use `/card.png`).
+   `/goals/<slug>/card.png` (other pages use `/card.png`). The card shows
+   the goal's photo (`/card.png`: `capitol-dome-dusk`) behind the two ink
+   gradients the page hero uses, cropped about its centre (`/card.png`:
+   `CARD_CROP`, so the dome sits right of the title) with the `Photo`
+   filter and no halftone. The top bar, category line, title, rule,
+   what-we-want line and logo mark are where they were before photos; only
+   the ground behind them changed. Over the lightest point of any library
+   photo the title is at least 3:1 (large text) and the two smaller lines
+   at least 4.5:1 ([site-imagery.md](site-imagery.md) Behavior 16).
 3. **Goal lifecycle.** `upcoming → active → completed | expired`. An
    `upcoming` goal has no page, is absent from `/api/goals` and from the
    ranking. When the goal naming it in `successor_slug` is `completed` or
@@ -153,8 +161,15 @@ there.
   (Vite alias `@worker` → `worker/src`, `web/src/lib/goals.ts`), so
   pages and API agree on every row and on the lifecycle. Share cards are
   rendered at build by `sharp` from an SVG template with the logo mark
-  composited at 120 px in the top-right corner (`renderCard` in
-  `web/src/pages/goals/[slug]/card.png.ts`); absolute share URLs
+  composited at 120 px in the top-right corner: `renderCard(svg,
+  imageId?)` in `web/src/pages/goals/[slug]/card.png.ts`. With a manifest
+  id the photo is the base layer, the template's solid ground (`BACKDROP`)
+  becomes `inkLayers()` and the file is an 8-bit palette PNG (`CARD` in
+  `web/src/lib/images.ts`): a 1200×630 photograph is over 200 KB as
+  truecolour, and the URL and `image/png` type stay as they were. Goal
+  cards pass `imageIdFor(goal)`. Without an id the output is the
+  truecolour file it was before photos, byte for byte; member cards use
+  that (`member-pages.md` Behavior 6). Absolute share URLs
   need `SITE_URL` in the Pages build environment.
 - Type tokens (`web/src/styles/global.css`): every H1/H2 and display
   utility in Bebas Neue, body Inter 400/600, labels, chips and buttons
@@ -186,6 +201,10 @@ there.
       the build, naming the goal and the id
       (`worker/test/goals.test.ts`); `/goals/<slug>/act/…` and the whip
       page show no photo (`web/src/lib/images.test.ts`).
+- [ ] Every published goal's card and `/card.png` are 1200×630 PNGs of at
+      most 200,000 bytes; card text passes AA over every library photo;
+      `renderCard` without an id writes the bytes it wrote before photos
+      (`web/src/lib/card.test.ts`).
 
 ## Performance budget
 `/goals`, `/goals/<slug>` and `/goals/<slug>/prep` ≤100 KB transferred on

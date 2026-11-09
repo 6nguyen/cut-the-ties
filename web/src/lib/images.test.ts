@@ -9,6 +9,8 @@ import { readFileSync as readText } from 'node:fs';
 import { parseCsv as csvRows } from '@worker/load';
 import { pickBadge, publishedGoals } from './goals';
 import { PORTRAIT, hasPortraitFile, portraitIds } from './images';
+import { CARD, CARD_CROP, WEB_ROOT, originalPath, sharpTreatment } from './images';
+import { existsSync } from 'node:fs';
 import { BAND, FILE_NAMES, HERO, heroWidths, LICENCES, MANIFEST, PHOTO_OUTPUT, TREATMENT, fitWidths, creditLine, credits, creditsFor, imageIdFor, pageSources, rowFor, sourceName, usedIds, validate, type ImageRow } from './images';
 
 const DIR = fileURLToPath(new URL('../assets/img/', import.meta.url));
@@ -296,5 +298,44 @@ describe('site-imagery §4: portraits', () => {
       expect(src).toContain("onload=\"this.parentNode.dataset.loaded='1'\"");
       expect(src).not.toMatch(/unitedstates\.github\.io|bioguide\.congress\.gov\/bioguide\/photo/);
     }
+  });
+});
+
+describe('site-imagery §5: what the share-card renderer reads', () => {
+  it('every photo row resolves to its original on disk; a dir row and an unknown id throw', () => {
+    for (const row of MANIFEST.filter((r) => r.file)) {
+      expect(originalPath(row.id)).toBe(join(WEB_ROOT, 'src', 'assets', 'img', row.file!));
+      expect(existsSync(originalPath(row.id)), row.id).toBe(true);
+    }
+    expect(() => originalPath('portraits')).toThrow(/dir row/);
+    expect(() => originalPath('no-such-photo')).toThrow(/manifest/);
+  });
+
+  it('the sharp numbers are the Photo filter: grey stays grey, mid-grey is the contrast pivot', () => {
+    const t = sharpTreatment();
+    for (const row of t.recomb) expect(row[0] + row[1] + row[2]).toBeCloseTo(1, 10);
+    // grayscale(1) would make every row the luma weights; at TREATMENT.gray the red row keeps 1 - gray of its own red.
+    expect(t.recomb[0][0]).toBeCloseTo(0.2126 + 0.7874 * (1 - TREATMENT.gray), 10);
+    expect(t.linear[0]).toBeCloseTo(TREATMENT.contrast * TREATMENT.brightness, 10);
+    expect(t.linear[0] * 127.5 + t.linear[1]).toBeCloseTo(127.5 * TREATMENT.brightness, 10);
+    expect(TREATMENT.filter).toBe(`grayscale(${String(TREATMENT.gray).replace(/^0/, '')}) contrast(${TREATMENT.contrast}) brightness(${String(TREATMENT.brightness).replace(/^0/, '')})`);
+  });
+
+  it('a card-only crop names a library photo and is a card-sized window inside its original', async () => {
+    expect(Object.keys(CARD_CROP)).toContain('capitol-dome-dusk');
+    for (const [id, c] of Object.entries(CARD_CROP)) {
+      const meta = await sharp(originalPath(id)).metadata();
+      expect([id, c.width, c.height]).toEqual([id, CARD.width, CARD.height]);
+      expect(c.left, id).toBeGreaterThanOrEqual(0);
+      expect(c.top, id).toBeGreaterThanOrEqual(0);
+      expect(c.left + c.width, id).toBeLessThanOrEqual(meta.width!);
+      expect(c.top + c.height, id).toBeLessThanOrEqual(meta.height!);
+    }
+  });
+
+  it('the card is an 8-bit palette PNG: sharp writes 16 colours for `colours` of 128 or fewer', () => {
+    expect(CARD.png.palette).toBe(true);
+    expect(CARD.png.colours).toBeGreaterThan(128);
+    expect([CARD.width, CARD.height, CARD.maxBytes]).toEqual([1200, 630, 200_000]);
   });
 });

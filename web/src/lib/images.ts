@@ -206,6 +206,41 @@ export const hasPortraitFile = (id: string | null | undefined): boolean => !!id 
 /** Sources of every page, component and layout, by path relative to this file. */
 export function pageSources(): Record<string, string> { return PAGE_SOURCES; }
 
+/** `web/`, whether the process runs there (the build, `test-web`) or in the checkout above it. */
+export const WEB_ROOT = existsSync(join(process.cwd(), 'src', 'assets', 'img')) ? process.cwd() : join(process.cwd(), 'web');
+/** The original on disk for a manifest id, for a renderer that reads pixels itself (`sharp` in the share card); throws on an unknown id or a `dir` row, so the build stops. */
+export function originalPath(id: string): string {
+  const row = rowFor(id);
+  if (!row.file) throw new Error(`image "${id}": a dir row has no original file`);
+  return join(WEB_ROOT, 'src', 'assets', 'img', row.file);
+}
+/**
+ * `TREATMENT`'s filter as numbers `sharp` takes, in the filter's own order: the CSS `grayscale()` matrix for
+ * `recomb`, then `contrast()` and `brightness()` folded into one `linear(a, b)` on 0 to 255.
+ */
+export function sharpTreatment(): { recomb: [[number, number, number], [number, number, number], [number, number, number]]; linear: [number, number] } {
+  const k = 1 - TREATMENT.gray;
+  const [r, g, b] = [0.2126, 0.7152, 0.0722];
+  return {
+    recomb: [[r + (1 - r) * k, g - g * k, b - b * k], [r - r * k, g + (1 - g) * k, b - b * k], [r - r * k, g - g * k, b + (1 - b) * k]],
+    linear: [TREATMENT.contrast * TREATMENT.brightness, 127.5 * (1 - TREATMENT.contrast) * TREATMENT.brightness],
+  };
+}
+/**
+ * site-imagery §5: a share card with a photo. The photo is cropped about its centre, as `object-fit: cover` crops it
+ * on the pages. The file must stay a PNG of at most `maxBytes`, which a 1200×630 photograph only meets as an 8-bit
+ * palette; `colours` at or under 128 would make `sharp` write a 16-colour file.
+ */
+export const CARD = { width: 1200, height: 630, maxBytes: 200_000, position: 'centre', png: { palette: true, colours: 256, quality: 80, dither: 0.5, effort: 10 } } as const;
+/**
+ * Card-only crops, in the original's pixels and at the card's own size (no scaling). The centre crop puts the Capitol's
+ * dome under the title, where the ink is at least 85% opaque and the building cannot be seen; this window puts it
+ * two thirds of the way across.
+ */
+export const CARD_CROP: Readonly<Record<string, { left: number; top: number; width: number; height: number }>> = {
+  'capitol-dome-dusk': { left: 0, top: 175, width: 1200, height: 630 },
+};
+
 /** `/about` "Photo credits": one line per image in use, empty when no page shows one. `goals` are the published goals; their images count once a page resolves a goal's image. */
 export function credits(goals: readonly GoalImage[] = []): CreditLine[] {
   const ids = usedIds(Object.values(PAGE_SOURCES), goals.map(imageIdFor));
