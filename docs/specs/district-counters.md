@@ -42,7 +42,7 @@ updates.
    under the "Who to call" list on `/goals/<slug>` (only when the list
    has targets) and in each goal block on `/m/<bioguide_id>`, which passes
    the member's own state and, for a representative, district. With
-   `echo` (the act page's receipt screen, `commitment-funnel.md` §10) the
+   `echo` (the act page's receipt screen, `commitment-funnel.md` §7) the
    same scope reads "You're one of <N> constituents in <where> who
    <verb> this week" and an empty or failed response renders nothing.
 7. **Nothing before the response.** The island fetches once per mount and

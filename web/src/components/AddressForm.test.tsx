@@ -130,6 +130,41 @@ describe('provider mapbox (combobox)', () => {
   });
 });
 
+describe('return visit (action-router §1.6, one-screen-receipt §4.2)', () => {
+  const LIST = JSON.stringify({ v: 1, goal: 'ndaa-1217', people: [{ name: 'Ana', channel: 'text', done: true }], receipted: true });
+  const PLACE = JSON.stringify({ state: 'CA', district: 7 });
+  const visit = async (keys: Record<string, string>) => {
+    const replace = vi.fn();
+    vi.stubGlobal('location', { assign: vi.fn(), replace, pathname: '/', search: '' });
+    for (const [k, v] of Object.entries(keys)) localStorage.setItem(k, v);
+    await act(() => { render(h(AddressForm, { timings: TIMINGS }), root); });
+    return replace;
+  };
+
+  it('a stored place with a captain list alone deletes the list and goes to /results: the list is not an open item', async () => {
+    const replace = await visit({ 'cut-ties:place': PLACE, 'cut-ties:captain': LIST });
+    expect(localStorage.getItem('cut-ties:captain')).toBeNull();
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith('/results');
+    expect(localStorage.getItem('cut-ties:place')).toBe(PLACE);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('an open commitment keeps the visitor on /; the captain list still goes and the commitment stays', async () => {
+    const open = JSON.stringify([{ v: 1, goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110', due: '2026-11-10T18:00:00.000Z' }]);
+    const replace = await visit({ 'cut-ties:place': PLACE, 'cut-ties:captain': LIST, 'cut-ties:commitments': open });
+    expect(replace).not.toHaveBeenCalled();
+    expect(localStorage.getItem('cut-ties:captain')).toBeNull();
+    expect(localStorage.getItem('cut-ties:commitments')).toBe(open);
+  });
+
+  it('no stored place: no redirect, and the list is deleted all the same', async () => {
+    const replace = await visit({ 'cut-ties:captain': LIST });
+    expect(replace).not.toHaveBeenCalled();
+    expect(localStorage.getItem('cut-ties:captain')).toBeNull();
+  });
+});
+
 describe('picking (§3) and the unresolved copy (§4)', () => {
   let assign: ReturnType<typeof vi.fn>;
   const serve = (routeStatus = 200, routeBody: unknown = ROUTE_OK) => vi.fn(async (url: string, init?: RequestInit) => {

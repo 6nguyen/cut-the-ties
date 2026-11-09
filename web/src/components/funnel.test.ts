@@ -2,17 +2,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { h, render } from 'preact';
 import { act } from 'preact/test-utils';
-import Funnel from './Funnel';
 import { NextOffice, Retry } from './ReceiptExtras';
 import YourWeek from './YourWeek';
-import { CAPTAIN_KEY, COMMIT_KEY, loadCaptain, loadCommitments, logReceipt } from '../lib/commitments';
-import { posterFile } from '../lib/poster';
+import { CAPTAIN_KEY, COMMIT_KEY, loadCommitments, logReceipt } from '../lib/commitments';
 
-// social-sharing §4: happy-dom has no canvas, so the draw is stubbed with a PNG File; the rest of poster.ts is real.
-vi.mock('../lib/poster', async (orig) => ({
-  ...(await orig<typeof import('../lib/poster')>()),
-  posterFile: vi.fn(async (_spec: unknown, name: string) => new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' })),
-}));
+// one-screen-receipt §4.3: nothing in this file may load the poster module ("Your week" no longer draws one).
+const posterLoads = vi.hoisted(() => ({ n: 0 }));
+vi.mock('../lib/poster', () => { posterLoads.n += 1; return {}; });
 
 const PLACE = { state: 'TX', district: 35 };
 const GOALS = [
@@ -23,7 +19,6 @@ let root: HTMLElement;
 let fetchMock: ReturnType<typeof vi.fn>;
 const flush = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 const click = (sel: string) => act(() => { (root.querySelector(sel) as HTMLElement).click(); });
-const type = (sel: string, value: string) => act(() => { const el = root.querySelector(sel) as HTMLInputElement; el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); });
 
 beforeEach(() => {
   localStorage.clear();
@@ -32,44 +27,6 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
 });
 afterEach(() => { render(null, root); root.remove(); vi.unstubAllGlobals(); });
-
-describe('Funnel after a receipt (§1)', () => {
-  const props = { goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110', who: 'Correa', title: 'Strip the section', type: 'letter' as const, decision: '2026-12-10', place: PLACE };
-  it('asks for the commitment first, then the three names; Share waits for the parent', async () => {
-    const onFinished = vi.fn();
-    await act(() => { render(h(Funnel, { ...props, onFinished }), root); });
-    expect(root.textContent).toMatch(/Will you call by/);
-    expect(root.textContent).not.toMatch(/Share/);
-    expect(root.querySelector('[data-step="captains"]')).toBeNull();
-    await click('button.btn-primary');
-    expect(loadCommitments()).toMatchObject([{ v: 1, goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110' }]);
-    expect(root.textContent).toMatch(/Name three people in TX-35/);
-    expect(onFinished).not.toHaveBeenCalled();
-    await type('#captain-0', 'Ana'); await type('#captain-1', 'Ben 555'); await type('#captain-2', 'Cy');
-    expect(root.textContent).toMatch(/no numbers or @/);
-    expect((root.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
-    await type('#captain-1', 'ben@x.io');
-    expect((root.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
-    expect(localStorage.getItem(CAPTAIN_KEY)).toBeNull();
-    await type('#captain-1', 'Ben');
-    await act(() => { (root.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
-    expect(loadCaptain()).toMatchObject({ v: 1, goal: 'ndaa-1217', who: 'Correa', people: [{ name: 'Ana', done: false }, { name: 'Ben', done: false }, { name: 'Cy', done: false }] });
-    expect(onFinished).toHaveBeenCalledTimes(1);
-    expect(root.textContent).toMatch(/Add reminder/);
-    expect(root.textContent).toMatch(/Copy a message/);
-    expect(fetchMock).not.toHaveBeenCalled(); // nothing left the device
-  });
-  it('skipping either step is one tap and stores nothing', async () => {
-    const onFinished = vi.fn();
-    await act(() => { render(h(Funnel, { ...props, type: 'call', onFinished }), root); });
-    expect(root.textContent).toMatch(/Will you call again before the vote\?/);
-    await click('button.btn-ghost');
-    await click('button.btn-ghost');
-    expect(onFinished).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem(COMMIT_KEY)).toBeNull();
-    expect(localStorage.getItem(CAPTAIN_KEY)).toBeNull();
-  });
-});
 
 describe('Retry after no_answer (call-follow-through §1)', () => {
   const props = { goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110', who: 'Rep. Correa', title: 'Strip the section' };
@@ -129,7 +86,7 @@ describe('NextOffice (call-follow-through §3, one-screen-receipt §2.4)', () =>
   });
 });
 
-describe('YourWeek (§2, §3)', () => {
+describe('YourWeek (commitment-funnel §3–4)', () => {
   const list = (done: boolean[], due = '2099-01-01T17:00:00.000Z') => ({ v: 1, goal: 'ndaa-1217', due, who: 'Casar', people: ['Ana', 'Ben', 'Cy'].map((name, i) => ({ name, channel: 'text', done: done[i] })) });
   const mount = () => act(() => { render(h(YourWeek, { goals: GOALS }), root); });
 
@@ -140,43 +97,35 @@ describe('YourWeek (§2, §3)', () => {
     render(null, root); await mount(); await flush();
     expect(root.querySelector('[data-your-week]')).toBeNull();
   });
-  it('two ticks post nothing; the third posts one receipt with no target and no names, then offers Share', async () => {
-    localStorage.setItem('cut-ties:place', JSON.stringify(PLACE));
-    localStorage.setItem(CAPTAIN_KEY, JSON.stringify(list([false, false, false])));
-    await mount(); await flush();
-    expect(root.textContent).toMatch(/Your week/);
-    expect(root.textContent).not.toMatch(/Share/);
-    const boxes = () => [...root.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[];
-    await act(() => { boxes()[0].click(); }); await act(() => { boxes()[1].click(); }); await flush();
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(root.querySelector('[data-share]')).toBeNull();
-    await act(() => { boxes()[2].click(); }); await flush();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string);
-    expect(body).toEqual({ goal: 'ndaa-1217', action: 'captain-list', state: 'TX', district: 35, device: expect.any(String) });
-    expect(JSON.stringify(fetchMock.mock.calls)).not.toMatch(/Ana|Ben|Cy|people/);
-    expect(root.querySelector('[data-share]')?.textContent).toMatch(/Share/);
-    expect(loadCaptain()?.receipted).toBe(true);
-  });
-  it('social-sharing §4: Share on a receipted list attaches the 9:16 poster; text and link are unchanged, district off the image', async () => {
+  it('one-screen-receipt §4.2: a stored captain list is deleted on load and never shown; a commitment and a retry still show; nothing posts and no poster loads', async () => {
     localStorage.setItem('cut-ties:place', JSON.stringify(PLACE));
     localStorage.setItem(CAPTAIN_KEY, JSON.stringify(list([true, true, false])));
-    const share = vi.fn((_d: ShareData) => Promise.resolve());
-    vi.stubGlobal('navigator', { ...navigator, share, canShare: () => true });
+    localStorage.setItem(COMMIT_KEY, JSON.stringify([
+      { v: 1, goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'X', due: '2099-01-01T15:00:00.000Z' },
+      { v: 1, goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110', due: '2099-01-02T15:00:00.000Z', kind: 'retry', who: 'Rep. Correa' },
+    ]));
     await mount(); await flush();
-    await act(() => { ([...root.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[])[2].click(); }); await flush(); await flush();
-    const spec = vi.mocked(posterFile).mock.calls.at(-1)![0];
-    expect(spec).toMatchObject({ act: 'called', verb: 'THREE OF US ARE CALLING', title: 'Strip the section' });
-    expect(spec.target).toMatch(/^CASAR'S OFFICE BEFORE \S+/);
-    expect(`${spec.verb} ${spec.target}`).not.toMatch(/TX|35|Ana|Ben|Cy/);
-    await act(() => { [...root.querySelectorAll('[data-share] button')].find((b) => /Share/.test(b.textContent ?? ''))!.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(share).toHaveBeenCalledTimes(1);
-    const data = share.mock.calls[0][0];
-    expect(data.files).toHaveLength(1);
-    expect(data.files![0]).toMatchObject({ name: 'cut-the-ties-ndaa-1217.png', type: 'image/png' });
-    expect(data.text).toMatch(/^Three of us in .*35.* are calling Casar before .+\. Who's next\?$/);
-    expect(data.url).toBe(`${location.origin}/goals/ndaa-1217`);
-    expect(fetchMock).toHaveBeenCalledTimes(1); // the list receipt only: drawing and sharing send nothing
+    expect(localStorage.getItem(CAPTAIN_KEY)).toBeNull();
+    expect([...root.querySelectorAll('[data-commitment]')].map((el) => el.getAttribute('data-kind'))).toEqual(['call', 'retry']);
+    expect(loadCommitments()).toHaveLength(2);
+    expect(root.querySelector('[data-captain]')).toBeNull();
+    expect(root.querySelector('[data-share]')).toBeNull();
+    expect(root.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+    expect(root.textContent).not.toMatch(/Ana|Ben|Cy|Three people|Counted|Share/);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(posterLoads.n).toBe(0);
+  });
+  it('one-screen-receipt §4.2: a captain list alone puts no card on the page and is deleted, receipted or not, with or without a stored place', async () => {
+    for (const [place, stored] of [[true, list([false, false, false])], [true, { ...list([true, true, true]), receipted: true }], [false, list([true, false, false], '2020-01-01T17:00:00.000Z')]] as const) {
+      localStorage.clear();
+      if (place) localStorage.setItem('cut-ties:place', JSON.stringify(PLACE));
+      localStorage.setItem(CAPTAIN_KEY, JSON.stringify(stored));
+      await mount(); await flush();
+      expect(root.querySelector('[data-your-week]')).toBeNull();
+      expect(localStorage.getItem(CAPTAIN_KEY)).toBeNull();
+      render(null, root);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it('shows the open commitment, drops a closed goal with its outcome, keeps items on Change address and clears all on Start over', async () => {
     localStorage.setItem('cut-ties:place', JSON.stringify(PLACE));

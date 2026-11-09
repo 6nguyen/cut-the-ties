@@ -1,8 +1,8 @@
 # Social sharing
 
 ## Purpose
-After a receipt (and after a completed captain list) the person can share
-a poster of the action they just took: a 1080×1920 image drawn on the
+After a receipt the person can share a poster of the action they just
+took: a 1080×1920 image drawn on the
 device from the goal and action copy, handed file-only to the OS share
 sheet so Instagram and every other app on the phone can take it, with a
 text-and-link share beside it and a download, caption and intent-link row
@@ -10,8 +10,7 @@ where files cannot be shared. Nothing leaves the page while drawing or
 sharing; the only server-visible trace is an optional `via` tag on the
 next visitor's `POST /api/route`. It stops at the share: no account, no
 share counts per person, no identifier on the image or in the link, and
-no share affordance before the private commitment and captain steps
-(`commitment-funnel.md` §4).
+no share affordance before the receipt.
 
 ## Behavior
 1. **Pre-render on receipt.** When the receipt screen mounts, the act
@@ -57,12 +56,8 @@ no share affordance before the private commitment and captain steps
    Lines wrap greedily by `measureText`; an overflowing last line ends
    in an ellipsis. **Fit:** the stack clears the block by ≥24 px with a
    three-line title and a two-line ask; when it would not, the act line
-   steps from 200 px to 160 px. Until `one-screen-receipt` §4 the
-   captain-list poster (6) draws its verb line ("THREE OF US ARE
-   CALLING", 72 px Bebas Neue, newsprint) and target line (72 px, acid,
-   ≤2 lines, "… BEFORE <MON D>") in place of the stamp, with the same
-   call to action and no date line. Never on the poster: the user's
-   name, city, district, phone, the generated text or anything from the
+   steps from 200 px to 160 px. Never on the poster: the user's name,
+   city, district, phone, the generated text or anything from the
    office response.
 3. **The share block** (on the receipt screen, after the count line) is
    a 96 px wide thumbnail of the poster (`<img>` from a blob URL, alt
@@ -87,7 +82,7 @@ no share affordance before the private commitment and captain steps
      It hands the sheet that line and URL only.
 
    No share control is filled: the one filled button on the receipt
-   screen is the next office (`commitment-funnel.md` §10).
+   screen is the next office (`commitment-funnel.md` §7).
 4. **No file share.** When a file exists but `canShare({files})` is
    false, `navigator.share` is absent, or the poster share threw: a
    download icon + "Save poster" (`<a download="cut-the-ties-<slug>.png">`
@@ -105,14 +100,7 @@ no share affordance before the private commitment and captain steps
    `bsky.app/intent/compose?text=` (link inside the text), each in a new
    tab with `rel="noopener"`. Their preview is the build-time 1200×630
    goal card (`goal-pages.md`), unchanged.
-6. **Captain-list share.** The "Share" after a completed list on "Your
-   week" (`commitment-funnel.md` §8) draws the same poster with the
-   "THREE OF US ARE CALLING" verb line and "<ROLE> <SURNAME>'S OFFICE
-   BEFORE <MON D>" (or "OUR OFFICES BEFORE <MON D>" with no captain
-   name) once the list is receipted, and attaches it when the sheet
-   takes files; the district stays off the image. Text and link are
-   unchanged.
-7. **`via` on the next visit.** A `?via=<tag>` on the landing rides on
+6. **`via` on the next visit.** A `?via=<tag>` on the landing rides on
    that visitor's `POST /api/route` as `via`; the goal page's "Enter your
    address" link carries it to the landing. The client passes only a
    1–16 character `[a-z0-9-]` tag and drops anything else; the Worker
@@ -125,8 +113,7 @@ no share affordance before the private commitment and captain steps
 - `web/src/lib/poster.ts` (lazy chunk): `SHARE_PAYLOAD: 'files' |
   'files+title'`, `W = 1080`, `H = 1920`, `BAND`,
   `drawPoster(ctx, {act: 'called' | 'wrote', target, title, what, date,
-  url?, verb?})` (`verb` marks the captain-list poster and leaves with
-  it), `CTA = 'YOUR TURN. CALL YOUR REP'`, `fitSize(ctx, text, width,
+  url?})`, `CTA = 'YOUR TURN. CALL YOUR REP'`, `fitSize(ctx, text, width,
   from, to, step)` (largest size in the steps whose measured width
   fits, `to` when none does; swaps the px size in `ctx.font`),
   `wrapText`, `posterDate`, `targetLine(role, name, state?)`,
@@ -151,8 +138,7 @@ no share affordance before the private commitment and captain steps
   via?)`. No new endpoint, table, cookie or environment variable.
 
 ## Invariants (regression checklist)
-- [ ] No share affordance renders before the receipt, nor before the
-      commitment and captain steps are answered or skipped.
+- [ ] No share affordance renders before the receipt.
 - [ ] The poster is 1080×1920; every glyph, the four corners of the
       turned stamp and the address line's descenders lie within y
       285–1635 and x 72–1008; title ≥72 px, body ≥44 px, call to action
@@ -176,8 +162,8 @@ no share affordance before the private commitment and captain steps
       the page holds one poster `<img>`, 96 px wide; without a share API
       "Message" is absent and the four intent links carry the encoded
       line and link and open with `rel="noopener"`.
-- [ ] The captain-list share attaches the 9:16 poster; its text is
-      unchanged.
+- [ ] No poster carries "THREE OF US ARE CALLING"; "Your week" loads no
+      poster module.
 - [ ] No request leaves the page between receipt and share.
 - [ ] `POST /api/route` with `via: 'share'` succeeds and the digest counts
       it; `via: 'x'.repeat(17)` or `via: 'A B'` is 400 `bad_request`; no
@@ -186,6 +172,6 @@ no share affordance before the private commitment and captain steps
 
 ## Performance budget
 - Landing ≤100 KB transferred (unchanged by this capability).
-- The poster chunk ≤4 KB gzip, loaded only on the receipt screen and
-  "Your week" after a receipted list; the act page's LCP is unchanged.
+- The poster chunk ≤4 KB gzip, loaded only on the receipt screen; the
+  act page's LCP is unchanged.
 - Draw + encode ≤300 ms on a mid-range Android.

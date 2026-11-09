@@ -28,7 +28,7 @@ would do. Generation, its guardrails, receipts and reports are in
    in the last 24 hours, which is the limit, so this one is built from
    our template with your lines dropped in."); when more than one reason
    applies the first of `budget`, `unconfigured`, `limit`, `capacity`
-   wins; receipt, commitment, captain, share and report are unchanged. The
+   wins; receipt, reminder, share and report are unchanged. The
    `generations` row has `model = 'standard'`, zero tokens and `check_fail`
    null, so the per-device-day and per-IP limits see it; the per-office
    cap and the global daily cap count model rows only, and `costUsd`

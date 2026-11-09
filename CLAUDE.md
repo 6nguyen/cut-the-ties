@@ -68,8 +68,8 @@ From `docs/prd/archive/2026-11-action-router.md` acceptance criteria:
   NDAA integration sections (219/224), the 2028 MOU replacement, named
   appropriations votes and primaries. A PRD names the vote it targets.
 - Don't make a public act the first step. The evidence says public badges
-  and petitions suppress follow-through; the funnel is private commitment,
-  then a related hard ask, then named-captain recruitment, then a public
-  receipt.
+  and petitions suppress follow-through; the funnel is the private hard
+  act (a call or a letter), then the public receipt, with an optional
+  private reminder. No share before a receipt.
 - Don't let the product's numbers (whip counts, tallies) come from an LLM;
   deterministic code counts, sourced rows feed it.

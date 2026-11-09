@@ -2,12 +2,11 @@
 
 ## Purpose
 After a receipt, offers one private reminder (a call by a date, stored
-by one tap), keeps it only in the browser, shows it as a checklist on
-the next visit and offers a share only after the receipt. A captain list
-(three first names) saved before `one-screen-receipt` §2 stays on "Your
-week" until that PRD's §4 retires it. It stops at the
-device: the Worker learns that a list was completed in a district, never
-who was on it. The receipt itself and the share sheet are in
+by one tap), keeps it only in the browser and shows it as a checklist on
+the next visit. No share is offered before a receipt. It stops at the
+device: nothing in these lists is sent. The captain list (three first
+names) was retired by `one-screen-receipt` §4; a stored one is deleted
+unread. The receipt itself and the share sheet are in
 `personalised-documents.md`; the landing page in `action-router.md`.
 
 ## Behavior
@@ -16,62 +15,36 @@ who was on it. The receipt itself and the share sheet are in
    me to call (.ics)" after a letter, a comment or an emailed script
    (`personalised-documents.md` §4 email step, receipt `channel
    'email'`), "Remind me before the vote (.ics)" after a call. One tap
-   downloads the `.ics` of §3 for the default date (10:00 local on the
+   downloads the `.ics` of §2 for the default date (10:00 local on the
    next weekday, never later than the goal's decision date; 10:00
    anywhere in the US falls inside DC office hours,
    `call-follow-through`), stores the same commitment locally and
    replaces the link with "Reminder saved". There is no date input and
-   no "Skip"; the date moves later from "Your week" (§6). Nothing is
+   no "Skip"; the date moves later from "Your week" (§4). Nothing is
    sent and no counter moves.
-2. **Captain list.** Next, "Name three people in <STATE-NN> you'll ask to
-   call by <due>" (the district is omitted when none is stored): three
-   first-name fields (≤20 characters; letters, spaces, hyphens and
-   apostrophes) each with a channel (text · in person · call). A field
-   holding a digit or `@` is refused inline with "First name only: no
-   numbers or @." and the list cannot be saved; an invalid list is never
-   written. "Save my three" stores the list locally and shows "Add
-   reminder (.ics)" and "Copy a message"; "Skip" is one tap. The list
-   exists only after a receipt (it is the related hard ask, never the
-   first step).
-3. **Reminder and message.** The `.ics` is built in the browser: one
-   event at the due time (15 minutes, display alarm 15 minutes before)
-   titled "Call about: <goal>", with the goal deep link as URL and
-   description. It holds no name. "Copy a message" puts on the clipboard
-   one line naming the goal and the date plus the goal deep link, for
-   the user's own groups.
-4. **Share waits.** The share row (`social-sharing.md` §3) and "Your
-   other action" appear on the receipt screen only after both steps are
-   answered or skipped.
-5. **Your week (`/`).** A visitor with a stored district and any open
-   commitment or captain list sees a "Your week" card above the address
-   field instead of being redirected to `/results`. Each open commitment
-   shows "You said you'd call about <goal> by <due>" (goal linked to its
-   act page) with "Done" (removes it) and "Not yet" (hides it this
-   visit). The captain list shows the three names with a checkbox each;
-   ticking is local. The third tick posts one receipt (`action:
-   captain-list`, no target, no names); only then the card shows
-   "Counted: one list for <STATE-NN>, no names." and "Share". A failed
-   post keeps the list and says so. The card's footer links to
-   `/results`, offers "Change address" (clears the place and route cache,
-   keeps every commitment) and "Start over" (clears the place and every
-   commitment and list).
-6. **Overdue and closed.** An item past its due time reads "Still on?"
+2. **Reminder.** The `.ics` is built in the browser: one event at the
+   due time (15 minutes, display alarm 15 minutes before) titled "Call
+   about: <goal>", with the goal deep link as URL and description. It
+   holds no name.
+3. **Your week (`/`).** A visitor with a stored district and any open
+   commitment sees a "Your week" card above the address field instead of
+   being redirected to `/results`. Each open commitment shows "You said
+   you'd call about <goal> by <due>" (goal linked to its act page) with
+   "Done" (removes it) and "Not yet" (hides it this visit). On load the
+   card deletes `cut-ties:captain` unread: a browser that saved a captain
+   list sees no list, no checkboxes and no "Share", and a list alone
+   shows no card. The card's footer links to `/results`, offers "Change
+   address" (clears the place and route cache, keeps every commitment)
+   and "Start over" (clears the place and every commitment).
+4. **Overdue and closed.** An item past its due time reads "Still on?"
    with "Done", "New date" (a date input, 10:00 local) and "Drop"
    (deletes it locally). On load, items whose goal is no longer active
    are removed and the card shows one line per goal: "<title>:
    <outcome_note>" (or "the window closed" / "closed"); a goal no longer
-   listed yields "One goal is no longer listed; its item was dropped." A
-   list that already posted its receipt is removed silently.
-7. **Act page nudge.** The act page of a goal with an open commitment
+   listed yields "One goal is no longer listed; its item was dropped."
+5. **Act page nudge.** The act page of a goal with an open commitment
    shows "You said you'd call by <due>" above the form.
-8. **Share after a list.** The share after a completed list uses the
-   device share sheet (clipboard fallback: line + link) with the text
-   "Three of us in <STATE-NN> are calling <Surname> before <Mon D>. Who's
-   next?" and the goal deep link. When the browser can share files, the
-   1080×1920 poster of `social-sharing.md` §6 is attached ("THREE OF US
-   ARE CALLING / <ROLE> <SURNAME>'S OFFICE BEFORE <MON D>"); the
-   district stays off the image and in the text.
-9. **Voicemail retry** (`call-follow-through` §1). Choosing `no_answer`
+6. **Voicemail retry** (`call-follow-through` §1). Choosing `no_answer`
    in the office-response picker shows "Voicemail counts. Offices tally
    messages daily; say your street address so yours is logged." and one
    "Try again" button. The tap stores a commitment of kind `retry` for
@@ -84,23 +57,22 @@ who was on it. The receipt itself and the share sheet are in
    page with `?target=<id>` (both numbers, DC first), and has the same
    Done / Not yet / Still on? controls as a call. A retry never posts
    anything; nothing counts until a new receipt.
-
-10. **Next office and echo** (`call-follow-through` §3–4,
-    `one-screen-receipt` §2.2 and §2.4). Under the share row the receipt
-    screen shows "Next: call <Role Name>'s office →" for each target
-    of the goal with no receipt from this device in the last 24 h (local
-    log `cut-ties:receipts`, written when `/api/receipt` succeeds), each
-    linking to `/goals/<slug>/act/<action>?target=<id>`. The first
-    (`[data-next-primary]`) is the screen's one filled button and the
-    rest are bordered; while the email step shows "I sent it" that
-    button holds the fill and the first drops to bordered. When every
-    target has a receipt it reads "All three called this week." (two
-    targets: "All of your targets called this week."); a goal with one
-    target shows nothing. Above the share row, with a stored place, the
-    `Counts` island in `echo` mode: "You're one of <N> constituents in
-    <STATE-NN> who called this week", the state line when the district
-    is under threshold, else nothing (`district-counters.md` §6). Both
-    load with the receipt screen, after the act page's own bundle.
+7. **Next office and echo** (`call-follow-through` §3–4,
+   `one-screen-receipt` §2.2 and §2.4). Under the share row the receipt
+   screen shows "Next: call <Role Name>'s office →" for each target
+   of the goal with no receipt from this device in the last 24 h (local
+   log `cut-ties:receipts`, written when `/api/receipt` succeeds), each
+   linking to `/goals/<slug>/act/<action>?target=<id>`. The first
+   (`[data-next-primary]`) is the screen's one filled button and the
+   rest are bordered; while the email step shows "I sent it" that
+   button holds the fill and the first drops to bordered. When every
+   target has a receipt it reads "All three called this week." (two
+   targets: "All of your targets called this week."); a goal with one
+   target shows nothing. Above the share row, with a stored place, the
+   `Counts` island in `echo` mode: "You're one of <N> constituents in
+   <STATE-NN> who called this week", the state line when the district
+   is under threshold, else nothing (`district-counters.md` §6). Both
+   load with the receipt screen, after the act page's own bundle.
 
 ## Data & contracts
 - `localStorage` `cut-ties:commitments` = `[{v: 1, goal, action, target,
@@ -109,20 +81,16 @@ who was on it. The receipt itself and the share sheet are in
   `retry:<goal>:<target>`: one call per goal, one retry per goal and
   target (`keyOf`); `cut-ties:receipts` = `[{v: 1, goal, action, target,
   at}]`, one row per goal, action and target, pruned to 24 h on every
-  read, cleared by "Start over"; `cut-ties:captain` = `{v: 1, goal,
-  due, people: [{name, channel: text|in_person|call, done}] ×3, who?,
-  receipted?}` where `who` is the target official's surname for the
-  share line and `receipted` marks a list whose receipt posted. Records
-  with another `v`, a wrong shape or an invalid name are ignored.
+  read, cleared by "Start over". `cut-ties:captain` (the retired captain
+  list) is never read: `/` deletes it on load and so does "Start over".
+  Records with another `v` or a wrong shape are ignored.
   `cut-ties:device` (`web/src/lib/store.ts`) is shared with the receipt
   flow. Nothing in these keys is ever sent.
 - Deadline rules (`web/src/lib/commitments.ts`, `DUE_HOUR = 10`): default
-  = next weekday 10:00 local, capped at the decision date's 10:00; editable
-  maximum =
-  min(now + 7 days, decision date), or the decision date alone for a
-  repeat call; a missing decision date means no cap.
-- `POST /api/receipt` accepts `{goal, action: 'captain-list', state?,
-  district?, device}`: the goal must be active, `target` must be absent
+  = next weekday 10:00 local, capped at the decision date's 10:00; a
+  missing decision date means no cap.
+- `POST /api/receipt` still accepts `{goal, action: 'captain-list', state?,
+  district?, device}` (no shipped client sends it; cached old ones may): the goal must be active, `target` must be absent
   (else 400 `bad_request`), and the row is written with `kind
   'captain-list'`, `action_id NULL`, `target_id NULL`. Ordinary receipts
   are unchanged and carry `kind 'action'`.
@@ -138,26 +106,28 @@ who was on it. The receipt itself and the share sheet are in
   folding, TEXT escaping; `VCALENDAR` (VERSION 2.0, PRODID) › `VEVENT`
   (UID, DTSTAMP, DTSTART/DTEND in UTC, SUMMARY, DESCRIPTION, URL) ›
   `VALARM` (DISPLAY, `-PT15M`). File name `call-<goal>.ics`.
-- Islands: `web/src/components/Funnel.tsx` (steps 1–4, rendered by
-  `ActForm.tsx` after a receipt), `web/src/components/YourWeek.tsx`
-  (steps 5–8, mounted above `AddressForm` on `/` with every published
-  goal's `{slug, title, status, decision_date, outcome_note}` as props).
+- Islands: `web/src/components/ReceiptExtras.tsx` (steps 1, 6 and 7, in
+  the lazy receipt chunk `ActForm.tsx` loads after a receipt),
+  `web/src/components/YourWeek.tsx` (steps 3–4, mounted above
+  `AddressForm` on `/` with every published goal's `{slug, title, status,
+  decision_date, outcome_note}` as props).
 
 ## Invariants (regression checklist)
-- [ ] After a receipt the commitment line renders before any "Share";
-      "Share" is absent until both steps are answered or skipped
-      (`web/src/components/funnel.test.ts`).
-- [ ] A captain field with a digit or `@` is refused and nothing is
-      stored; the whole flow makes no request carrying a name.
+- [ ] No share control renders before a receipt
+      (`web/src/components/receipt.test.tsx`).
+- [ ] `/` deletes `cut-ties:captain` on load and shows no captain list,
+      checkbox or "Share"; a stored commitment and a retry still show,
+      nothing is posted and no poster module loads (`funnel.test.ts`,
+      `commitments.test.ts`).
 - [ ] "Next:" lists only targets without a receipt in the last 24 h,
       links carry `?target=`, and the slot is empty for a one-target goal
       (`funnel.test.ts`, `commitments.test.ts`).
 - [ ] `no_answer` → "Try again" stores exactly one `retry` due ≥60 min
       ahead inside DC hours, a remount offers no second one, and no
       request is made (`funnel.test.ts`, `commitments.test.ts`).
-- [ ] Two ticks post nothing; the third posts exactly one receipt with
-      `action: captain-list`, no `target`, no names; the Worker stores
-      `kind 'captain-list'` with null ids (`worker/test/generate.test.ts`).
+- [ ] `POST /api/receipt` with `action: captain-list` and no `target`
+      still stores `kind 'captain-list'` with null ids
+      (`worker/test/generate.test.ts`).
 - [ ] The `.ics` parses (CRLF, ≤75 octets per line, required properties
       in order), carries the goal link and no name (`web/src/lib/ics.test.ts`).
 - [ ] The default deadline is the next weekday 10:00 local and never
@@ -166,8 +136,6 @@ who was on it. The receipt itself and the share sheet are in
       address field and does not redirect; "Change address" keeps the
       items; "Start over" clears them; a closed goal's item is dropped
       with its outcome line.
-- [ ] No public act precedes the private one: no counter, badge or share
-      appears before the commitment line.
 
 ## Performance budget
 Landing ≤100 KB transferred with the island (measured 2026-11-04: 24.0

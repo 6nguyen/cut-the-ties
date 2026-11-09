@@ -9,12 +9,11 @@ only after that device has asked to come. Nothing is public until a
 maintainer approves it from the weekly digest. Stops short of office
 addresses (the office's own site has them), of any directory of people, and
 of any public act before the private one: a visit is reached from the
-captain screen and the member page, never as a first step.
+member page, never as a first step.
 
 ## Behavior
 1. **Listing (organiser).** `VisitForm` (Preact island inside `Visits` on
-   `/m/<bioguide>`, opened by "Organise one" or by `#organise`; the captain
-   screen's saved step links to `/m/<target>#organise`): member fixed to
+   `/m/<bioguide>`, opened by "Organise one" or by `#organise`): member fixed to
    the page, office city (read-only when `members.district_office_city` is
    set; typed otherwise, letters only), date from today on, start and end
    times (end after start), one contact (an `https://` URL or one

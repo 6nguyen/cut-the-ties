@@ -2,7 +2,6 @@
 // bordered icon buttons. ActForm imports this module lazily when a receipt exists (so the poster chunk never
 // ships with the landing or the act page's own bundle) and calls `preparePoster` at once, so the File and the
 // canShare answer are ready when the block shows.
-import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { surname } from '@worker/names';
 import { canShareFile, captionFor, intentLinks, posterAlt, posterDate, posterFile, sharePayload, targetLine, type PosterSpec } from '../lib/poster';
@@ -28,8 +27,6 @@ interface Props {
   slug: string;
   /** null while the poster is still rendering; the block then offers "Copy link" and "Message" alone. */
   poster: Poster | null;
-  /** Rendered after the share buttons, before the fallback row: the receipt's "Your other action" link. */
-  other?: ComponentChildren;
 }
 
 /** §3.1: 20 px monochrome line icons in the button's ink: no brand colour, no icon font, no request. */
@@ -45,7 +42,7 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
 /** Every share control is bordered: the one filled button on the receipt screen is the next office. */
 const BTN = 'btn btn-ghost w-full justify-start';
 
-export default function ShareRow({ type, role, name, title, slug, poster, other }: Props) {
+export default function ShareRow({ type, role, name, title, slug, poster }: Props) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false); // the sheet threw something other than AbortError
   const [wide, setWide] = useState(false);
@@ -99,7 +96,6 @@ export default function ShareRow({ type, role, name, title, slug, poster, other 
           {noFileShare && imgUrl && <a href={imgUrl} download={`cut-the-ties-${slug}.png`} class={BTN} data-share-save><Icon name="save" />Save poster</a>}
           <button type="button" class={BTN} onClick={copyLink} data-share-copy><Icon name="link" /><span aria-live="polite">{copied ? 'Link copied' : 'Copy link'}</span></button>
           {hasShare && <button type="button" class={BTN} onClick={message} data-share-message><Icon name="message" />Message</button>}
-          {other}
         </div>
       </div>
       {usePoster && <p class="text-sm text-ink/70" data-share-hint>Pick Instagram, then Story, Post, Reel or Message.</p>}

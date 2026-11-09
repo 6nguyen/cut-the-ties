@@ -1,23 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addCommitment, CAPTAIN_KEY, ceilingFor, clearFunnel, COMMIT_KEY, commitmentFor, defaultDue, hasOpenItems, loadCaptain, loadCommitments, logReceipt, maxDue, receiptedTargets, receiptLine, recentReceipts, retryDue, retryFor, saveCaptain, validName } from './commitments';
+import { addCommitment, CAPTAIN_KEY, ceilingFor, clearFunnel, COMMIT_KEY, commitmentFor, defaultDue, dropCaptain, hasOpenItems, loadCommitments, logReceipt, receiptedTargets, recentReceipts, retryDue, retryFor } from './commitments';
 
-const people = (names: string[]) => names.map((name) => ({ name, channel: 'text' as const, done: false }));
-
-describe('captain names (§1.3)', () => {
-  it('accepts first names, refuses digits, @ and anything over 20 chars', () => {
-    for (const ok of ['Maya', 'José', "O'Neil", 'Mary Ann', 'Anne-Marie']) expect(validName(ok)).toBe(true);
-    for (const bad of ['', '  ', 'Maya 555', '5551234567', 'maya@example.com', '@maya', 'a'.repeat(21), 'Bob;drop', 42, null]) expect(validName(bad)).toBe(false);
-  });
-  it('never stores a list with an invalid name', () => {
-    localStorage.clear();
-    saveCaptain({ v: 1, goal: 'g', due: new Date().toISOString(), people: people(['Ana', 'Ben', '555-0100']) });
-    expect(loadCaptain()).toBeNull();
-    saveCaptain({ v: 1, goal: 'g', due: new Date().toISOString(), people: people(['Ana', 'Ben', 'Cy']) });
-    expect(loadCaptain()?.people.map((p) => p.name)).toEqual(['Ana', 'Ben', 'Cy']);
-    expect(JSON.parse(localStorage.getItem(CAPTAIN_KEY)!).v).toBe(1);
-  });
-});
+/** A list as the retired captain step stored it (one-screen-receipt §4). */
+const LIST = JSON.stringify({ v: 1, goal: 'g', due: '2026-11-05T17:00:00.000Z', people: ['Ana', 'Ben', 'Cy'].map((name) => ({ name, channel: 'text', done: false })) });
 
 describe('default deadline (call-follow-through §2)', () => {
   const at = (s: string) => new Date(s);
@@ -35,13 +21,6 @@ describe('default deadline (call-follow-through §2)', () => {
     expect(ceilingFor('2026-11-07')!.getHours()).toBe(10);
     expect(defaultDue(at('2026-11-03T09:00:00'), '2026-12-10').getDate()).toBe(4);
     expect(defaultDue(at('2026-11-03T09:00:00'), '').getDate()).toBe(4);
-  });
-  it('caps the editable date at seven days, or the vote, or the whole window for a repeat call', () => {
-    const now = at('2026-11-03T09:00:00');
-    expect(maxDue(now, null, false).getDate()).toBe(10);
-    expect(maxDue(now, '2026-11-05', false).getDate()).toBe(5);
-    expect(maxDue(now, '2026-12-10', false).getDate()).toBe(10);
-    expect(maxDue(now, '2026-12-10', true).getMonth()).toBe(11);
   });
 });
 
@@ -72,15 +51,18 @@ describe('local schema and open items (§1.2, §2.1)', () => {
     expect(retryDue(new Date('2026-11-02T22:30:00Z')).toISOString()).toBe('2026-11-03T14:00:00.000Z');
     expect(retryDue(new Date('2026-11-02T20:00:00Z')).toISOString()).toBe('2026-11-02T21:00:00.000Z');
   });
-  it('a receipted list is no longer open', () => {
-    saveCaptain({ v: 1, goal: 'g', due: '2026-11-05T17:00:00.000Z', people: people(['Ana', 'Ben', 'Cy']) });
-    expect(hasOpenItems()).toBe(true);
-    saveCaptain({ v: 1, goal: 'g', due: '2026-11-05T17:00:00.000Z', people: people(['Ana', 'Ben', 'Cy']), receipted: true });
+  it('one-screen-receipt §4.2: a stored captain list is not an open item; dropCaptain and Start over delete it and leave the rest', () => {
+    localStorage.setItem(CAPTAIN_KEY, LIST);
     expect(hasOpenItems()).toBe(false);
-  });
-  it('the receipt line names a district, an official and a date, never a person', () => {
-    const line = receiptLine('TX-35', 'Casar', '2026-11-07T23:00:00.000Z');
-    expect(line).toMatch(/^Three of us in TX-35 are calling Casar before Nov \d+\. Who's next\?$/);
+    addCommitment({ goal: 'g', action: 'g-call', target: 'X1', due: '2026-11-05T15:00:00.000Z' });
+    dropCaptain();
+    expect(localStorage.getItem(CAPTAIN_KEY)).toBeNull();
+    expect(loadCommitments()).toHaveLength(1);
+    expect(hasOpenItems()).toBe(true);
+    localStorage.setItem(CAPTAIN_KEY, LIST);
+    clearFunnel();
+    expect(localStorage.getItem(CAPTAIN_KEY)).toBeNull();
+    expect(localStorage.getItem(COMMIT_KEY)).toBeNull();
   });
 });
 

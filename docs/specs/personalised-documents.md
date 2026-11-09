@@ -111,13 +111,13 @@ stores identifies them. Address routing, goals and ranking are in
    receipt, one screen in this order: the stamp ("I CALLED" / "I WROTE",
    office, day; `role="status"`), the "You're one of <N>" line when it
    has a number, the share row of `social-sharing.md` §3–5, the next
-   office as the one filled button (`commitment-funnel.md` §10), the
+   office as the one filled button (`commitment-funnel.md` §7), the
    office-response chips
    (`will_support · undecided · opposed · no_answer · other`): a tap
    posts `POST /api/report`, shows "Saved" and locks the rest ("Other"
    first opens a note ≤140 with "Save note"; a failed post reads "Could
    not save that. Try again."); `no_answer` adds the voicemail line,
-   "Try again" (`commitment-funnel.md` §9) and "Email it instead", any
+   "Try again" (`commitment-funnel.md` §6) and "Email it instead", any
    other outcome "Put it in writing (2 min)". Last, three text links:
    the reminder (`commitment-funnel.md` §1), `/donate`, "Your other
    action". No share row before a receipt. Reports

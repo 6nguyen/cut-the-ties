@@ -29,8 +29,8 @@ documents, receipts and reports are in `personalised-documents.md`.
    request in flight; a failure, a 429 or a 2 s timeout closes the list
    with no message. With `none` (§Data & contracts) the plain field
    renders unchanged. A return visitor with a stored district and an open
-   commitment or captain list sees the "Your week" card above the field
-   (`commitment-funnel.md` §5) instead of the redirect in §6.
+   commitment sees the "Your week" card above the field
+   (`commitment-funnel.md` §3) instead of the redirect in §6.
 2. **ZIP or partial input.** A bare ZIP (`\d{5}(-\d{4})?`) is refused
    before any lookup with "A ZIP code is not enough: many cities are split
    between districts. Enter your street address." Input shorter than eight
@@ -94,8 +94,8 @@ documents, receipts and reports are in `personalised-documents.md`.
    arrive as 0 and the line waits for the response (`district-counters.md`).
 6. **Return visit.** The browser keeps only `{state, district}` in
    `localStorage` (`cut-ties:place`); `/` redirects straight to `/results`,
-   which re-posts the stored pair, unless an open commitment or captain
-   list keeps the visitor on `/` (§1). The last route response is cached in
+   which re-posts the stored pair, unless an open commitment
+   keeps the visitor on `/` (§1). The last route response is cached in
    `sessionStorage` (`cut-ties:route`) for the immediate navigation only.
 7. **Targets per goal.** Federal goals target the representative and both
    senators; state goals target the state treasurer row. Leadership goals
@@ -114,7 +114,7 @@ documents, receipts and reports are in `personalised-documents.md`.
 ## Data & contracts
 - `POST /api/route` body `{address, turnstile?}` or `{state, district,
   by_location?, by_suggestion?, turnstile?}`, plus optional `via`
-  (`social-sharing.md` §7; malformed → 400 `bad_request`). 200 `{state, district, house, senators, state_row, goals}`
+  (`social-sharing.md` §6; malformed → 400 `bad_request`). 200 `{state, district, house, senators, state_row, goals}`
   where `goals` is at most two `GoalCard`s (`worker/src/route.ts`). A
   leadership `GoalCard` carries `chamber`, `uncalled: Chamber[]` (the
   Democratic-caucus seats with no called result) and, when both goals
