@@ -189,8 +189,8 @@ describe('photo output', () => {
     // §2.1: the phone hero is dimmed so the paragraph over the photo's lightest side keeps 4.5:1.
     expect(page('index')).toContain('<Photo id="capitol-dome-dusk" widths={heroWidths} sizes="100vw" eager class="hero-photo" />');
     expect(page('index')).toMatch(/@media \(max-width: 767px\) \{\s*:global\(\.hero-photo\) \{ filter: brightness\(0\.75\); \}/);
-    expect(page('results')).toContain('<template data-photo-band={id}><Photo id={id} widths={[...BAND.widths]} sizes={bandSizes} quality={BAND.quality} /></template>');
-    expect(usedIds([page('results')], ['state-capitol'])).toEqual(['state-capitol']);
+    expect(page('results/index')).toContain('<template data-photo-band={id}><Photo id={id} widths={[...BAND.widths]} sizes={bandSizes} quality={BAND.quality} /></template>');
+    expect(usedIds([page('results/index')], ['state-capitol'])).toEqual(['state-capitol']);
   });
 });
 

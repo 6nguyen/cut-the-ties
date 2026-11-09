@@ -59,7 +59,8 @@ no share affordance before the receipt.
    steps from 200 px to 160 px. Never on the poster: the user's name,
    city, district, phone, the generated text or anything from the
    office response.
-3. **The share block** (on the receipt screen, after the count line) is
+3. **The share block** (on the act page's receipt screen and in the
+   results receipt modal, `results-pages.md` §5, after the count line) is
    a 96 px wide thumbnail of the poster (`<img>` from a blob URL, alt
    "Poster: I called <Role Surname>'s office about <goal title>", "I
    wrote to …" for a letter or comment) beside a column of bordered

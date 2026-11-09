@@ -1,5 +1,5 @@
 # Share from results — PRD
-Status: READY 2026-11-09 (auto) · Owner: George Nguyen · Last updated: 2026-11-09
+Status: IN PROGRESS 2026-11-09 (§1–3 built, §4 owner device test) · Owner: George Nguyen · Last updated: 2026-11-09
 
 ## Problem
 The share poster and share row exist only at the end of the script flow
@@ -252,23 +252,42 @@ owner device test (§4) closes the PRD.
 
 ## State (updated 2026-11-09, PR #n)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [ ] 1. Summary cards on `/results`
-  - [ ] 2. One-action page `/results/<goal>`
-  - [ ] 3. Receipt modal after a call or a write
+  - [~] 1. Summary cards on `/results` · feat/share-from-results
+  - [~] 2. One-action page `/results/<goal>` · feat/share-from-results
+  - [~] 3. Receipt modal after a call or a write · feat/share-from-results
   - [ ] 4. Owner device test
-- Completed: none
-- Folded: none
-- Branch / open PRs: `docs/share-from-results-prd` (this PRD)
-- Files changed (file:line map): none yet
-- Tests run + result: none yet
-- Remaining: §1–4
-- Decisions since last update: no outcome sheet (owner, 2026-11-09); the
-  receipt posts on the tap; email follows the call flow; modal, not a
-  card tail or a `/done` route; `limit_repeat` gains the target.
+- Completed: §1–3 built and tested (one branch, one PR, owner asked for end to end)
+- Folded: §1, §2, §3 (`docs/specs/results-pages.md` added; action-router §5,
+  target-cards §1/§3, countdown-stamp §3, social-sharing §3,
+  commitment-funnel §7, district-counters §8, specs README index)
+- Branch / open PRs: `feat/share-from-results`
+- Files changed (file:line map): `web/src/pages/results/index.astro` (moved),
+  `web/src/pages/results/[goal].astro`; `web/src/components/SummaryCard.tsx`,
+  `ReceiptModal.tsx`, `ReceiptStamp.tsx`, `Results.tsx` (single-goal mode,
+  `open()` lazy-imports the modal, `onContact` POST keepalive), `Target.tsx`
+  (write square, `done`/`ring`/`onContact`/`onShare`, `TargetStack done/next`);
+  `web/src/lib/store.ts` `peekRoute`, `commitments.ts` `ReceiptChannel`
+  `receiptsByTarget`, `contact.ts` `CONTACT_LABEL`/`CONTACT_ACTION`;
+  `worker/src/route.ts` GoalCard `action`/`short_label`/`what_we_want`,
+  TargetCard `contact_form_url`/`contact_kind`; `worker/src/repo.ts` repeat SUM
+  keyed on `target_id`; `schema.sql`/`migrate.ts`/`load.ts` `actions.short_label`;
+  `data/actions/*.yaml` `short_label`
+- Tests run + result: `quiet-check test-web` PASS (SummaryCard.test.tsx 9,
+  results-page.test.tsx 7 new), `tsc` PASS, `test` PASS (counts.test.ts
+  per-target repeat), `build` PASS, `prd-lint` PASS, `doc-lint` PASS.
+  Budgets (gzip, build 2026-11-09): `/results` 4.1 KB HTML + 6.6 KB CSS +
+  24.0 KB island JS + 26 KB first band ≈ 61 KB ≤ 100 KB; ShareRow chunk
+  3.99 KB ≤ 4 KB, loaded only on the tap (dynamic import confirmed).
+- Remaining: §4 (owner device test on the Pages preview)
+- Decisions since last update: modal stamp reuses the act page's
+  `ReceiptStamp` (paper/crimson dashed, −4°) rather than a new crimson
+  block; `what_we_want` added to GoalCard; `short_label` is a new
+  `actions` column; `LoggedReceipt.channel` optional (missing = call);
+  `CONTACT_LABEL` (square title) split from `CONTACT_ACTION` (act page);
+  tests stub `ShareRow` and block happy-dom navigation on external links.
 - Known failures / blockers: none
-- Next action: merge this PR, then `/implement-prd-section
-  docs/prd/share-from-results.md` (next: §1)
-
+- Next action: owner reviews PR #n; then §4 on
+  `https://feat-share-from-results.cut-ties.pages.dev`
 ## Open questions
 1. Should the goal detail page's call squares get the same tap-receipt and
    modal? Proposal: not in this PRD; row in `## Next` (`results-pages`
@@ -285,3 +304,4 @@ owner device test (§4) closes the PRD.
 
 ## Changes
 - 2026-11-09 — created from mock-up D minus the outcome sheet (READY, auto).
+- 2026-11-09 — §1–3 built on `feat/share-from-results` (one PR, owner asked for end to end): summary cards, `/results/<goal>`, write square, tap-is-receipt modal; `limit_repeat` keyed on target; spec delta folded (`results-pages.md` added). Stamp reuses `ReceiptStamp`. IN PROGRESS; §4 next.

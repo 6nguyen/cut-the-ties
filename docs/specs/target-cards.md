@@ -29,14 +29,21 @@ presentation: who the targets are and what each line says come from
    "Representative · AK at large", "Treasurer · MD", or the role alone
    when the card has no state, then the prior-vote ticker line; at the
    right a 44 px acid call square (phone glyph, `aria-label="Call
-   <name>"`, `title="Call <phone>"`, `href="tel:…"`). Below, in this
-   order and only when present: the elect line, the district office
+   <name>"`, `title="Call <phone>"`, `href="tel:…"`), and left of it,
+   when the target has a `contact_form_url`, a 44 px paper write square
+   (envelope glyph, `aria-label="Write to <name>"`, `title` by
+   `contact_kind`, `results-pages.md` §3). With `done` set the card is
+   muted and one "✓ Share" pill replaces both squares; `ring` draws the
+   crimson Next ring on the call square. Below, in this order and only
+   when present: the elect line, the district office
    line, the position chip with its source link, the holdings line, the
    visit line, the record line.
 2. **Member-elect.** No phone, so the square is hazard with an arrow
    glyph, `aria-label="Contact <name>"`, linking `contact_url`; the role
    line reads "Representative-elect"/"Senator-elect".
-3. **Stack.** `TargetStack({label, targets, partner, children})`: a
+3. **Stack.** `TargetStack({label, targets, partner, done, next,
+   onContact, onShare, children})` (the last four only on
+   `/results/<goal>`, `results-pages.md` §4–7): a
    `label-code` line ("Who to call (n)" on `/results`; "Who to call in
    <where> (n) · your two actions" on the goal page), the cards 12 px
    apart, then `children` (the `Counts` line, itself a bordered

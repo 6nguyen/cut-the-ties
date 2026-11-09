@@ -12,6 +12,8 @@ export const MIGRATIONS: ColumnMigration[] = [
   // email-button §2.1
   { table: 'actions', column: 'email_subject', ddl: 'ALTER TABLE actions ADD COLUMN email_subject TEXT;' },
   // email-button §2.2 (the receipts_kind_goal index change is an owner step: DROP INDEX + CREATE INDEX on production).
+  // share-from-results §1
+  { table: 'actions', column: 'short_label', ddl: 'ALTER TABLE actions ADD COLUMN short_label TEXT;' },
   { table: 'receipts', column: 'channel', ddl: "ALTER TABLE receipts ADD COLUMN channel TEXT NOT NULL DEFAULT 'call' CHECK (channel = 'call' OR channel = 'email');" },
 ];
 

@@ -6,6 +6,7 @@ target_scope: state
 order: 1
 ask_text: Ask {decider} whether the state holds Israel Bonds and when they will stop renewing them.
 email_subject: 'Constituent in {city}: does the state still hold Israel Bonds?'
+short_label: Israel bonds
 form_schema:
   fields:
     - {name: first_name, label: First name, max: 40, required: true}

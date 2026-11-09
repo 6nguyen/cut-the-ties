@@ -16,7 +16,7 @@ Rules:
 ## Index (the feature set)
 | Spec | Capability | Owner surfaces |
 |---|---|---|
-| [action-router.md](action-router.md) | Address → delegation → two ranked goal cards, return visit, targets per goal | `web/src/pages/index.astro`, `web/src/pages/results.astro`, `worker/src/route.ts`, `worker/src/ranking.ts` |
+| [action-router.md](action-router.md) | Address → delegation → two ranked goal cards, return visit, targets per goal | `web/src/pages/index.astro`, `web/src/pages/results/`, `worker/src/route.ts`, `worker/src/ranking.ts` |
 | [goal-pages.md](goal-pages.md) | Goals overview, goal detail and prep pages, goal lifecycle, donate/about/privacy, state goal copy | `web/src/pages/goals/`, `web/src/pages/donate.astro`, `worker/src/prep.ts`, `worker/src/state-copy.ts` |
 | [personalised-documents.md](personalised-documents.md) | Act page → screened, generated document → receipt and report | `web/src/components/ActForm.tsx`, `worker/src/generate.ts`, `worker/src/anthropic.ts` |
 | [standard-scripts.md](standard-scripts.md) | Deterministic fallback document: per-action template or seeded script-block composition, leader line, same output check | `worker/src/standard.ts`, `worker/src/compose.ts`, `data/script_blocks/` |
@@ -33,6 +33,7 @@ Rules:
 | [decision-feed.md](decision-feed.md) | Public `.ics` feed of decision dates, subscribe line on `/goals` and goal pages | `web/src/pages/feeds/decisions.ics.ts`, `web/src/components/SubscribeLine.astro`, `web/src/lib/ics.ts` |
 | [social-sharing.md](social-sharing.md) | On-device 1080×1920 poster after a receipt, file-only to the OS sheet, "Copy link" and "Message", "Save poster" fallback + intent links, `?via=` counted in the digest | `web/src/lib/poster.ts`, `web/src/components/ShareRow.tsx` |
 | [office-visits.md](office-visits.md) | List a district-office visit, maintainer approval from the digest, "I'll come" with the contact handed only to joiners, personal-data screen | `worker/src/visits.ts`, `web/src/components/Visits.tsx`, `web/src/components/VisitForm.tsx`, `web/src/lib/visits.ts` |
+| [results-pages.md](results-pages.md) | `/results` summary cards, one-action page `/results/<goal>`, write square, tap-is-receipt modal with stamp, echo, share and next office | `web/src/pages/results/`, `web/src/components/SummaryCard.tsx`, `web/src/components/ReceiptModal.tsx`, `web/src/components/Results.tsx` |
 | [site-imagery.md](site-imagery.md) | Photo library and manifest, licence policy checked at build, `Photo` ink treatment, generated photo credits on `/about` | `web/src/assets/img/manifest.yaml`, `web/src/lib/images.ts`, `web/src/components/Photo.astro`, `web/src/pages/about.astro` |
 
 ## Template (copy for a new capability)

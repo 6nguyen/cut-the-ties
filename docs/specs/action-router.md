@@ -68,30 +68,29 @@ documents, receipts and reports are in `personalised-documents.md`.
    404 `no_delegation`.
 5. **Results (`/results`).** Header `<STATE-NN> · change address`, H1
    "Your two actions this week", one line naming the delegation ("Your
-   people in Congress for <where>: …"), then
-   two slots: category chip, title, countdown stamp or past decision
-   date (`countdown-stamp.md`), summary, one card per target with its
-   party, role, name, phone as `tel:`, position chip, prior-vote line
-   and source link (`target-cards.md`), the ask text and a CTA to
-   `/goals/<goal>/act/<action>`. The page header carries one stamp for
-   the soonest target across both slots. When both
-   leadership goals are eligible they share one slot: the higher-scoring
-   goal is the card and the other rides on it as `also`; the card shows a
+   people in Congress for <where>: …"), then two summary cards
+   (`results-pages.md` §1), each linking `/results/<goal>`, where the
+   result card renders: category chip, title, countdown stamp or
+   past decision date (`countdown-stamp.md`), summary, one card per
+   target with its party, role, name, phone as `tel:`, position chip,
+   prior-vote line and source link (`target-cards.md`), the ask text and
+   a CTA to `/goals/<goal>/act/<action>`. The page header carries one
+   stamp for the soonest target across both slots. When both leadership
+   goals are eligible they share one slot: the higher-scoring goal is
+   the card and the other rides on it as `also`; the card shows a
    "House" block, then a "Senate" block, each with that goal's decision
-   date, targets, counter line, ask and CTA (`web/src/components/Results.tsx`
-   `Card`). A Democratic-caucus seat whose race is not called shows
-   "<Chamber> seat: race not called yet." in place of its block. A
+   date, targets, counter line, ask and CTA (`Results.tsx`). A
+   Democratic-caucus seat whose race is not called shows "<Chamber>
+   seat: race not called yet." in its block's place. A
    member-elect target shows the role "Representative-elect" or
    "Senator-elect", the line "Takes office <date>, replaces <name>" and a
    hazard "Contact" square (arrow glyph, `aria-label="Contact <name>"`)
-   linking `contact_url` when it has no phone (never a `tel:`
-   or the switchboard). Zero eligible goals
-   shows a message and a link to `/goals`. One column at 390 px, two at
-   ≥1024 px. "Change address" clears the stored district and returns to
-   `/`. Under each card's target stack the `Counts` island adds one line
-   ("12 constituents in TX-35 called this week", else the state line,
-   else nothing) from `GET /api/counts`; buckets below the threshold
-   arrive as 0 and the line waits for the response (`district-counters.md`).
+   linking `contact_url` when it has no phone (never a `tel:` or the
+   switchboard). No eligible goal: a message and a `/goals` link. One column at 390 px, two from 1024 px. "Change address"
+   clears the stored district and returns to `/`. Under each card's
+   target stack the `Counts` island adds one line ("12 constituents in
+   TX-35 called this week", else the state line, else nothing) from `GET /api/counts`; buckets below the threshold arrive
+   as 0 and the line waits for the response (`district-counters.md`).
 6. **Return visit.** The browser keeps only `{state, district}` in
    `localStorage` (`cut-ties:place`); `/` redirects straight to `/results`,
    which re-posts the stored pair, unless an open commitment

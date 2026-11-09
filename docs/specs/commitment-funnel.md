@@ -72,7 +72,11 @@ unread. The receipt itself and the share sheet are in
    `Counts` island in `echo` mode: "You're one of <N> constituents in
    <STATE-NN> who called this week", the state line when the district
    is under threshold, else nothing (`district-counters.md` §6). Both
-   load with the receipt screen, after the act page's own bundle.
+   load with the receipt screen, after the act page's own bundle. The
+   same 24 h rule picks the results receipt modal's one filled button
+   ("Next: call <Role Name> →", `results-pages.md` §5), which closes the
+   modal and scrolls to that office's ringed call square instead of
+   linking the act page.
 
 ## Data & contracts
 - `localStorage` `cut-ties:commitments` = `[{v: 1, goal, action, target,

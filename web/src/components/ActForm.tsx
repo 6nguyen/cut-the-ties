@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { DocFormat, FormField, GenerateDone, TargetContact } from '@worker/generate';
-import type { ContactKind } from '@worker/types';
+import { CONTACT_ACTION } from '../lib/contact';
 import { surname } from '@worker/names';
+import ReceiptStamp, { stampOffice, stampDay } from './ReceiptStamp';
 import type { TargetCard } from '../lib/api';
 import { deviceId, loadPlace } from '../lib/store';
 import { commitmentFor, fmtDue, logReceipt } from '../lib/commitments';
@@ -40,12 +41,8 @@ const STANDARD_WHY: Record<string, string> = {
   // draft-cap-per-office §1.3: the 3 is LIMITS.device_target_day in worker/src/generate.ts (limit.test.tsx holds them together).
   limit: 'You have had 3 personalised drafts for this office in the last 24 hours, which is the limit, so this one is built from our template with your lines dropped in.',
 };
-/** email-button §1.4: the contact link's label by `contact_kind`, as on member pages. */
-export const CONTACT_LABEL: Record<ContactKind, string> = {
-  form: 'Open the contact form ↗',
-  zip_gate: 'Open the contact form (asks for your ZIP first) ↗',
-  homepage: 'Open the office website, then Contact ↗',
-};
+/** email-button §1.4: the contact link's label by `contact_kind` (`lib/contact.ts`). */
+export const CONTACT_LABEL = CONTACT_ACTION;
 /** email-button §1.4: one line on what the office's form asks for; a treasurer (no chamber) has a comment box. */
 export function fieldHint(chamber: TargetContact['chamber']): string {
   if (chamber === 'house') return 'The form asks for your name, address and ZIP, then a topic and a message box: paste the message there. If the form refuses your ZIP, use your ZIP+4 from usps.com.';
@@ -62,14 +59,7 @@ export function allClosed(phones: string[], state: string | undefined, now: Date
   return phones.length > 0 && phoneOrder(phones, now).every((p) => !isOpen(now, p.district ? { state } : undefined));
 }
 const OUTCOMES: [string, string][] = [['will_support', 'Will support'], ['undecided', 'Undecided'], ['opposed', 'Opposed'], ['no_answer', 'No answer'], ['other', 'Other']];
-/** one-screen-receipt §2.1: the countdown stamp's under-inked ends (countdown-stamp §1). */
-const STAMP_MASK = 'radial-gradient(ellipse at center, #000 45%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.38) 100%)';
-/** one-screen-receipt §2.1: the stamp's office, worded as on the poster ("Rep. Correa's office" / "the TX Treasurer"); the poster's own module stays in its lazy chunk. */
-export function stampOffice(role: string, name: string, state?: string | null): string {
-  return /treasurer/i.test(role) ? `the ${state ? `${state} ` : ''}Treasurer` : `${role} ${surname(name)}'s office`;
-}
-/** "Nov 8": the stamp's date, local. */
-export const stampDay = (d: Date = new Date()): string => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+export { stampOffice, stampDay };
 
 /**
  * call-follow-through §2: the Worker lists the DC number first, the district number second; when DC is closed the
@@ -391,7 +381,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               <div class="flex flex-wrap gap-2 items-center">
                 <button type="button" class="btn btn-ghost" onClick={() => { void navigator.clipboard?.writeText(`${emailSubject.replace('{city}', (values.city ?? '').trim() || 'your city')}\n\n${emailMessage(phase.doc.target, text, values)}`); setCopied(true); }}>{copied ? 'Copied' : 'Copy subject and message'}</button>
                 {phase.doc.target.contact_form_url ? (
-                  <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank" data-contact-link>{CONTACT_LABEL[phase.doc.target.contact_kind ?? 'homepage']}</a>
+                  <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank" data-contact-link>{CONTACT_ACTION[phase.doc.target.contact_kind ?? 'homepage']}</a>
                 ) : <p class="text-sm w-full" data-no-form>This office lists no contact form; the DC number is the only channel.</p>}
               </div>
               {phase.doc.target.contact_form_url && <p class="text-sm" data-field-hint>{fieldHint(phase.doc.target.chamber)}</p>}
@@ -428,24 +418,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               </>
             ) : (
               <>
-                {/* one-screen-receipt §2.1: the countdown stamp's markup, reading as a finished act; the sentence is the accessible name. */}
-                <div class="inline-block self-start -rotate-[4deg] my-2 ml-1" role="status" aria-label={`I ${wrote ? 'wrote to' : 'called'} ${stampOffice(phase.doc.target.role, phase.doc.target.name, place?.state)}, ${stampDay()}`} data-receipt-stamp>
-                  <svg aria-hidden="true" width="0" height="0" class="absolute">
-                    <filter id="stamp-grain-receipt" x="-5%" y="-5%" width="110%" height="110%">
-                      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="noise" />
-                      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
-                    </filter>
-                  </svg>
-                  <div aria-hidden="true" class="border-[5px] border-dashed border-crimson bg-paper text-crimson flex flex-col items-center gap-1 px-4 py-2 max-w-[320px]" style={{ filter: 'url(#stamp-grain-receipt)', WebkitMaskImage: STAMP_MASK, maskImage: STAMP_MASK }}>
-                    <span class="font-condensed text-5xl leading-none tracking-[0.06em] whitespace-nowrap flex items-center gap-2">
-                      {wrote ? 'I WROTE' : 'I CALLED'}
-                      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"><path d="M4 13l5 5L20 6" /></svg>
-                    </span>
-                    <span class="font-mono font-bold text-xs tracking-[0.14em] uppercase text-center flex flex-wrap justify-center gap-x-3">
-                      <span>{stampOffice(phase.doc.target.role, phase.doc.target.name, place?.state)}</span><span>{stampDay()}</span>
-                    </span>
-                  </div>
-                </div>
+                <ReceiptStamp wrote={wrote} role={phase.doc.target.role} name={phase.doc.target.name} state={place?.state} id="receipt" />
                 {extras && place && <extras.Counts goal={goal} state={place.state} district={scope === 'state' ? null : place.district} echo />}
                 {shareMod && <shareMod.default type={channel === 'email' ? 'letter' : type} role={phase.doc.target.role} name={phase.doc.target.name} title={title ?? goal} slug={goal} poster={poster} />}
                 {extras && <extras.NextOffice goal={goal} action={action} choices={choices} primary={!(writing && emailSubject && phase.doc.target.contact_form_url)} />}

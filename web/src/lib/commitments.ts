@@ -38,7 +38,9 @@ export function clearFunnel(): void { write(COMMIT_KEY, null); write(CAPTAIN_KEY
 // call-follow-through §3: the device's own receipts for the next-office chain. Goal, action, target and
 // a time; pruned to 24 h on every read. Never sent: the Worker already has the receipt row.
 export const RECEIPTS_KEY = 'cut-ties:receipts';
-export interface LoggedReceipt { v: 1; goal: string; action: string; target: string; at: string }
+export type ReceiptChannel = 'call' | 'email';
+/** `channel` arrived with results-pages §3.4; an older row without one was a call. */
+export interface LoggedReceipt { v: 1; goal: string; action: string; target: string; at: string; channel?: ReceiptChannel }
 const DAY_MS = 24 * 60 * 60_000;
 export function recentReceipts(now: Date = new Date()): LoggedReceipt[] {
   const list = read<LoggedReceipt[]>(RECEIPTS_KEY);
@@ -50,6 +52,10 @@ export function logReceipt(r: Omit<LoggedReceipt, 'v' | 'at'>, now: Date = new D
 /** The targets of one action this device filed a receipt for in the last 24 h. */
 export function receiptedTargets(goal: string, action: string, now: Date = new Date()): Set<string> {
   return new Set(recentReceipts(now).filter((r) => r.goal === goal && r.action === action).map((r) => r.target));
+}
+/** results-pages §3.4: this device's receipt per target of one action in the last 24 h, with its channel and time. */
+export function receiptsByTarget(goal: string, action: string, now: Date = new Date()): Map<string, { channel: ReceiptChannel; at: string }> {
+  return new Map(recentReceipts(now).filter((r) => r.goal === goal && r.action === action).map((r) => [r.target, { channel: r.channel ?? 'call', at: r.at }]));
 }
 
 /** §2.1 return visit: anything still to do? */
