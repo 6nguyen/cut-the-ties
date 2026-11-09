@@ -1,9 +1,21 @@
 ---
 import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
 import Results from '../components/Results';
+import { publishedGoals } from '../lib/goals';
+import { BAND, imageIdFor } from '../lib/images';
+// site-imagery §2.3: `Photo` cannot render inside the island, and the cards only exist after `/api/route` answers.
+// So the build writes one inert `<template>` per image a goal can show, and each card copies the markup of its own.
+// Nothing inside a template is fetched until a card uses it.
+const photos = Object.fromEntries(publishedGoals().map((g) => [g.slug, imageIdFor(g)]));
+const bandIds = [...new Set(Object.values(photos))];
+// One card column: two columns from 1024 px inside the 1360 px page, one below; under 768 px the slot is declared
+// at 36vw so a phone takes the 480 px file, as on the landing cards.
+const bandSizes = '(min-width: 1360px) 624px, (min-width: 1024px) 46vw, (min-width: 768px) 92vw, 36vw';
 ---
 <Base title="Your two actions this week — Cut the Ties">
   <section class="mx-auto max-w-[1360px] px-4 lg:px-10 py-10 lg:py-14">
-    <Results client:load />
+    <Results client:load photos={photos} />
   </section>
+  {bandIds.map((id) => <template data-photo-band={id}><Photo id={id} widths={[...BAND.widths]} sizes={bandSizes} quality={BAND.quality} /></template>)}
 </Base>

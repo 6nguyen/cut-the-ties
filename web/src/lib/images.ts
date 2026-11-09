@@ -56,6 +56,16 @@ export const TREATMENT = {
   up: { foot: 1, head: 0.4 },
 } as const;
 
+/** Encoder settings every photo slot uses unless it passes its own quality. The landing's preload link asks for the same AVIF files `Photo` does, so both read these. Quality is low on purpose: the ink layers cover most of each photo. */
+export const PHOTO_OUTPUT = { formats: ['avif', 'webp'], fallback: 'jpg', quality: 30 } as const;
+/** The 16:9 card band (landing goal cards, result cards): its widths and a lower quality, so the bands a phone loads with the landing fit the page's byte budget. */
+export const BAND = { widths: [480, 768], quality: 22 } as const;
+/** The widths a slot can serve from an original `original` px wide: unique, ascending, never wider than the file (no upscaling); the file's own width when none fits. */
+export function fitWidths(original: number, widths: readonly number[]): number[] {
+  const fit = [...new Set(widths.filter((w) => w > 0 && w <= original))].sort((a, b) => a - b);
+  return fit.length ? fit : [original];
+}
+
 const LICENCE_LABEL: Record<Licence, string> = {
   'us-gov': 'US government work, public domain',
   pd: 'public domain',
