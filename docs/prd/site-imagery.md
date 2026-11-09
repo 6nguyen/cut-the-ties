@@ -1,5 +1,5 @@
 # Site imagery — PRD
-Status: IN PROGRESS 2026-11-08 (§1 merged, PR #80; §2 merged, PR #82; §3 in review; §4–§5 to build) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: IN PROGRESS 2026-11-08 (§1 merged, PR #80; §2 merged, PR #82; §3 in review, PR #84; §4–§5 to build) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The Stitch screens (`design/stitch/screens/`) put a photograph behind every
@@ -263,19 +263,19 @@ metric a static site can read without analytics, and the site has none.
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [x] 1. Image library, policy and credits · PR #80 merged
   - [x] 2. Landing and results heroes · PR #82 merged
-  - [~] 3. Goal pages · feat/site-imagery-goal-pages
+  - [~] 3. Goal pages · feat/site-imagery-goal-pages · PR #84
   - [ ] 4. Portraits: picks, targets and member pages
   - [ ] 5. Share cards
 - Completed: §1 merged (library and `manifest.yaml`, policy check, `Photo.astro`, `/about` credits). §2 merged (landing hero photo with its preload link, 16:9 photo band on landing goal cards and result cards, landscape `capitol-dome-dusk`). §3 built, in review: 16:9 band on every `/goals` card, goal and prep hero photos with their preload links, the goal `image` field end to end with the loader check, the two NDAA goals on `hasc-hearing-room`, `/about` lists five credits
 - Folded: §1 (ADDED `docs/specs/site-imagery.md`; `goal-pages.md` §Behavior 6). §2: `action-router.md` §Behavior 1 and §Performance budget; `site-imagery.md` §Behavior 9–11 and §Performance budget. §3: `goal-pages.md` §Behavior 1 and 2, §Data & contracts (`image`), §Invariants, §Performance budget; `site-imagery.md` §Behavior 7, 10, 12, 13, contracts, invariants and budgets. Not folded, left for §4: `goal-pages.md` §Behavior 4 (picks portraits) and `our_picks[].bioguide_id` in its §Data & contracts; `target-cards.md` §Behavior 1; `member-pages.md`; portrait import in `site-imagery.md`. Left for §5: the share card compositing the photo (`goal-pages.md` §Behavior 2)
-- Branch / open PRs: feat/site-imagery-goal-pages
+- Branch / open PRs: feat/site-imagery-goal-pages · PR #84 (open)
 - Files changed (file:line map): data/goals/ndaa-1217.yaml:13 · data/goals/ndaa-report-vote.yaml:13 · worker/src/types.ts:123 · worker/schema.sql:45 · worker/scripts/migrate.ts:10-11 · worker/src/load.ts:113-131,243,278,292 · worker/test/goals.test.ts:6,170-196 · web/src/lib/images.ts:63-64,70-73 · web/src/lib/images.test.ts:9,191-238 · web/src/pages/goals/index.astro:4,6,9-13,23,25 · web/src/pages/goals/[slug].astro:2,4,10,21-25,29,32,120-127 · web/src/pages/goals/[slug]/prep.astro:2,4,7,13-17,28,31,107-114 · docs/specs/goal-pages.md · docs/specs/site-imagery.md
 - Tests run + result: tsc PASS (0 type errors) · test PASS (26 files, 376 tests) · test-web PASS (27 files, 241 tests) · build PASS · prd-lint PASS · doc-lint PASS · local preview build, own origin, fonts excluded: `/goals` 46.5 KB phone, 80.1 KB at 1440 px · `/goals/<slug>` 48.4 to 64.4 KB phone, 71.0 to 91.8 KB at 1440 px · `/goals/<slug>/prep` 44.4 to 56.0 KB phone, 67.4 to 83.4 KB at 1440 px · landing 97.1 KB at 390 px @3x, 101.1 KB at 1440 px · phone hero 8.3 to 24.1 KB, bands 6.4 to 12.6 KB · LCP 576 to 592 ms (Fast 4G, CPU 4x), 1,400 to 1,424 ms (Slow 4G), the photo is the LCP element · 0 image requests off-origin · images blocked: 0 photo layers visible · hero H1 ≥5.99:1, paragraph ≥6.27:1, label ≥8.95:1 at 390, 768, 1024 and 1440 px
 - Remaining: §4–§5
 - Follow-ups: §4 builds 3.3's picks block on the prep page (80 px portrait, party-coloured initial badge, `our_picks[].bioguide_id`); §5 builds 3.2's share card using the goal's image; `docs/specs/action-router.md` §Performance budget quotes landing bytes 2.2 KB under today's (not this PR's file)
 - Decisions since last update: Changes 2026-11-08 (§3 built; ten decisions and deviations)
 - Known failures / blockers: none. Owner review: `house-floor` (1080 px) and `senate-chamber` (946 px) are stretched on a desktop hero wider than the file, so the leadership goal heroes are soft: source wider photos or accept; the prep hero's "About this goal" ghost button is ink on the dark hero (1.18:1 to 1.40:1), as before the photo; production D1 needs the new `goals.image` column (`worker/scripts/migrate.ts`) before the next seed; LCP was measured on localhost, re-check on the Pages preview
-- Next action: open the §3 PR, then merge it and run /implement-prd-section docs/prd/site-imagery.md (next: §4. Portraits: picks, targets and member pages)
+- Next action: merge PR #84, then /implement-prd-section docs/prd/site-imagery.md (next: §4. Portraits: picks, targets and member pages)
 ## Open questions
 1. Which exact Capitol, House, Senate, hearing-room and state-capitol
    photos? Proposal: the implementing session picks the highest-resolution
