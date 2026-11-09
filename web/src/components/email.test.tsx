@@ -122,6 +122,17 @@ describe('email step (email-button §1)', () => {
     expect(root.textContent).not.toMatch(/Will you call again before the vote/);
   });
 
+  it('after an emailed receipt the share caption says "wrote to", matching the poster, not "called"', async () => {
+    await mount(done(), OPEN);
+    await click('[data-email-link]');
+    await click('[data-sent]');
+    await flush();
+    for (let i = 0; i < 2; i++) await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'Skip')!.click(); });
+    await vi.waitFor(() => expect(q('[data-share-row]')).not.toBeNull());
+    const x = [...root.querySelectorAll('a')].find((a) => a.href.startsWith('https://x.com/intent/'))!;
+    expect(decodeURIComponent(x.href)).toMatch(/text=I just wrote to Rep\. Correa's office about Strip 1217\./);
+  });
+
   it('a call receipt is unchanged (no channel key), and no_answer adds "Email it instead" beside "Try again"', async () => {
     await mount(done(), OPEN);
     await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'I did it')!.click(); });
@@ -188,6 +199,9 @@ describe('helpers', () => {
     expect(fieldHint('house')).toMatch(/ZIP\+4 from usps\.com\.$/);
     expect(fieldHint('senate')).toBe('The form asks for your name, address and email, a topic and a message box: paste the message there.');
     expect(fieldHint(null)).toBe('Paste the message into the comment box.');
+  });
+  it('emailMessage greets a suffixed member by surname, never by the suffix', () => {
+    expect(emailMessage({ role: 'Rep.', name: 'Frank Pallone, Jr.' }, 'Body.', { first_name: 'Jo', city: 'Edison' })).toBe('Dear Rep. Pallone,\n\nBody.\n\nJo, Edison');
   });
   it('emailMessage uses the surname and the two fields on the device, nothing else', () => {
     expect(emailMessage({ role: 'Sen.', name: 'Alex Padilla' }, 'Body.', { first_name: ' Jo ', city: 'Fresno', why: 'secret' })).toBe('Dear Sen. Padilla,\n\nBody.\n\nJo, Fresno');

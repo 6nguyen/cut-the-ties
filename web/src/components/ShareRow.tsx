@@ -3,6 +3,7 @@
 // calls `preparePoster` at once, so the File and the canShare answer are ready before the funnel ends.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
+import { surname } from '@worker/names';
 import { POSTER_LABEL, canShareFile, captionFor, intentLinks, posterDate, posterFile, sharePayload, targetLine, type PosterSpec } from '../lib/poster';
 
 export interface Poster { file: File | null; canShare: boolean }
@@ -35,7 +36,7 @@ export default function ShareRow({ type, role, name, title, slug, poster, other 
   const [failed, setFailed] = useState(false); // §2.3: the sheet threw something other than AbortError
   const [wide, setWide] = useState(false);
   const [imgUrl, setImgUrl] = useState<string | null>(null);
-  const cap = captionFor(type, role, name.trim().split(/\s+/).pop() ?? name, title, slug);
+  const cap = captionFor(type, role, surname(name), title, slug);
   const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
   const hasShare = typeof nav.share === 'function';
   const usePoster = !!poster?.file && poster.canShare && !failed;

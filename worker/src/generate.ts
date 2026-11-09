@@ -6,6 +6,7 @@ import { priorVote } from './route';
 import { fillAsk } from './state-copy';
 import { STANDARD_MODEL, currentCap } from './cost';
 import { standardScript } from './standard';
+import { surname } from './names';
 
 export interface FormField { name: string; label: string; max: number; required: boolean; multiline?: boolean; hint?: string }
 export interface DocFormat { kind: 'call_script' | 'letter' | 'public_comment'; min_words: number; max_words: number; mentions: string[]; ask: string }
@@ -228,7 +229,6 @@ export function factBlock(goal: Goal, action: Action, fmt: DocFormat, t: Target)
 
 export const digitRuns = (text: string): string[] => text.match(/\d+/g) ?? [];
 export const wordCount = (t: string): number => t.trim().split(/\s+/).filter(Boolean).length;
-const lastWord = (name: string): string => name.trim().split(/\s+/).pop() ?? name;
 
 // ---- prompts (§4.8.3) --------------------------------------------------------------------
 const KIND_LABEL: Record<DocFormat['kind'], string> = { call_script: 'phone call script', letter: 'letter', public_comment: 'public comment' };
@@ -370,15 +370,15 @@ export function checkOutput(doc: Doc, ctx: CheckContext): Check {
   const fail = (cls: CheckClass, reason: string): Check => ({ ok: false, reason, cls });
   const words = wordCount(doc.body);
   if (words < ctx.fmt.min_words || words > ctx.fmt.max_words) return fail('word_count', `word count ${words} is outside ${ctx.fmt.min_words}–${ctx.fmt.max_words}`);
-  if (!low.includes(lastWord(ctx.targetName).toLowerCase())) return fail('target', 'does not name the target');
+  if (!low.includes(surname(ctx.targetName).toLowerCase())) return fail('target', 'does not name the target');
   if (ctx.fmt.mentions.length && !ctx.fmt.mentions.some((m) => low.includes(m.toLowerCase()))) return fail('mention', 'does not name the section or vote');
   if (ctx.fmt.ask && !low.includes(ctx.fmt.ask.toLowerCase())) return fail('ask', 'ask wording missing');
-  if (ctx.pickName && !low.includes(lastWord(ctx.pickName).toLowerCase())) return fail('pick', 'does not name our pick');
+  if (ctx.pickName && !low.includes(surname(ctx.pickName).toLowerCase())) return fail('pick', 'does not name our pick');
   if (/\bend aid\b/i.test(text)) return fail('end_aid', 'contains "end aid"');
   for (const d of digitRuns(text)) if (!ctx.allowedDigits.has(d)) return fail('digit', `number ${d} is not in the fact block`);
   if (text.match(URL_RE) || text.match(EMAIL_RE) || text.match(PHONE_RE)) return fail('contact', 'contains a URL, email address or phone number');
   // The target's own name is never a blocked term (Rep. Lynch must be nameable); the seed check found this.
-  const scrubbed = low.split(ctx.targetName.toLowerCase()).join(' ').split(lastWord(ctx.targetName).toLowerCase()).join(' ');
+  const scrubbed = low.split(ctx.targetName.toLowerCase()).join(' ').split(surname(ctx.targetName).toLowerCase()).join(' ');
   for (const term of BLOCKLIST) if (scrubbed.includes(term)) return fail('blocked', 'contains a blocked term');
   return { ok: true, words };
 }

@@ -93,6 +93,10 @@ describe('targetLine', () => {
     expect(targetLine('Sen.', 'Alex Padilla')).toBe("SEN. PADILLA'S OFFICE");
     expect(targetLine('Treasurer', 'Fiona Ma', 'ca')).toBe('THE CA TREASURER');
   });
+  it('drops a generational suffix instead of naming the office after it', () => {
+    expect(targetLine('Rep.', 'Frank Pallone, Jr.')).toBe("REP. PALLONE'S OFFICE");
+    expect(targetLine('Rep.', 'Rudy Yakym III')).toBe("REP. YAKYM'S OFFICE");
+  });
 });
 
 describe('captionFor', () => {

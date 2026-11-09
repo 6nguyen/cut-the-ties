@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { DocFormat, FormField, GenerateDone, TargetContact } from '@worker/generate';
 import type { ContactKind } from '@worker/types';
+import { surname } from '@worker/names';
 import type { TargetCard } from '../lib/api';
 import { deviceId, loadPlace } from '../lib/store';
 import { commitmentFor, fmtDue, logReceipt } from '../lib/commitments';
@@ -53,7 +54,7 @@ export function fieldHint(chamber: TargetContact['chamber']): string {
 /** email-button §1.4: greeting, the body exactly as shown, then the user's own first name and city; nothing else, no model. */
 export function emailMessage(target: Pick<TargetContact, 'role' | 'name'>, body: string, values: Record<string, string>): string {
   const sign = [values.first_name, values.city].map((v) => (v ?? '').trim()).filter(Boolean).join(', ');
-  return `Dear ${target.role} ${target.name.trim().split(/\s+/).pop()},\n\n${body}\n\n${sign}`;
+  return `Dear ${target.role} ${surname(target.name)},\n\n${body}\n\n${sign}`;
 }
 /** email-button §1.2: every office on file closed (DC hours for the DC or lone number, the state's for the district office). */
 export function allClosed(phones: string[], state: string | undefined, now: Date = new Date()): boolean {
@@ -405,13 +406,13 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
             ) : (
               <>
                 <p class="font-semibold"><span class="chip bg-acid text-ink mr-2">✓</span>Counted. No name, no address: just this goal, this office, today.</p>
-                <Funnel goal={goal} action={action} target={target} who={phase.doc.target.name.trim().split(/\s+/).pop()} role={phase.doc.target.role} title={title ?? goal} type={channel === 'email' ? 'letter' : type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
+                <Funnel goal={goal} action={action} target={target} who={surname(phase.doc.target.name)} role={phase.doc.target.role} title={title ?? goal} type={channel === 'email' ? 'letter' : type} decision={decision ?? null} place={place} onFinished={() => setFunnelDone(true)} />
                 {funnelDone && (
                   <>
                     {extras && <extras.NextOffice goal={goal} action={action} choices={choices} />}
                     {extras && place && <extras.Counts goal={goal} state={place.state} district={scope === 'state' ? null : place.district} echo />}
                     {shareMod ? (
-                      <shareMod.default type={type} role={phase.doc.target.role} name={phase.doc.target.name} title={title ?? goal} slug={goal} poster={poster} other={<a href="/results" class="btn btn-ghost">Your other action</a>} />
+                      <shareMod.default type={channel === 'email' ? 'letter' : type} role={phase.doc.target.role} name={phase.doc.target.name} title={title ?? goal} slug={goal} poster={poster} other={<a href="/results" class="btn btn-ghost">Your other action</a>} />
                     ) : (
                       <div class="flex flex-wrap gap-2"><a href="/results" class="btn btn-ghost">Your other action</a></div>
                     )}
