@@ -1,5 +1,5 @@
 # Draft cap per office — PRD
-Status: IN PROGRESS 2026-11-08 (§1 being built) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: SHIPPED 2026-11-08 (PR #78) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 `/api/generate` allows 3 drafts per device per action per 24 hours
@@ -192,12 +192,12 @@ to be 429s, model cost per day stays under `dailyCap`, and receipts per
 drafting device should not fall. Worker logs show no `limit_action` or
 `limit_hour` after the deploy.
 
-## State (updated 2026-11-08, PR #n) — ≤30 lines
+## State (updated 2026-11-08, PR #78) — ≤30 lines
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [~] 1. Per-office cap with template fallback · feat/draft-cap-per-office-per-office-cap
-- Completed: §1 built (code, tests, specs), awaiting merge
+  - [~] 1. Per-office cap with template fallback · feat/draft-cap-per-office-per-office-cap · PR #78
+- Completed: §1 built (code, tests, specs), awaiting merge of PR #78
 - Folded: §1
-- Branch / open PRs: `feat/draft-cap-per-office-per-office-cap`
+- Branch / open PRs: `feat/draft-cap-per-office-per-office-cap`, PR #78
 - Files changed (file:line map): `worker/src/generate.ts:14-21` (`LIMITS`),
   `:479` (`StandardReason`), `:511-526` (limits and standard decision);
   `worker/src/repo.ts:110-126` (D1 counts query), `:419-431`
@@ -217,8 +217,8 @@ drafting device should not fall. Worker logs show no `limit_action` or
 - Decisions since last update: the why line's 3 is a literal in
   `ActForm.tsx` (no worker code in the web bundle); `limit.test.tsx`
   asserts it equals `LIMITS.device_target_day`
-- Known failures / blockers: none
-- Next action: merge the PR; nothing left to build (next: none)
+- Known failures / blockers: none; not checked in a browser
+- Next action: merge PR #78; nothing left to build (next: none)
 ## Open questions
 1. Is the cap per office per ask, or per office across all asks?
    Proposal: per office per ask (device + action + target). A
@@ -242,3 +242,4 @@ drafting device should not fall. Worker logs show no `limit_action` or
 - 2026-11-08 — Status APPROVED → READY. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
 - 2026-11-08 — Status READY → IN PROGRESS; §1 build started on `feat/draft-cap-per-office-per-office-cap`.
 - 2026-11-08 — §1 built as specified: `device_hour` and `device_action_day` removed, `device_target_day: 3` added, reason `limit` served from the template, global cap counts model rows only. Spec delta folded into `docs/specs/personalised-documents.md` and `docs/specs/standard-scripts.md`. No scope change.
+- 2026-11-08 — Status IN PROGRESS → SHIPPED (PR #78); no section left, archived to `docs/prd/archive/2026-11-draft-cap-per-office.md`. `docs/specs/personalised-documents.md` §Behavior 5 points at `standard-scripts.md` Behavior 1 for the reasons and the `limit` why line, to stay under the 16,000-byte spec limit.
