@@ -200,3 +200,48 @@ describe('helpers', () => {
     expect(allClosed([], 'CA', closed)).toBe(false);
   });
 });
+
+describe('a rejected receipt is said beside the button that was pressed', () => {
+  const didIt = () => [...root.querySelectorAll('button')].find((b) => /^(I did it|Counting…)$/.test(b.textContent ?? '')) as HTMLButtonElement | undefined;
+  const receipts = () => calls.filter((c) => c.url === '/api/receipt').length;
+
+  it('a 429 shows the Worker\'s message under "I did it", keeps the button, and a later tap can still count', async () => {
+    await mount(done(), OPEN);
+    vi.mocked(fetch).mockResolvedValueOnce(json({ error: 'limit_repeat', message: 'That one is already counted. Try again in ten minutes.' }, 429));
+    await act(() => { didIt()!.click(); }); await flush();
+    const alert = q('[data-receipt-error]')!;
+    expect(alert.textContent).toBe('That one is already counted. Try again in ten minutes.');
+    expect(alert.getAttribute('role')).toBe('alert');
+    expect(alert.previousElementSibling).toBe(didIt()); // directly under the button, inside the receipt card
+    expect(root.textContent).not.toMatch(/Counted\./);
+    expect(root.querySelectorAll('[role=alert]').length).toBe(1); // not also in the page-level alert above the script
+    await act(() => { didIt()!.click(); }); await flush();
+    expect(q('[data-receipt-error]')).toBeNull();
+    expect(root.textContent).toMatch(/Counted\. No name, no address/);
+  });
+
+  it('a network failure says so instead of failing silently, and a second tap while one is pending posts nothing', async () => {
+    await mount(done(), OPEN);
+    let fail!: (e: Error) => void;
+    vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>((_, reject) => { fail = reject; }));
+    await act(() => { didIt()!.click(); });
+    expect(didIt()!.textContent).toBe('Counting…');
+    expect(didIt()!.disabled).toBe(true);
+    await act(() => { didIt()!.click(); });
+    expect(receipts()).toBe(0); // the pending request never reached the recording stub; no second request was made
+    expect(vi.mocked(fetch).mock.calls.filter(([u]) => u === '/api/receipt').length).toBe(1);
+    await act(async () => { fail(new TypeError('Failed to fetch')); }); await flush();
+    expect(q('[data-receipt-error]')!.textContent).toBe('Could not reach the server. Check your connection and try again.');
+    expect(didIt()!.textContent).toBe('I did it');
+    expect(didIt()!.disabled).toBe(false);
+  });
+
+  it('"I sent it" shows the rejection inside the email step, which is the only card on screen', async () => {
+    await mount(done(), OPEN);
+    await click('[data-email-link]');
+    vi.mocked(fetch).mockResolvedValueOnce(json({ error: 'limit_day', message: 'Ten actions a day is plenty. Come back tomorrow.' }, 429));
+    await click('[data-sent]'); await flush();
+    expect(q('[data-email-step] [data-receipt-error]')!.textContent).toBe('Ten actions a day is plenty. Come back tomorrow.');
+    expect(q('[data-email-step]')).not.toBeNull();
+  });
+});
