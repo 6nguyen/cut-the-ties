@@ -6,8 +6,8 @@ sourced, licensed photograph, never a generated picture of a person or a
 real place. Every photo gets the same ink treatment and a credit line on
 `/about`. This spec covers the library, the policy check, the `Photo`
 component, the credits and the slots that show a photo today: the landing
-hero, the goal and prep page heroes, and the card bands on the landing,
-the results and `/goals`.
+hero, the goal and prep page heroes, the card bands on the landing, the
+results and `/goals`, and the share cards.
 
 ## Behavior
 1. **Library.** Originals live in `web/src/assets/img/`: JPEG or PNG, at
@@ -126,6 +126,10 @@ the results and `/goals`.
     below; a member with no file gets no box and no gap. Prep picks:
     80×100, lazy (`goal-pages.md` §Behavior 4). Members-elect, treasurers
     and state officials have no portrait.
+16. **Share cards.** `/card.png` (`capitol-dome-dusk`) and each goal's
+    card put the photo under the text: centre cover crop, the Behavior 5
+    filter and both gradients, no halftone (`goal-pages.md` §Behavior 2).
+    Member cards carry no photo.
 
 ## Data & contracts
 - `manifest.yaml` row: `id`, `file` | `dir`, `alt`, `subject`
@@ -140,7 +144,9 @@ the results and `/goals`.
   `fitWidths(original, widths)` → unique ascending widths no wider than
   the original, or the original's width; `HERO` (`widths` 640, 960, 1440
   and 1920, `sizes`); `heroWidths(original)` → the hero widths that fit
-  plus the original's own width when it is under 1920.
+  plus the original's own width when it is under 1920; `CARD` (share
+  card size, byte cap, PNG settings), `originalPath(id)`,
+  `sharpTreatment()`.
 - Goal row: optional `image` (YAML → `Goal.image` → D1 `goals.image TEXT`,
   column migration in `worker/scripts/migrate.ts`); null shows the
   category default. `worker/src/load.ts`: `MANIFEST_FILE`,
@@ -211,6 +217,9 @@ the results and `/goals`.
   Transferred at 390 px: 2.9 to 4.1 KB on a member page, 8.8 KB for the
   three members of one `/results` page, whose LCP element stays a card
   band (1.56 s before, 1.60 s after, Slow 4G with CPU 4x, localhost).
+- Share card ≤200 KB (palette PNG). Built 2026-11-08: `/card.png`
+  81.9 KB, goal cards 105.8 to 169.6 KB; title at least 3.2:1 over the
+  photo's lightest pixel (large text, 3:1), other lines 10.7:1 or more.
 - A page without a photo transfers no extra bytes. Tailwind scans these
   source files, so a bare utility name in a comment or a key adds CSS to
   every page; keep them out.

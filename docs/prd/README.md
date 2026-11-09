@@ -71,12 +71,11 @@ it is generated from the same markers.
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [site-imagery.md](site-imagery.md) | IN PROGRESS (§1 merged, PR #80; §2 merged, PR #82; §3 merged, PR #84; §4 portraits in review, PR #85; §5 to build) | — | `web/src/assets/img/` + manifest, `Photo.astro`, landing/results/goal heroes, portraits on targets and member pages, share-card photo; §5 buildable once §4 merges |
-| 2 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
-| 3 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
-| 4 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
-| 5 | [primary-2028.md](primary-2028.md) | IN PROGRESS (§2 blocked: counsel) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
-| 6 | [district-vintage-rollover.md](district-vintage-rollover.md) | IN PROGRESS (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 merged (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
+| 1 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
+| 2 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
+| 3 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
+| 4 | [primary-2028.md](primary-2028.md) | IN PROGRESS (§2 blocked: counsel) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
+| 5 | [district-vintage-rollover.md](district-vintage-rollover.md) | IN PROGRESS (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 merged (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
 
 ## Next (ideas without a PRD, in intended order; ≤10)
 Targets is an existing spec stem or `new`. Writing the PRD deletes its row
