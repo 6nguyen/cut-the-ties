@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { route, validVia } from '../lib/api';
 import { STATES, cacheRoute, loadPlace, savePlace } from '../lib/store';
-import { hasOpenItems } from '../lib/commitments';
+import { dropCaptain, hasOpenItems } from '../lib/commitments';
 import { ATTRIBUTION, stepHighlight, suggest, suggestLoop } from '../lib/suggest';
 import type { Loop, Provider, Suggester, Suggestion, Timings } from '../lib/suggest';
 import { useTurnstile } from '../lib/turnstile';
@@ -37,7 +37,8 @@ export default function AddressForm({ siteKey, provider = 'none', suggester, tim
   const loop = useRef<Loop | null>(null);
 
   useEffect(() => {
-    // §1.6 return visit: skip the field, unless an open commitment or captain list puts "Your week" on this page (commitment-funnel §2.1).
+    // §1.6 return visit: skip the field, unless an open commitment or joined visit puts "Your week" on this page (commitment-funnel §2.1).
+    dropCaptain(); // one-screen-receipt §4.2: the retired captain list goes before any redirect, whichever island hydrates first
     if (loadPlace() && !hasOpenItems()) location.replace('/results');
   }, []);
 
