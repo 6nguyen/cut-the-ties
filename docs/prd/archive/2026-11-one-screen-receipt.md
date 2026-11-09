@@ -1,5 +1,5 @@
 # One-screen receipt: stamped poster, icon share buttons, no funnel steps — PRD
-Status: SHIPPED 2026-11-08 (PR pending) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: SHIPPED 2026-11-08 (PR #83) · Owner: George Nguyen · Last updated: 2026-11-08
 
 ## Problem
 The owner's phone test on 2026-11-08 (Chrome on iPhone; Story, Post, Reel
