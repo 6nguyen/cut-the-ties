@@ -250,17 +250,17 @@ digest (`maintainer-tooling.md` §3): receipts per day split by `channel`
 and `via: share` routes, the week before against the week after; the
 owner device test (§4) closes the PRD.
 
-## State (updated 2026-11-09, PR #n)
+## State (updated 2026-11-09, PR #89)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [~] 1. Summary cards on `/results` · feat/share-from-results
-  - [~] 2. One-action page `/results/<goal>` · feat/share-from-results
-  - [~] 3. Receipt modal after a call or a write · feat/share-from-results
+  - [~] 1. Summary cards on `/results` · feat/share-from-results · PR #89
+  - [~] 2. One-action page `/results/<goal>` · feat/share-from-results · PR #89
+  - [~] 3. Receipt modal after a call or a write · feat/share-from-results · PR #89
   - [ ] 4. Owner device test
 - Completed: §1–3 built and tested (one branch, one PR, owner asked for end to end)
 - Folded: §1, §2, §3 (`docs/specs/results-pages.md` added; action-router §5,
   target-cards §1/§3, countdown-stamp §3, social-sharing §3,
   commitment-funnel §7, district-counters §8, specs README index)
-- Branch / open PRs: `feat/share-from-results`
+- Branch / open PRs: `feat/share-from-results` · PR #89
 - Files changed (file:line map): `web/src/pages/results/index.astro` (moved),
   `web/src/pages/results/[goal].astro`; `web/src/components/SummaryCard.tsx`,
   `ReceiptModal.tsx`, `ReceiptStamp.tsx`, `Results.tsx` (single-goal mode,
@@ -286,7 +286,7 @@ owner device test (§4) closes the PRD.
   `CONTACT_LABEL` (square title) split from `CONTACT_ACTION` (act page);
   tests stub `ShareRow` and block happy-dom navigation on external links.
 - Known failures / blockers: none
-- Next action: owner reviews PR #n; then §4 on
+- Next action: §4 device test on the preview below, then merge PR #89, then `/implement-prd-section docs/prd/share-from-results.md` (next: none);
   `https://feat-share-from-results.cut-ties.pages.dev`
 ## Open questions
 1. Should the goal detail page's call squares get the same tap-receipt and
@@ -304,4 +304,4 @@ owner device test (§4) closes the PRD.
 
 ## Changes
 - 2026-11-09 — created from mock-up D minus the outcome sheet (READY, auto).
-- 2026-11-09 — §1–3 built on `feat/share-from-results` (one PR, owner asked for end to end): summary cards, `/results/<goal>`, write square, tap-is-receipt modal; `limit_repeat` keyed on target; spec delta folded (`results-pages.md` added). Stamp reuses `ReceiptStamp`. IN PROGRESS; §4 next.
+- 2026-11-09 — §1–3 built on `feat/share-from-results` (PR #89, owner asked for end to end): summary cards, `/results/<goal>`, write square, tap-is-receipt modal; `limit_repeat` keyed on target; spec delta folded (`results-pages.md` added). Stamp reuses `ReceiptStamp`. IN PROGRESS; §4 next.
