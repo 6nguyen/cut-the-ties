@@ -4,7 +4,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { surname } from '@worker/names';
-import { POSTER_LABEL, canShareFile, captionFor, intentLinks, posterDate, posterFile, sharePayload, targetLine, type PosterSpec } from '../lib/poster';
+import { POSTER_LABEL, canShareFile, captionFor, intentLinks, posterAlt, posterDate, posterFile, sharePayload, targetLine, type PosterSpec } from '../lib/poster';
 
 export interface Poster { file: File | null; canShare: boolean }
 
@@ -14,9 +14,9 @@ export async function preparePoster(spec: PosterSpec, slug: string): Promise<Pos
   return { file, canShare: canShareFile(file) };
 }
 
-/** §2.2 spec from the receipt: verb by channel, target without a person's first name, nothing else personal. */
+/** §2.2 spec from the receipt: the stamp's act by channel, the office without a person's first name, nothing else personal. */
 export function receiptSpec(type: 'call' | 'letter' | 'public_comment', role: string, name: string, state: string | undefined, title: string, what: string): PosterSpec {
-  return { verb: type === 'call' ? 'I JUST CALLED' : 'I JUST WROTE TO', target: targetLine(role, name, state), title, what, date: posterDate() };
+  return { act: type === 'call' ? 'called' : 'wrote', target: targetLine(role, name, state), title, what, date: posterDate() };
 }
 
 interface Props {
@@ -82,7 +82,7 @@ export default function ShareRow({ type, role, name, title, slug, poster, other 
       </div>
       {fallback && imgUrl && (
         <div class="flex flex-wrap gap-3 items-start border-t-2 border-ink pt-3" data-share-fallback>
-          <img src={imgUrl} width={270} height={480} alt={`Poster: ${title}`} class="border-2 border-ink" />
+          <img src={imgUrl} width={270} height={480} alt={posterAlt(type, role, surname(name), title)} class="border-2 border-ink" />
           <div class="flex flex-col gap-2 text-sm">
             <a href={imgUrl} download={`cut-the-ties-${slug}.png`} class="btn btn-ghost self-start">Download poster</a>
             <p class="text-ink/70">On iPhone the poster lands in Files; share it from there, or press and hold the image to save it to Photos.</p>

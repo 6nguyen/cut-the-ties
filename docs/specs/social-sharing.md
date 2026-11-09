@@ -22,22 +22,48 @@ no share affordance before the private commitment and captain steps
    `navigator.canShare({files})` answer in state. A `null` blob, a
    missing canvas context or a thrown error leaves the file `null`;
    the row then behaves as in 4 with no poster.
-2. **The poster.** `drawPoster(ctx, spec)` is pure over a 2D context.
-   Ink background, an acid rule across the top, then inside the central
-   4:5 band (y 285–1635, x 72–1008) top to bottom: the chip line
-   "CONSTITUENT ACTION · CUT THE TIES" (40 px Space Mono, hazard), the
-   verb line in the user's voice (72 px Bebas Neue, newsprint: "I JUST
-   CALLED", "I JUST WROTE TO" for a letter or comment receipt, "THREE OF
-   US ARE CALLING" after a list), the target line (72 px, acid, ≤2
-   lines: "REP. <SURNAME>'S OFFICE" / "SEN. <SURNAME>'S OFFICE" / "THE
-   <STATE> TREASURER", "… BEFORE <MON D>" after a list), the goal title
-   (96 px, ≤3 lines; 84 px when it needs three), a crimson rule, the
-   goal's one-line `what_we_want` (44 px Inter, ≤2 lines), the date
-   ("Nov 8, 2026", 40 px) and `cutthetiesmovement.org` (48 px) on the
-   band's foot. Lines wrap greedily by `measureText`; an overflowing last
-   line ends in an ellipsis. Never on the poster: the user's name, city,
-   district, phone, the generated text or anything from the office
-   response.
+2. **The poster.** `drawPoster(ctx, spec)` is pure over a 2D context
+   (fills, strokes, text and one rotation; no filter or mask). Ink
+   background, an acid rule across the top, then inside the central 4:5
+   band (y 285–1635, x 72–1008) top to bottom:
+   - the chip line "CONSTITUENT ACTION · CUT THE TIES" (40 px Space
+     Mono, hazard);
+   - the **stamp**: one box turned −4° about its centre, horizontally
+     centred in the band, paper (#FFFFFF) fill, 14 px dashed crimson
+     border, three centred crimson lines: the office ("REP. <SURNAME>'S
+     OFFICE" / "SEN. <SURNAME>'S OFFICE" / "THE <STATE> TREASURER"; 40 px
+     Space Mono, stepping down 2 px at a time to 32 px to fit one line,
+     then ending in an ellipsis), the act ("I CALLED" for a call receipt,
+     "I WROTE" for a letter, a comment or an emailed script; 200 px
+     Bebas Neue) followed by a tick drawn as a stroked path, and the date
+     ("NOV 8, 2026", 40 px Space Mono). The box is as wide as its widest
+     line plus padding, capped so that all four turned corners stay
+     inside the band;
+   - the goal title (96 px Bebas Neue, newsprint, ≤3 lines; 84 px when
+     it needs three), a 6 px crimson rule, the goal's one-line
+     `what_we_want` (44 px Inter, ≤2 lines);
+   - anchored to the band's foot, the **call to action**: an acid block
+     the full band width with ink Bebas Neue "YOUR TURN. CALL YOUR REP"
+     centred on one line, and under it an acid arrow (stroked path)
+     pointing at "CUTTHETIESMOVEMENT.ORG" (48 px Space Mono, acid), its
+     baseline 16 px above the band's foot so no descender leaves the
+     feed crop. The block text takes the largest size from 120 px down
+     to 72 px in 4 px steps whose measured width fits the block minus
+     32 px each side (`fitSize`, after the faces load: 104 px with the
+     web faces, 80 px with the fallback faces in desktop Chrome); at
+     72 px a face still too wide is condensed by `fillText`'s
+     `maxWidth`, never clipped.
+
+   Lines wrap greedily by `measureText`; an overflowing last line ends
+   in an ellipsis. **Fit:** the stack clears the block by ≥24 px with a
+   three-line title and a two-line ask; when it would not, the act line
+   steps from 200 px to 160 px. Until `one-screen-receipt` §4 the
+   captain-list poster (6) draws its verb line ("THREE OF US ARE
+   CALLING", 72 px Bebas Neue, newsprint) and target line (72 px, acid,
+   ≤2 lines, "… BEFORE <MON D>") in place of the stamp, with the same
+   call to action and no date line. Never on the poster: the user's
+   name, city, district, phone, the generated text or anything from the
+   office response.
 3. **The share row** (after the funnel steps, in place of the old
    "Share" button) reads, in order: the poster button (`POSTER_LABEL`,
    "Share poster" until the owner's device matrix sets it) only when a
@@ -53,8 +79,9 @@ no share affordance before the private commitment and captain steps
    without a share API it copies line + link and reads "Link copied".
 4. **Fallback row.** When a file exists but `canShare({files})` is false,
    `navigator.share` is absent, or the poster share threw: the poster
-   shows inline (`<img>` from a blob URL, 270 px wide, alt "Poster: <goal
-   title>") with "Download poster" (`<a download="cut-the-ties-<slug>.png">`;
+   shows inline (`<img>` from a blob URL, 270 px wide, alt "Poster: I called
+   <Role Surname>'s office about <goal title>", "I wrote to …" for a
+   letter or comment) with "Download poster" (`<a download="cut-the-ties-<slug>.png">`;
    on iOS a note says the image opens for long-press save), "Copy
    caption" (the line from 3 plus the link; reads "Caption copied") and
    "Open Instagram ↗" (`https://www.instagram.com/`, new tab,
@@ -85,11 +112,20 @@ no share affordance before the private commitment and captain steps
 ## Data & contracts
 - `web/src/lib/poster.ts` (lazy chunk): `SHARE_PAYLOAD: 'files' |
   'files+title'`, `POSTER_LABEL`, `W = 1080`, `H = 1920`, `BAND`,
-  `drawPoster(ctx, {verb, target, title, what, date, url?})`,
+  `drawPoster(ctx, {act: 'called' | 'wrote', target, title, what, date,
+  url?, verb?})` (`verb` marks the captain-list poster and leaves with
+  it), `CTA = 'YOUR TURN. CALL YOUR REP'`, `fitSize(ctx, text, width,
+  from, to, step)` (largest size in the steps whose measured width
+  fits, `to` when none does; swaps the px size in `ctx.font`),
   `wrapText`, `posterDate`, `targetLine(role, name, state?)`,
+  `posterAlt(type, role, surname, title)`,
   `captionFor(type, role, surname, title, slug) → {text, url, caption}`,
   `intentLinks(text, url)`, `sharePayload(file)`, `canShareFile(file)`,
-  `posterFile(spec, name?) → Promise<File | null>`.
+  `posterFile(spec, name?) → Promise<File | null>`. The `Ctx` the draw
+  needs: `fillRect`, `fillText`, `measureText`, `save`, `restore`,
+  `translate`, `rotate`, `strokeRect`, `setLineDash`, `beginPath`,
+  `moveTo`, `lineTo`, `stroke`, `fillStyle`, `strokeStyle`, `lineWidth`,
+  `lineCap`, `font`, `textBaseline`.
 - `web/src/components/ShareRow.tsx`: `preparePoster(spec, slug)`,
   `receiptSpec(type, role, name, state, title, what)`, the row itself
   (`[data-share-row]`, `[data-share-poster]`, `[data-share-link]`,
@@ -103,10 +139,19 @@ no share affordance before the private commitment and captain steps
 ## Invariants (regression checklist)
 - [ ] No share affordance renders before the receipt, nor before the
       commitment and captain steps are answered or skipped.
-- [ ] The poster is 1080×1920; every glyph lies within y 285–1635 and
-      x 72–1008; headline ≥72 px, body ≥44 px, URL ≥40 px; it names the
-      goal, the office role and surname, the date and the site, and
-      carries no first name, city, district, phone or generated text.
+- [ ] The poster is 1080×1920; every glyph, the four corners of the
+      turned stamp and the address line's descenders lie within y
+      285–1635 and x 72–1008; title ≥72 px, body ≥44 px, call to action
+      ≥72 px, address ≥40 px; it names the goal, the office role and
+      surname, the date and the site, and carries no first name, city,
+      district, phone or generated text.
+- [ ] A call receipt's stamp reads the office, "I CALLED" with a tick
+      and the date; a letter, comment or emailed script reads "I WROTE";
+      "I JUST" appears nowhere on the poster.
+- [ ] "YOUR TURN. CALL YOUR REP" is on one line inside its block at the
+      size `fitSize` returns, with the arrow and the address under it;
+      for every goal in `data/goals/` no two text boxes overlap and the
+      stack clears the block by ≥24 px.
 - [ ] The poster share payload holds the file only (plus `title: ''` if
       `SHARE_PAYLOAD` says so); "Share link" holds text and URL only, and
       the link ends in `?via=share`.

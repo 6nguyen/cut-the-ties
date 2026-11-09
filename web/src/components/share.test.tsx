@@ -56,7 +56,7 @@ describe('ShareRow', () => {
     await mount({ file, canShare: false });
     expect(buttons()).toEqual(['Share link', 'Your other action']);
     const img = root.querySelector('[data-share-fallback] img') as HTMLImageElement;
-    expect(img.getAttribute('alt')).toBe('Poster: Strip the section');
+    expect(img.getAttribute('alt')).toBe("Poster: I called Rep. Casar's office about Strip the section");
     expect(img.getAttribute('width')).toBe('270');
     const dl = root.querySelector('a[download]') as HTMLAnchorElement;
     expect(dl.getAttribute('download')).toBe('cut-the-ties-ndaa.png');
@@ -111,8 +111,11 @@ describe('ShareRow', () => {
       `https://bsky.app/intent/compose?text=${t}%20${u}`,
     ]);
   });
-  it('receiptSpec picks the verb by channel and names the state treasurer without a person', () => {
-    expect(receiptSpec('letter', 'Sen.', 'Alex Padilla', 'CA', 'T', 'W')).toMatchObject({ verb: 'I JUST WROTE TO', target: "SEN. PADILLA'S OFFICE" });
-    expect(receiptSpec('call', 'Treasurer', 'Fiona Ma', 'CA', 'T', 'W').target).toBe('THE CA TREASURER');
+  it('receiptSpec picks the stamp act by channel and names the state treasurer without a person', () => {
+    const letter = receiptSpec('letter', 'Sen.', 'Alex Padilla', 'CA', 'T', 'W');
+    expect(letter).toMatchObject({ act: 'wrote', target: "SEN. PADILLA'S OFFICE", title: 'T', what: 'W' });
+    expect(letter).not.toHaveProperty('verb');
+    expect(receiptSpec('public_comment', 'Sen.', 'Alex Padilla', 'CA', 'T', 'W').act).toBe('wrote');
+    expect(receiptSpec('call', 'Treasurer', 'Fiona Ma', 'CA', 'T', 'W')).toMatchObject({ act: 'called', target: 'THE CA TREASURER' });
   });
 });
