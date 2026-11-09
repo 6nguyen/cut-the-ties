@@ -62,7 +62,7 @@ export function Card({ g, n, state, district, photo }: { g: GoalCard; n: number;
         <Countdown at={stamp.g.decision_at} date={stamp.g.decision_date} confirmed={stamp.g.decision_date_confirmed} id={stamp.g.slug}
           title={split && stamp.g.chamber ? CHAMBER[stamp.g.chamber] : null} class="absolute -top-6 right-3.5 z-10" />
       )}
-      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-hidden flex flex-col justify-end ${stamp ? 'pt-16' : ''}`} data-band={photo}>
+      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end ${stamp ? 'pt-16' : ''}`} data-band={photo}>
         <div class="absolute inset-0 halftone pointer-events-none" />
         {band && <div class="contents" dangerouslySetInnerHTML={{ __html: band }} />}
         <div class="relative flex gap-2 mb-3">

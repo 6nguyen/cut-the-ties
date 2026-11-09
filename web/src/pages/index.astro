@@ -45,7 +45,7 @@ const cardSizes = '(min-width: 1360px) 411px, (min-width: 1024px) 31vw, (min-wid
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
       {goals.map((g) => (
         <article class="card flex flex-col">
-          <div class="relative hero-gradient text-newsprint p-4 aspect-video overflow-hidden flex flex-col justify-end">
+          <div class="relative hero-gradient text-newsprint p-4 aspect-video overflow-clip flex flex-col justify-end">
             <div class="absolute inset-0 halftone pointer-events-none"></div>
             <Photo id={imageIdFor(g)} widths={[...BAND.widths]} sizes={cardSizes} quality={BAND.quality} />
             <span class="relative chip bg-hazard text-ink self-start mb-2">{CATEGORY[g.category]}</span>

@@ -71,7 +71,8 @@ hero, the landing goal cards and the result cards.
     chip and title: lazy, widths 480/768, quality 22 (`BAND`). `sizes`
     follows the grid from 768 px up; below it the slot is declared at 36vw
     although the card is 92vw wide, so a phone at any pixel density takes
-    the 480 px file. On a result card the band sits above the body, whose
+    the 480 px file. A header whose text needs more than 16:9 grows taller
+    (`overflow: clip`), never cutting the title. On a result card the band sits above the body, whose
     first element stays the CTA.
 11. **Result cards.** The `Results` island renders the cards in the
     browser, so `/results` ships one inert
