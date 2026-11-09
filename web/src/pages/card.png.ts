@@ -6,6 +6,6 @@ import type { Goal } from '../lib/goals';
 const SITE = { category: 'federal_vote', title: 'Find the two things you can do this week', what_we_want: 'End US aid to Israel and get the US military out of its wars. Enter your address; we find the people who represent you in Congress.' } as Goal;
 
 export const GET: APIRoute = async () => {
-  const png = await renderCard(cardSvg(SITE).replace('FEDERAL VOTE · ', 'CONSTITUENT ACTION · '));
+  const png = await renderCard(cardSvg(SITE).replace('FEDERAL VOTE · ', 'CONSTITUENT ACTION · '), 'capitol-dome-dusk'); // site-imagery §5: the landing's photo
   return new Response(new Uint8Array(png), { headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' } });
 };
