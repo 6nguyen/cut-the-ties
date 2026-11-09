@@ -505,12 +505,15 @@ export async function prepare(deps: GenerateDeps, input: GenerateInput): Promise
   if (until && until.getTime() > now.getTime()) return reject(403, 'blocked', 'Drafting is paused on this device for 24 hours after repeated misuse.');
 
   const counts = await repo.generationCounts(deviceHash, ipHash, action.id, now);
-  if (counts.device_hour >= LIMITS.device_hour) return reject(429, 'limit_hour', `You have drafted ${LIMITS.device_hour} times in the last hour, which is the limit. Try again in an hour.`);
-  if (counts.device_day >= LIMITS.device_day) return reject(429, 'limit_day', `You have drafted ${LIMITS.device_day} times in the last 24 hours, which is the limit. Try again tomorrow.`);
-  if (counts.device_action_day >= LIMITS.device_action_day) return reject(429, 'limit_action', `You have used all ${LIMITS.device_action_day} drafts for this action in the last 24 hours. Try again tomorrow.`);
-  if (counts.ip_day >= LIMITS.ip_day) return reject(429, 'limit_ip', 'Too many drafts from this network today. Come back tomorrow.');
-
   const fmt = parseFormat(action);
+  // Each message says what was used, what the limit is and when the next one opens: the windows roll, so a slot
+  // comes back when the oldest draft in the window ages out.
+  const noun = { call_script: 'call scripts', letter: 'letters', public_comment: 'comments' }[fmt.kind];
+  if (counts.device_hour >= LIMITS.device_hour) return reject(429, 'limit_hour', `You have written ${LIMITS.device_hour} drafts in the last hour, and ${LIMITS.device_hour} is the limit. You can write another one hour after the first.`);
+  if (counts.device_day >= LIMITS.device_day) return reject(429, 'limit_day', `You have written ${LIMITS.device_day} drafts in the last 24 hours, and ${LIMITS.device_day} is the limit. You can write another 24 hours after the first.`);
+  if (counts.device_action_day >= LIMITS.device_action_day) return reject(429, 'limit_action', `You have written ${LIMITS.device_action_day} ${noun} for this ask in the last 24 hours, and ${LIMITS.device_action_day} is the limit. You can write another 24 hours after the first.`);
+  if (counts.ip_day >= LIMITS.ip_day) return reject(429, 'limit_ip', `Your network has reached the limit of ${LIMITS.ip_day} drafts in 24 hours. Try again tomorrow.`);
+
   // generation-cost §1/§4: no key, a zero budget or a used-up day means the standard script and no Anthropic call at all.
   let standard: StandardReason | null = null;
   if (!(deps.budgetUsd > 0)) standard = 'budget';

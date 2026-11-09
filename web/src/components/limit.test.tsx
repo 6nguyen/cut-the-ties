@@ -8,7 +8,7 @@ import { act } from 'preact/test-utils';
 import ActForm from './ActForm';
 import type { GenerateDone } from '@worker/generate';
 
-const LIMIT = 'You have used all 3 drafts for this action in the last 24 hours. Try again tomorrow.';
+const LIMIT = 'You have written 3 call scripts for this ask in the last 24 hours, and 3 is the limit. You can write another 24 hours after the first.';
 const fields = [
   { name: 'first_name', label: 'First name', max: 40, required: true, multiline: false },
   { name: 'why', label: 'Why', max: 280, required: true, multiline: true },

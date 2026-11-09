@@ -287,7 +287,11 @@ describe('POST /api/generate — rejections before any Anthropic call', () => {
       repo.generations.push(...seed);
       const res = await generate();
       expect(res.status, error).toBe(429);
-      expect(((await res.json()) as { error: string }).error).toBe(error);
+      const body = (await res.json()) as { error: string; message: string };
+      expect(body.error).toBe(error);
+      // The message names the limit as a number, so "one used, two left" cannot be read into it.
+      expect(body.message, error).toMatch(/limit/);
+      expect(body.message, error).toMatch(/\d/);
       expect(calls.opus + calls.haiku).toBe(0);
     }
     // One under each limit still generates.
