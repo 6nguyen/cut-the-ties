@@ -11,7 +11,7 @@ const LINK = 'https://cutthetiesmovement.org/goals/ndaa?via=share';
 let root: HTMLElement;
 const flush = () => new Promise((r) => setTimeout(r, 0));
 const mount = (poster: Poster | null) => act(() => {
-  render(h(ShareRow, { type: 'call', role: 'Rep.', name: 'Greg Casar', title: 'Strip the section', slug: 'ndaa', poster, other: h('a', { href: '/results', 'data-other': true }, 'Your other action') }), root);
+  render(h(ShareRow, { type: 'call', role: 'Rep.', name: 'Greg Casar', title: 'Strip the section', slug: 'ndaa', poster }), root);
 });
 const q = <T extends HTMLElement>(sel: string) => root.querySelector(sel) as T | null;
 const buttons = () => [...root.querySelectorAll('[data-share-buttons] > *')].map((e) => e.textContent);
@@ -47,7 +47,7 @@ describe('ShareRow', () => {
     const share = vi.fn(() => Promise.resolve());
     stubShare(share);
     await mount({ file, canShare: true });
-    expect(buttons()).toEqual(['Share', 'Copy link', 'Message', 'Your other action']);
+    expect(buttons()).toEqual(['Share', 'Copy link', 'Message']);
     expectBorderedIconButtons();
     const thumb = q<HTMLImageElement>('[data-share-thumb]')!;
     expect(thumb.getAttribute('src')).toBe('blob:poster');
@@ -73,14 +73,14 @@ describe('ShareRow', () => {
     await act(async () => { q('[data-share-poster]')!.click(); await flush(); });
     expect(q('[data-share-poster]')).toBeNull();
     expect(q('[data-share-hint]')).toBeNull();
-    expect(buttons()).toEqual(['Save poster', 'Copy link', 'Message', 'Your other action']);
+    expect(buttons()).toEqual(['Save poster', 'Copy link', 'Message']);
     expect(q('[data-share-fallback]')).not.toBeNull();
     expectBorderedIconButtons();
   });
   it('without file share: "Save poster" replaces the Instagram button and "Open Instagram ↗" follows the block', async () => {
     const nav = stubShare(vi.fn(() => Promise.resolve()), false);
     await mount({ file, canShare: false });
-    expect(buttons()).toEqual(['Save poster', 'Copy link', 'Message', 'Your other action']);
+    expect(buttons()).toEqual(['Save poster', 'Copy link', 'Message']);
     expectBorderedIconButtons();
     const imgs = root.querySelectorAll('img'); // the thumbnail alone: the 270 px inline poster is gone
     expect(imgs.length).toBe(1);
@@ -108,7 +108,7 @@ describe('ShareRow', () => {
   it('without a share sheet: no "Message", "Copy link" reads "Link copied" for 2 s, and the four intent links open in new tabs', async () => {
     const nav = stubShare(undefined);
     await mount({ file, canShare: false });
-    expect(buttons()).toEqual(['Save poster', 'Copy link', 'Your other action']);
+    expect(buttons()).toEqual(['Save poster', 'Copy link']);
     expect(q('[data-share-message]')).toBeNull();
     const links = [...root.querySelectorAll('[data-share-intents] a')];
     expect(links.map((a) => a.textContent)).toEqual(['Facebook', 'X', 'Threads', 'Bluesky']);
@@ -126,11 +126,11 @@ describe('ShareRow', () => {
   it('offers "Copy link" and "Message" alone while the poster is still rendering or failed to draw, and never prints the first name', async () => {
     stubShare(vi.fn(() => Promise.resolve()));
     await mount(null);
-    expect(buttons()).toEqual(['Copy link', 'Message', 'Your other action']);
+    expect(buttons()).toEqual(['Copy link', 'Message']);
     expect(q('[data-share-thumb]')).toBeNull();
     expect(root.textContent).not.toMatch(/Greg/);
     await mount({ file: null, canShare: false });
-    expect(buttons()).toEqual(['Copy link', 'Message', 'Your other action']);
+    expect(buttons()).toEqual(['Copy link', 'Message']);
     expect(q('[data-share-thumb]')).toBeNull();
     expect(root.textContent).not.toContain('Open Instagram');
     expectBorderedIconButtons();

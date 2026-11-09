@@ -1,30 +1,26 @@
 import { useEffect, useState } from 'preact/hooks';
 import { districtLabel } from '../lib/api';
-import { clearPlace, deviceId, loadPlace, type Place } from '../lib/store';
-import { atDue, clearFunnel, fmtDay, fmtDue, isOverdue, keyOf, kindOf, loadCaptain, loadCommitments, loadVisits, receiptLine, saveCaptain, saveCommitments, ymd, type Captain, type Commitment, type JoinedVisit } from '../lib/commitments';
+import { clearPlace, loadPlace, type Place } from '../lib/store';
+import { atDue, clearFunnel, dropCaptain, fmtDue, isOverdue, keyOf, kindOf, loadCommitments, loadVisits, saveCommitments, ymd, type Commitment, type JoinedVisit } from '../lib/commitments';
 import { fmtWhen, withdrawVisit } from '../lib/visits';
 
 /** The build-time slice of every published goal the card needs (index.astro passes it). */
 export interface WeekGoal { slug: string; title: string; status: 'upcoming' | 'active' | 'completed' | 'expired'; decision_date: string | null; outcome_note: string | null; what_we_want?: string }
 interface Props { goals: WeekGoal[] }
 
-
-/** commitment-funnel §2: the return visitor's checklist above the address field; §3: share after a completed list. */
+/** commitment-funnel §3: the return visitor's checklist above the address field. */
 export default function YourWeek({ goals }: Props) {
   const [place, setPlace] = useState<Place | null>(null);
   const [items, setItems] = useState<Commitment[]>([]);
-  const [captain, setCaptain] = useState<Captain | null>(null);
   const [dropped, setDropped] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [date, setDate] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [visits, setVisits] = useState<JoinedVisit[]>([]);
-  const [poster, setPoster] = useState<File | null>(null); // social-sharing §4: drawn once the list is receipted, shared synchronously on tap
   const goalOf = (slug: string) => goals.find((g) => g.slug === slug);
 
   useEffect(() => {
+    dropCaptain(); // one-screen-receipt §4.2: the captain list is retired; a stored one goes, unread
     const p = loadPlace();
     setPlace(p);
     setVisits(loadVisits().filter((j) => j.ends_at >= new Date().toISOString().slice(0, 16)));
@@ -35,60 +31,22 @@ export default function YourWeek({ goals }: Props) {
     const keep = loadCommitments().filter((c) => !closed(c.goal));
     saveCommitments(keep);
     setItems(keep);
-    const cap = loadCaptain();
-    if (cap && (cap.receipted || closed(cap.goal))) saveCaptain(null); else setCaptain(cap);
     setDropped([...new Set(gone)]);
   }, []);
-
-  useEffect(() => {
-    if (!captain?.receipted) { setPoster(null); return; }
-    const g = goalOf(captain.goal);
-    const due = fmtDay(captain.due).toUpperCase();
-    const target = captain.who ? `${(captain.role ?? '').toUpperCase()} ${captain.who.toUpperCase()}'S OFFICE BEFORE ${due}`.trim() : `OUR OFFICES BEFORE ${due}`;
-    let live = true;
-    import('../lib/poster').then((m) => m.posterFile({ act: 'called', verb: 'THREE OF US ARE CALLING', target, title: g?.title ?? captain.goal, what: g?.what_we_want ?? '', date: m.posterDate() }, `cut-the-ties-${captain.goal}.png`))
-      .then((f) => { if (live) setPoster(f); }).catch(() => {});
-    return () => { live = false; };
-  }, [captain?.receipted, captain?.goal]);
 
   // office-visits: a joined visit shows even without a stored address (one can be joined from a member page).
   if (!place && visits.length === 0) return null;
   const where = place ? districtLabel(place.state, place.district) : '';
   const open = items.filter((c) => !hidden.includes(keyOf(c)));
-  if (open.length === 0 && !captain && dropped.length === 0 && visits.length === 0) return null;
+  if (open.length === 0 && dropped.length === 0 && visits.length === 0) return null;
 
   function update(list: Commitment[]) { saveCommitments(list); setItems(list); }
-  function setCap(c: Captain | null) { saveCaptain(c); setCaptain(c); }
   function newDate(key: string, apply: (iso: string) => void) {
     const d = atDue(date);
     if (Number.isNaN(d.getTime())) return;
     apply(d.toISOString()); setEditing(null);
   }
-  async function tick(i: number, done: boolean) {
-    if (!captain) return;
-    const next = { ...captain, people: captain.people.map((p, j) => (j === i ? { ...p, done } : p)) };
-    setCap(next);
-    if (next.people.every((p) => p.done)) await complete(next);
-  }
-  /** §2.1: three ticks → one receipt, no names. */
-  async function complete(c: Captain) {
-    if (c.receipted) return;
-    setError(null);
-    const res = await fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: c.goal, action: 'captain-list', state: place?.state, district: place?.district, device: deviceId() }) });
-    if (!res.ok) { setError('Could not count that. Your list is still here.'); return; }
-    setCap({ ...c, people: c.people.map((p) => ({ ...p, done: true })), receipted: true });
-  }
-  /** social-sharing §4: the 9:16 poster ("THREE OF US ARE CALLING / <ROLE> <SURNAME>'S OFFICE BEFORE <MON D>", district off the image) is attached when the sheet takes files; text and link unchanged. */
-  function share(c: Captain) {
-    const url = `${location.origin}/goals/${c.goal}`;
-    const text = receiptLine(where, c.who, c.due);
-    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-    if (nav.share) {
-      const data: ShareData = poster && nav.canShare?.({ files: [poster] }) ? { title: 'Cut the Ties', text, url, files: [poster] } : { title: 'Cut the Ties', text, url };
-      nav.share(data).catch(() => { /* dismissed */ });
-    } else { void navigator.clipboard?.writeText(`${text} ${url}`).then(() => setCopied(true)); }
-  }
-  function startOver() { clearFunnel(); clearPlace(); setItems([]); setCaptain(null); setDropped([]); setVisits([]); setPlace(null); }
+  function startOver() { clearFunnel(); clearPlace(); setItems([]); setDropped([]); setVisits([]); setPlace(null); }
   async function leave(id: number) { await withdrawVisit(id); setVisits(visits.filter((j) => j.id !== id)); }
 
   const dateInput = (key: string, apply: (iso: string) => void) => (
@@ -128,37 +86,6 @@ export default function YourWeek({ goals }: Props) {
           </div>
         );
       })}
-      {captain && (() => {
-        const c = captain;
-        const late = !c.receipted && isOverdue(c.due) && c.people.some((p) => !p.done);
-        return (
-          <div class="border-t-2 border-ink pt-3 flex flex-col gap-2" data-captain>
-            <p class="font-semibold">{late ? 'Still on? ' : ''}Three people you'll ask to call about <a href={`/goals/${c.goal}`} class="underline">{goalOf(c.goal)?.title ?? c.goal}</a> by {fmtDue(c.due)}.</p>
-            <ul class="flex flex-col gap-1">
-              {c.people.map((p, i) => (
-                <li>
-                  <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={p.done} disabled={!!c.receipted} onChange={(e) => void tick(i, (e.target as HTMLInputElement).checked)} /> {p.name} <span class="label-ticker text-ink/60">· {p.channel.replace('_', ' ')}</span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-            {error && <p role="alert" class="text-sm text-crimson font-semibold">{error}</p>}
-            {c.receipted ? (
-              <div class="flex flex-wrap gap-2 items-center" data-share>
-                <p class="text-sm"><span class="chip bg-acid text-ink mr-2">✓</span>Counted: one list for {where}, no names.</p>
-                <button type="button" class="btn btn-primary" onClick={() => void share(c)}>{copied ? 'Line copied' : 'Share'}</button>
-              </div>
-            ) : late && (
-              <div class="flex flex-wrap gap-2 items-center">
-                <button type="button" class="btn btn-primary" onClick={() => void complete({ ...c, people: c.people.map((p) => ({ ...p, done: true })) })}>Done</button>
-                {editing === 'cap' ? dateInput('cap', (iso) => setCap({ ...c, due: iso })) : <button type="button" class="btn btn-ghost" onClick={() => { setDate(ymd(new Date())); setEditing('cap'); }}>New date</button>}
-                <button type="button" class="btn btn-ghost" onClick={() => setCap(null)}>Drop</button>
-              </div>
-            )}
-          </div>
-        );
-      })()}
       {visits.map((j) => (
         <div class="border-t-2 border-ink pt-3 flex flex-col gap-2" data-joined-visit={j.id}>
           <p class="font-semibold">You're visiting <a href={`/m/${j.member}#visits`} class="underline">{j.name}</a>'s office in {j.city}, {fmtWhen(j.starts_at, j.ends_at)}.</p>

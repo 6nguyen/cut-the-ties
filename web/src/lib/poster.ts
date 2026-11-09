@@ -1,7 +1,7 @@
-// social-sharing §2: the 1080×1920 poster drawn on the device after a receipt (and, until one-screen-receipt
-// §4, after a completed captain list). Text and shapes only (Canvas 2D: fills, strokes, one rotation; no
-// filter, Safari has none), the goal card's palette and faces; nothing identifying on it.
-// This module is a lazy chunk: ActForm and YourWeek import it only once a share can be offered.
+// social-sharing §2: the 1080×1920 poster drawn on the device after a receipt. Text and shapes only
+// (Canvas 2D: fills, strokes, one rotation; no filter, Safari has none), the goal card's palette and
+// faces; nothing identifying on it.
+// This module is a lazy chunk: ActForm imports it (through ShareRow) only once a receipt exists.
 import { surname } from '@worker/names';
 
 /**
@@ -41,11 +41,6 @@ export interface PosterSpec {
   date: string;
   /** The address under the call to action; defaults to the site host. */
   url?: string;
-  /**
-   * one-screen-receipt §1.7: the captain-list poster ("THREE OF US ARE CALLING"). With it the verb line and
-   * the target lines stand in place of the stamp. Goes with the captain list in §4.
-   */
-  verb?: string;
 }
 
 /** The subset of CanvasRenderingContext2D the draw uses, so a test can pass a recording stub. */
@@ -132,51 +127,45 @@ export function drawPoster(ctx: Ctx, spec: PosterSpec): void {
   const cta = fitSize(ctx, CTA, GUTTER - 64, 120, 72, 4);
   const block = BAND.bottom - FOOT - 48 - 24 - (cta + 28);
 
-  if (spec.verb) {
-    line(spec.verb.toUpperCase(), 72, `700 72px ${CONDENSED}`, NEWSPRINT, 8);
-    for (const l of wrapText(ctx, spec.target.toUpperCase(), GUTTER, 2)) line(l, 72, `700 72px ${CONDENSED}`, ACID, 8);
-  } else {
-    const date = spec.date.toUpperCase();
-    const act = spec.act === 'called' ? 'I CALLED' : 'I WROTE';
-    /** The box at act size `s`: `h` tall, `w` wide (its widest line plus padding), `box` tall once turned. */
-    const stamp = (s: number) => {
-      const h = 2 * PAD_Y + 40 + 14 + CAP * s + 18 + 40;
-      const max = Math.floor((GUTTER - h * SIN) / COS) - 2 * PAD_X;
-      ctx.font = `700 40px ${MONO}`;
-      const dw = ctx.measureText(date).width;
-      const os = fitSize(ctx, spec.target.toUpperCase(), max, 40, 32, 2);
-      const office = wrapText(ctx, spec.target.toUpperCase(), max, 1)[0] ?? '';
-      const ow = Math.min(ctx.measureText(office).width, max);
-      ctx.font = `700 ${s}px ${CONDENSED}`;
-      const aw = Math.min(ctx.measureText(act).width, max - 0.675 * s);
-      const w = Math.min(Math.max(ow, aw + 0.675 * s, dw), max) + 2 * PAD_X;
-      return { s, h, w, os, office, ow, aw, dw, box: h * COS + w * SIN };
-    };
-    let t = stamp(200);
-    if (y + t.box + 40 + body + 24 > block) t = stamp(160);
-    ctx.save();
-    ctx.translate(x + GUTTER / 2, y + t.box / 2);
-    ctx.rotate(-TILT);
-    ctx.fillStyle = PAPER; ctx.fillRect(-t.w / 2, -t.h / 2, t.w, t.h);
-    ctx.strokeStyle = CRIMSON; ctx.lineWidth = 14; ctx.setLineDash([36, 18]);
-    ctx.strokeRect(-t.w / 2 + 7, -t.h / 2 + 7, t.w - 14, t.h - 14);
-    ctx.setLineDash([]);
-    ctx.fillStyle = CRIMSON;
-    let ty = -t.h / 2 + PAD_Y + 40;
-    ctx.font = `700 ${t.os}px ${MONO}`; ctx.fillText(t.office, -t.ow / 2, ty, t.ow);
-    ty += 14 + CAP * t.s;
-    const ax = -(t.aw + 0.675 * t.s) / 2;
-    ctx.font = `700 ${t.s}px ${CONDENSED}`; ctx.fillText(act, ax, ty, t.aw);
-    // The tick: neither face has the glyph.
-    const tx = ax + t.aw + 0.12 * t.s;
-    ctx.lineWidth = 0.11 * t.s; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(tx, ty - 0.3 * t.s); ctx.lineTo(tx + 0.18 * t.s, ty - 0.08 * t.s); ctx.lineTo(tx + 0.5 * t.s, ty - 0.62 * t.s); ctx.stroke();
-    ty += 18 + 40;
-    ctx.font = `700 40px ${MONO}`; ctx.fillText(date, -t.dw / 2, ty);
-    ctx.restore();
-    y += t.box;
-  }
-  y += 40;
+  const date = spec.date.toUpperCase();
+  const act = spec.act === 'called' ? 'I CALLED' : 'I WROTE';
+  /** The box at act size `s`: `h` tall, `w` wide (its widest line plus padding), `box` tall once turned. */
+  const stamp = (s: number) => {
+    const h = 2 * PAD_Y + 40 + 14 + CAP * s + 18 + 40;
+    const max = Math.floor((GUTTER - h * SIN) / COS) - 2 * PAD_X;
+    ctx.font = `700 40px ${MONO}`;
+    const dw = ctx.measureText(date).width;
+    const os = fitSize(ctx, spec.target.toUpperCase(), max, 40, 32, 2);
+    const office = wrapText(ctx, spec.target.toUpperCase(), max, 1)[0] ?? '';
+    const ow = Math.min(ctx.measureText(office).width, max);
+    ctx.font = `700 ${s}px ${CONDENSED}`;
+    const aw = Math.min(ctx.measureText(act).width, max - 0.675 * s);
+    const w = Math.min(Math.max(ow, aw + 0.675 * s, dw), max) + 2 * PAD_X;
+    return { s, h, w, os, office, ow, aw, dw, box: h * COS + w * SIN };
+  };
+  let t = stamp(200);
+  if (y + t.box + 40 + body + 24 > block) t = stamp(160);
+  ctx.save();
+  ctx.translate(x + GUTTER / 2, y + t.box / 2);
+  ctx.rotate(-TILT);
+  ctx.fillStyle = PAPER; ctx.fillRect(-t.w / 2, -t.h / 2, t.w, t.h);
+  ctx.strokeStyle = CRIMSON; ctx.lineWidth = 14; ctx.setLineDash([36, 18]);
+  ctx.strokeRect(-t.w / 2 + 7, -t.h / 2 + 7, t.w - 14, t.h - 14);
+  ctx.setLineDash([]);
+  ctx.fillStyle = CRIMSON;
+  let ty = -t.h / 2 + PAD_Y + 40;
+  ctx.font = `700 ${t.os}px ${MONO}`; ctx.fillText(t.office, -t.ow / 2, ty, t.ow);
+  ty += 14 + CAP * t.s;
+  const ax = -(t.aw + 0.675 * t.s) / 2;
+  ctx.font = `700 ${t.s}px ${CONDENSED}`; ctx.fillText(act, ax, ty, t.aw);
+  // The tick: neither face has the glyph.
+  const tx = ax + t.aw + 0.12 * t.s;
+  ctx.lineWidth = 0.11 * t.s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(tx, ty - 0.3 * t.s); ctx.lineTo(tx + 0.18 * t.s, ty - 0.08 * t.s); ctx.lineTo(tx + 0.5 * t.s, ty - 0.62 * t.s); ctx.stroke();
+  ty += 18 + 40;
+  ctx.font = `700 40px ${MONO}`; ctx.fillText(date, -t.dw / 2, ty);
+  ctx.restore();
+  y += t.box + 40;
   for (const l of title) line(l, size, `700 ${size}px ${CONDENSED}`, NEWSPRINT, 6);
   y += 34;
   ctx.fillStyle = CRIMSON; ctx.fillRect(x, y, GUTTER, 6);

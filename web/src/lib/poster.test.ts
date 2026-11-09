@@ -73,7 +73,6 @@ const SPEC: PosterSpec = {
   what: 'Your representative and senators vote no on the final military bill if the Israel integration section is still in it.',
   date: 'Nov 8, 2026',
 };
-const LIST: PosterSpec = { ...SPEC, verb: 'Three of us are calling', target: "REP. CASAR'S OFFICE BEFORE DEC 10" };
 // What the drawer must never receive or print: the fields a receipt screen knows but the poster omits.
 const IDENTITY = ['George', 'Nguyen', 'Luis', 'Santa Ana', 'CA-46', '(714)', '555-', 'Dear Representative'];
 const draw = (spec: PosterSpec, em?: number) => { const s = stub(em); drawPoster(s.ctx, spec); return s; };
@@ -111,7 +110,7 @@ describe('drawPoster', () => {
   });
   it('keeps every glyph box, the stamp corners, the tick, the block and the arrow inside y 285–1635 and x 72–1008', () => {
     expect(glyphs.length).toBeGreaterThan(7);
-    for (const em of [0.3, 0.42, 0.55]) for (const spec of [SPEC, { ...SPEC, act: 'wrote' as const }, LIST]) expectInBand(draw(spec, em));
+    for (const em of [0.3, 0.42, 0.55]) for (const spec of [SPEC, { ...SPEC, act: 'wrote' as const }]) expectInBand(draw(spec, em));
     expectInBand(draw(SPEC, 0.7)); // wider than any fallback face: the stamp and the block still hold their lines
   });
   it('reads top to bottom: chip, stamp (office, act, date), title, ask, call to action, address', () => {
@@ -214,18 +213,13 @@ describe('drawPoster', () => {
     expect(clearance(worst)).toBeGreaterThanOrEqual(24);
     expect([200, 160]).toContain(worst.glyphs.find((g) => g.text === 'I CALLED')!.size);
   });
-  it('one-screen-receipt §1.7: the captain-list poster keeps its verb and target lines in place of the stamp and gains the call to action', () => {
-    const s = draw(LIST);
+  it('one-screen-receipt §4.3: no poster carries the captain-list lines; a spec with a stale `verb` draws the stamp like any other', () => {
+    const s = draw({ ...SPEC, verb: 'THREE OF US ARE CALLING' } as PosterSpec);
     const texts = s.glyphs.map((g) => g.text);
-    expect(texts.slice(0, 4)).toEqual(['CONSTITUENT ACTION · CUT THE TIES', 'THREE OF US ARE CALLING', "REP. CASAR'S OFFICE", 'BEFORE DEC 10']);
-    expect(s.glyphs.slice(1, 4).map((g) => g.size)).toEqual([72, 72, 72]);
-    expect(s.rects.some((r) => r.fill === PAPER)).toBe(false);
-    expect(s.glyphs.some((g) => g.turned)).toBe(false);
-    expect(texts).not.toContain('I CALLED');
-    expect(texts).not.toContain('NOV 8, 2026');
-    expect(texts.slice(-2)).toEqual([CTA, 'CUTTHETIESMOVEMENT.ORG']);
-    expectNoOverlap(s);
-    expect(clearance(s)).toBeGreaterThanOrEqual(24);
+    expect(texts).toEqual(draw(SPEC).glyphs.map((g) => g.text));
+    expect(texts).toContain('I CALLED');
+    expect(texts.join(' ')).not.toMatch(/THREE OF US|BEFORE/);
+    expect(s.rects.some((r) => r.fill === PAPER)).toBe(true);
   });
   it('meets the minimum sizes: title ≥72, body ≥44, call to action ≥72, address ≥40', () => {
     const by = (p: (g: Glyph) => boolean) => glyphs.filter(p).map((g) => g.size);
