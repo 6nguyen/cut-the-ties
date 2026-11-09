@@ -41,9 +41,10 @@ export function senateContacts(xml: string): SenateContact[] {
   return out;
 }
 
-/** §2: the contact link and its kind for one roster term. Senators: roster form, else the XML email when it is not the homepage, else the homepage. House: roster form, else `<url>/contact` behind a ZIP gate. */
+/** §2: the contact link and its kind for one roster term. A roster form counts only when it is an http(s) URL (the dataset has carried a typo'd scheme). Senators: roster form, else the XML email when it is not the homepage, else the homepage. House: roster form, else `<url>/contact` behind a ZIP gate. */
 export function contactFor(t: Pick<Term, 'type' | 'contact_form' | 'url'>, senate?: SenateContact): { contact_form_url: string; contact_kind: ContactKind | '' } {
-  if (t.contact_form) return { contact_form_url: t.contact_form, contact_kind: 'form' };
+  const form = (t.contact_form ?? '').trim();
+  if (/^https?:\/\//.test(form)) return { contact_form_url: form, contact_kind: 'form' };
   const home = (t.url ?? '').trim();
   if (t.type === 'sen') {
     const email = senate?.email.trim() ?? '';

@@ -24,11 +24,11 @@ never by this capability, and nothing here calls an LLM.
    `btb_cosponsor`, `target_2028`); `party`, `chamber`, `state`,
    `district`, `dc_phone`, `contact_form_url` and `contact_kind` are
    refreshed from the dataset when it has a value. The contact link is
-   filled by kind: a roster `contact_form` is `form`; a senator without one
+   filled by kind: an http(s) roster `contact_form` is `form`; a senator without one
    gets the XML `email` as `form` when it differs from the homepage, else
    the homepage as `homepage`; a representative without one gets
-   `terms[-1].url + '/contact'` as `zip_gate`. A row whose `contact_kind`
-   is already set keeps its link unless the dataset itself carries a form.
+   `terms[-1].url + '/contact'` as `zip_gate`. A row with a `contact_kind`
+   keeps its link unless the dataset has a form.
    New members get the dataset's name and empty flags. Members in the file
    but not in the roster are kept, never deleted: before 2027-01-03
    (`TRANSITION_DATE`) they are printed under `stale:` with no column
@@ -44,7 +44,8 @@ never by this capability, and nothing here calls an LLM.
    120th), a
    single-seat state uses a district other than `0`, a state code is
    unknown, `contact_kind` is outside `form · zip_gate · homepage`, a
-   `contact_form_url` has no kind, or `left_office` is not an ISO date.
+   `contact_form_url` is not https or has no kind, or
+   `left_office` is not an ISO date.
    `district_offices.csv` (`checkOffices`) is rejected on a `bioguide_id`
    not in `members.csv`, an unknown state, a repeated `office_id` or a
    phone that is not ten digits after stripping punctuation. After the

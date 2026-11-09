@@ -108,6 +108,8 @@ describe('contact-form fallback (§2)', () => {
     expect(contactFor({ type: 'rep', url: 'https://roy.house.gov/' })).toEqual({ contact_form_url: 'https://roy.house.gov/contact', contact_kind: 'zip_gate' });
     expect(contactFor({ type: 'rep', contact_form: 'https://roy.house.gov/email', url: 'https://roy.house.gov' })).toEqual({ contact_form_url: 'https://roy.house.gov/email', contact_kind: 'form' });
     expect(contactFor({ type: 'rep' })).toEqual({ contact_form_url: '', contact_kind: '' });
+    // A roster form that is not an http(s) URL (the dataset's `hhttps://fine.house.gov/…`) is ignored, so it cannot replace a hand-set link.
+    expect(contactFor({ type: 'rep', contact_form: 'hhttps://fine.house.gov/address_authentication?form=/contact/email-me', url: 'https://fine.house.gov' })).toEqual({ contact_form_url: 'https://fine.house.gov/contact', contact_kind: 'zip_gate' });
   });
   it('rosterRows fills the kind from the XML and the import keeps a hand-set link', () => {
     const yaml = `
@@ -130,7 +132,7 @@ describe('contact-form fallback (§2)', () => {
   });
   it('the committed file: every member has a contact link with a kind', () => {
     for (const m of rows.members) {
-      expect(m.contact_form_url, m.bioguide_id).toBeTruthy();
+      expect(m.contact_form_url, m.bioguide_id).toMatch(/^https:\/\/[a-z0-9.-]+\.(senate|house)\.gov(\/|$)/);
       expect(['form', 'zip_gate', 'homepage'], m.bioguide_id).toContain(m.contact_kind);
     }
     expect(rows.members.filter((m) => m.contact_kind === 'homepage').every((m) => m.chamber === 'senate')).toBe(true);
@@ -168,6 +170,7 @@ describe('departing members (§4)', () => {
     expect(() => checkMembers([ok])).not.toThrow();
     expect(() => checkMembers([{ ...ok, left_office: 'Jan 4' }])).toThrow(/left_office is not an ISO date/);
     expect(() => checkMembers([{ ...ok, contact_kind: '' }])).toThrow(/contact_form_url without contact_kind/);
+    expect(() => checkMembers([{ ...ok, contact_form_url: 'hhttps://x' }])).toThrow(/contact_form_url is not an https URL/);
     expect(() => checkMembers([{ ...ok, contact_kind: 'email' }])).toThrow(/unknown contact_kind email/);
   });
 
