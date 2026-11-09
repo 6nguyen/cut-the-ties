@@ -93,18 +93,25 @@ describe('Retry after no_answer (call-follow-through §1)', () => {
   });
 });
 
-describe('NextOffice (call-follow-through §3)', () => {
+describe('NextOffice (call-follow-through §3, one-screen-receipt §2.4)', () => {
   const choices = [{ id: 'A1', label: 'Sen. Alpha' }, { id: 'B2', label: 'Sen. Beta' }, { id: 'C3', label: 'Rep. Gamma' }];
-  const mountNext = (c = choices) => act(() => { render(h(NextOffice, { goal: 'ndaa-1217', action: 'ndaa-1217-call', choices: c }), root); });
-  it('lists "Next: <office>" for every target without a receipt today, linking to the act page with the target', async () => {
+  const mountNext = (c = choices, primary?: boolean) => act(() => { render(h(NextOffice, { goal: 'ndaa-1217', action: 'ndaa-1217-call', choices: c, primary }), root); });
+  it('the first target without a receipt today is the one filled "Next: call …" button, the rest are bordered; each links to the act page with the target', async () => {
     logReceipt({ goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'A1' });
     logReceipt({ goal: 'other-goal', action: 'other-call', target: 'B2' }); // another goal's receipt does not count
     logReceipt({ goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C3' }, new Date(Date.now() - 25 * 60 * 60_000)); // yesterday's is pruned
     await mountNext();
     const links = [...root.querySelectorAll('[data-next-office] a')];
-    expect(links.map((a) => a.textContent)).toEqual(['Next: Sen. Beta', 'Next: Rep. Gamma']);
+    expect(links.map((a) => a.textContent)).toEqual(["Next: call Sen. Beta's office →", "Next: call Rep. Gamma's office →"]);
     expect(links[0].getAttribute('href')).toBe('/goals/ndaa-1217/act/ndaa-1217-call?target=B2');
+    expect(links.map((a) => a.matches('[data-next-primary]'))).toEqual([true, false]);
+    expect(links.map((a) => /btn-primary/.test(a.className))).toEqual([true, false]);
+    expect(links[1].className).toMatch(/btn-ghost/);
     expect(fetchMock).not.toHaveBeenCalled();
+    render(null, root);
+    await mountNext(choices, false); // the email step's "I sent it" holds the fill: no second filled button
+    expect(root.querySelectorAll('.btn-primary').length).toBe(0);
+    expect(root.querySelector('[data-next-primary]')!.className).toMatch(/btn-ghost/);
   });
   it('reads "All three called this week." once every target has a receipt, the generic line for two, nothing for one', async () => {
     for (const t of ['A1', 'B2', 'C3']) logReceipt({ goal: 'ndaa-1217', action: 'ndaa-1217-call', target: t });

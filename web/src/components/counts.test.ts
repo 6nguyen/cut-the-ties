@@ -56,29 +56,30 @@ describe('<Counts> (§2.3)', () => {
   });
 });
 
-describe('echo mode (call-follow-through §4)', () => {
-  it('speaks in the first person with the same scope rules, and reads "Counted." with no bucket or no response', () => {
+describe('echo mode (call-follow-through §4, one-screen-receipt §2.2)', () => {
+  it('speaks in the first person with the same scope rules, and is null with no bucket or no response', () => {
     expect(echoLine(resp({ calls: 12 }, { calls: 40 }), 'TX', 35)).toBe("You're one of 12 constituents in TX-35 who called this week");
     expect(echoLine(resp({}, { calls: 8 }), 'TX', 35)).toBe("You're one of 8 constituents in Texas who called this week");
-    expect(echoLine(resp({}), 'TX', 35)).toBe('Counted.');
-    expect(echoLine(null, 'TX', 35)).toBe('Counted.');
+    expect(echoLine(resp({}), 'TX', 35)).toBeNull();
+    expect(echoLine(null, 'TX', 35)).toBeNull();
   });
-  it('<Counts echo> fetches once and falls back to "Counted." on an empty or failed response', async () => {
+  it('<Counts echo> fetches once, is unboxed, and renders nothing on an empty or failed response', async () => {
     const f = vi.fn(async () => new Response(JSON.stringify(resp({ calls: 12 })), { status: 200 }));
     vi.stubGlobal('fetch', f);
     act(() => { render(h(Counts, { goal: 'ndaa-1217', state: 'TX', district: 35, echo: true }), root); });
     await flush();
     expect(root.querySelector('[data-counts]')?.textContent).toBe("You're one of 12 constituents in TX-35 who called this week");
+    expect(root.querySelector('[data-counts]')!.className).not.toMatch(/border/); // §2.8: only what can be tapped has a border
     expect(f).toHaveBeenCalledTimes(1);
     render(null, root);
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(resp({})), { status: 200 })));
     act(() => { render(h(Counts, { goal: 'ndaa-1217', state: 'TX', district: 35, echo: true }), root); });
     await flush();
-    expect(root.querySelector('[data-counts]')?.textContent).toBe('Counted.');
+    expect(root.innerHTML).toBe('');
     render(null, root);
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline'); }));
     act(() => { render(h(Counts, { goal: 'ndaa-1217', state: 'TX', district: 35, echo: true }), root); });
     await flush();
-    expect(root.querySelector('[data-counts]')?.textContent).toBe('Counted.');
+    expect(root.innerHTML).toBe('');
   });
 });

@@ -40,16 +40,16 @@ export function counterLine(c: CountsResponse, state: string, district: number |
   const p = pick(c, state, district);
   return p && `${p.n} constituents in ${p.where} ${p.verb} this week`;
 }
-/** call-follow-through §4: the same scope after the user's own receipt; "Counted." when no bucket clears the threshold. */
-export function echoLine(c: CountsResponse | null, state: string, district: number | null): string {
+/** one-screen-receipt §2.2: the same scope after the user's own receipt; null (render nothing) when no bucket clears the threshold or the request failed. */
+export function echoLine(c: CountsResponse | null, state: string, district: number | null): string | null {
   const p = c && pick(c, state, district);
-  return p ? `You're one of ${p.n} constituents in ${p.where} who ${p.verb} this week` : 'Counted.';
+  return p ? `You're one of ${p.n} constituents in ${p.where} who ${p.verb} this week` : null;
 }
 
 /**
  * Fetches once; renders nothing until the response arrives and nothing when no bucket clears the
- * threshold (§2.3). With `echo` (the receipt screen) the line is first-person and a failed or empty
- * response reads "Counted.".
+ * threshold (§2.3). With `echo` (the receipt screen) the line is first-person and unboxed: the receipt
+ * card borders only what can be tapped (one-screen-receipt §2.8).
  */
 export default function Counts({ goal, state, district, echo = false }: { goal: string; state: string; district: number | null; echo?: boolean }) {
   const [line, setLine] = useState<string | null>(null);
@@ -62,5 +62,5 @@ export default function Counts({ goal, state, district, echo = false }: { goal: 
     return () => { live = false; };
   }, [goal, state, district, echo]);
   if (!line) return null;
-  return <p class="label-code text-sm px-3 py-2 border-2 border-ink bg-newsprint" data-counts>{line}</p>;
+  return <p class={echo ? 'font-semibold' : 'label-code text-sm px-3 py-2 border-2 border-ink bg-newsprint'} data-counts>{line}</p>;
 }

@@ -108,19 +108,19 @@ stores identifies them. Address routing, goals and ranking are in
    every office on file), the contact-form link
    for letters and comments, and "I did it" → `POST /api/receipt`
    (goal, action, target, stored state/district, device hash). After a
-   receipt, first the commitment line and the captain list
-   (`commitment-funnel.md` §1–4; each skippable in one tap), and only
-   once both are answered or skipped: the next-office buttons and the
-   "You're one of <N>" line (`commitment-funnel.md` §10), then the share
-   row of `social-sharing.md` §3–5 (poster, link, fallback, intents),
-   the office-response picker
-   (`will_support · undecided · opposed · no_answer · other` + note
-   ≤140) → `POST /api/report` (`no_answer` also shows the voicemail line,
-   "Try again", `commitment-funnel.md` §9, and the primary button "Email
-   it instead"; any other reported outcome shows the muted link "Put it
-   in writing (2 min)" under the thanks line), a reflection line that
-   never leaves the page, and a link to `/donate`. The share row comes
-   after a receipt or a completed captain list, never before. Reports
+   receipt, one screen in this order: the stamp ("I CALLED" / "I WROTE",
+   office, day; `role="status"`), the "You're one of <N>" line when it
+   has a number, the share row of `social-sharing.md` §3–5, the next
+   office as the one filled button (`commitment-funnel.md` §10), the
+   office-response chips
+   (`will_support · undecided · opposed · no_answer · other`): a tap
+   posts `POST /api/report`, shows "Saved" and locks the rest ("Other"
+   first opens a note ≤140 with "Save note"; a failed post reads "Could
+   not save that. Try again."); `no_answer` adds the voicemail line,
+   "Try again" (`commitment-funnel.md` §9) and "Email it instead", any
+   other outcome "Put it in writing (2 min)". Last, three text links:
+   the reminder (`commitment-funnel.md` §1), `/donate`, "Your other
+   action". No share row before a receipt. Reports
    never change a position row.
    **Email step** (`email-button`): "I can't call right now", the
    closed-offices button, "Email it instead" and "Put it in writing" all
