@@ -219,9 +219,9 @@ with no drop in receipts per visit.
 
 ## State (updated 2026-11-09)
 - Sections:
-  - [~] 1. Receipt sheet after a call · feat/receipt-sheet-and-done-stamps
-  - [~] 2. Write variant · feat/receipt-sheet-and-done-stamps
-  - [~] 3. Done-card postmark · feat/receipt-sheet-and-done-stamps
+  - [~] 1. Receipt sheet after a call · feat/receipt-sheet-and-done-stamps · PR #91
+  - [~] 2. Write variant · feat/receipt-sheet-and-done-stamps · PR #91
+  - [~] 3. Done-card postmark · feat/receipt-sheet-and-done-stamps · PR #91
   - [ ] 4. Owner device test
 - Completed: none (§1–3 built, PR open, not merged)
 - Folded: §1, §2, §3 → `docs/specs/results-pages.md` (§Purpose, §4, §5,
@@ -251,7 +251,7 @@ with no drop in receipts per visit.
   2026-11-09: "complete the entire prd"). Build: modal props `answer` /
   `onAnswer`; done card keeps a ringed call square after "Form didn't work".
 - Known failures / blockers: none
-- Next action: open the §1–3 PR, then the §4 device test
+- Next action: merge PR #91, then /implement-prd-section receipt-sheet-and-done-stamps.md (next: §4. Owner device test)
 ## Open questions
 1. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
    client-only until the digest shows it is chosen often enough to count.
