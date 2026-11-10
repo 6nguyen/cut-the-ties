@@ -79,15 +79,19 @@ describe('write square (results-pages §2.3)', () => {
     expect(out).toMatch(/class="w-11 h-11 [^"]*ring-\[3px\] ring-crimson[^"]*bg-acid"/);
     expect(out).toContain('data-next');
   });
-  it('§3.4: a done office is muted, its role line carries the time, and one ✓ Share pill replaces both squares', () => {
-    const out = render(h(Target, { t: correa, done: { channel: 'email', at: '2026-11-06T22:14:00Z' } }));
-    expect(out).toMatch(/^<li class="bg-newsprint\/60 border-2/);
-    expect(out).toMatch(/data-role-line[^>]*>Representative · CA-46 · Wrote \d{1,2}:\d{2} [ap]m</);
+  it('§3.4 / §7: a done office is muted, wears the 64 px postmark on its corner, keeps a plain role line, and one ✓ Share pill plus the answer chip replace both squares', () => {
+    const out = render(h(Target, { t: correa, done: { channel: 'email', at: '2026-11-06T22:14:00Z', outcome: 'sent' } }));
+    expect(out).toMatch(/^<li class="relative bg-newsprint\/60 border-2/);
+    expect(out).toMatch(/aria-label="Wrote to Lou Correa, Nov 6 \d{1,2}:\d{2} [AP]M" data-postmark="wrote" data-postmark-size="64"/);
+    expect(out).toMatch(/data-role-line[^>]*>Representative · CA-46</);
     expect(out).toContain('data-share-pill');
     expect(out).toContain('>✓ Share</button>');
+    expect(out).not.toContain('data-answer-chip'); // `sent` is not an answer
     expect(out).not.toContain('data-write-square');
     expect(out).not.toContain('data-call-square');
     expect(out).not.toContain('tel:');
-    expect(render(h(Target, { t: correa, done: { channel: 'call', at: '2026-11-06T22:14:00Z' } }))).toContain('· Called ');
-  });
+    const called = render(h(Target, { t: correa, done: { channel: 'call', at: '2026-11-06T22:14:00Z', outcome: 'undecided' } }));
+    expect(called).toContain('data-postmark="called"');
+    expect(called).toContain('data-answer-chip="undecided">Said: undecided<');
+});
 });

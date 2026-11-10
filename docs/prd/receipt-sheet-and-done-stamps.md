@@ -1,5 +1,5 @@
 # Receipt sheet and done-card stamps — PRD
-Status: READY 2026-11-09 (auto) · Owner: George Nguyen · Last updated: 2026-11-09
+Status: IN PROGRESS · Owner: George Nguyen · Last updated: 2026-11-09
 
 ## Problem
 On `/results/<goal>` a tap on a call or write square is the receipt: the
@@ -154,8 +154,10 @@ to the page later reads the stamp before any text.
   'skip' | 'sent' | 'form_failed'` (the last three are client-only, never
   posted). `logReceipt` writes it; `receiptsByTarget` returns it.
 - `Target` `done` becomes `{channel, at, outcome?}`; `ReceiptModal`
-  gains an `outcome` prop and `onOutcome(outcome)`; the postmark is
-  `web/src/components/Postmark.tsx`.
+  gains `at`, `answer?` and `onAnswer(outcome) → Promise<boolean>` (named
+  `answer`, not `outcome`: the modal's `outcome` prop is already the
+  receipt result); the postmark is `web/src/components/Postmark.tsx`,
+  bundled with `Target` since the done card renders it on load.
 - No schema, seed or endpoint change; no new settings key.
 
 ## Spec delta
@@ -221,22 +223,35 @@ with no drop in receipts per visit.
   - [~] 2. Write variant · feat/receipt-sheet-and-done-stamps
   - [~] 3. Done-card postmark · feat/receipt-sheet-and-done-stamps
   - [ ] 4. Owner device test
-- Completed: none
-- Folded: none
+- Completed: none (§1–3 built, PR open, not merged)
+- Folded: §1, §2, §3 → `docs/specs/results-pages.md` (§Purpose, §4, §5,
+  §7, Data & contracts, Invariants, Performance budget)
 - Branch / open PRs: `docs/receipt-sheet-prd` (this PRD, PR #90);
   `feat/receipt-sheet-and-done-stamps` (§1–3, cut from main with the PRD
   branch merged in)
-- Files changed (file:line map): —
-- Tests run + result: —
-- Remaining: §1–4
+- Files changed (file:line map): `web/src/components/Postmark.tsx` (new,
+  the 96/64 px CALLED/WROTE postmark); `ReceiptModal.tsx:32-36` chips +
+  `:107-125` hazard strip + `:127-131` Call-instead/Next;
+  `Target.tsx:102-130` done card (postmark, pill row, answer chip, call
+  square after form_failed); `Results.tsx` `report()`, `answer()`,
+  `answers` ref; `web/src/lib/commitments.ts:46-73` `ReceiptOutcome`,
+  `setReceiptOutcome`, `receiptsByTarget` outcome; tests in
+  `results-page.test.tsx` ("the ask" describe) and `SummaryCard.test.tsx`.
+- Tests run + result: quiet-check `test-web` PASS, `build` PASS, `tsc`
+  PASS, `test` PASS (2026-11-09). Chunks gzip: ReceiptModal 2.35 KB (from
+  1.45), Target 3.93 KB (from 3.07, holds Postmark), Results 4.90 KB (from
+  4.61), ShareRow 3.99 KB unchanged; results page initial ≤61 KB counting
+  every site chunk.
+- Remaining: merge §1–3; §4 owner device test on production
 - Decisions since last update: owner 2026-11-09: one ask on today's
   receipt card (no two-step flow, no gating, no bottom-sheet redesign),
   Next after the share card; the ask is the S8 hazard strip; the modal
   header is the postmark (S10); done-card postmark P1; proposals of Open
   questions 1–2 are the decisions. §1–3 build in one PR (owner
-  2026-11-09: "complete the entire prd").
+  2026-11-09: "complete the entire prd"). Build: modal props `answer` /
+  `onAnswer`; done card keeps a ringed call square after "Form didn't work".
 - Known failures / blockers: none
-- Next action: build §1–3, fold the spec, open the PR
+- Next action: open the §1–3 PR, then the §4 device test
 ## Open questions
 1. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
    client-only until the digest shows it is chosen often enough to count.
@@ -258,3 +273,10 @@ with no drop in receipts per visit.
 - 2026-11-09 — owner review 3: the ask is S8 (hazard strip, 2×2 chips,
   Skip); the modal header swaps the dashed "I CALLED" stamp for the same
   circular postmark as the done card (S10). No open questions on design.
+- 2026-11-09 — §1–3 built (`feat/receipt-sheet-and-done-stamps`): the
+  modal props are `answer` / `onAnswer` (see Data & contracts); after "Form
+  didn't work" the done card keeps the call square in its pill row, ringed
+  as Next, so "Call <Surname> instead →" has a square to ring; the answer
+  is written with `setReceiptOutcome`, or by `logReceipt` when the chip is
+  tapped before the receipt POST returns; `Postmark` ships in the `Target`
+  chunk, not the lazy one. Spec folded into `docs/specs/results-pages.md`.

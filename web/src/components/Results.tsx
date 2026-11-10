@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type preact from 'preact';
 import { districtLabel, route, type GoalCard, type RouteResponse, type TargetCard } from '../lib/api';
 import type { Chamber } from '@worker/types';
 import { cacheRoute, clearPlace, deviceId, loadPlace, peekRoute } from '../lib/store';
-import { logReceipt, receiptsByTarget } from '../lib/commitments';
+import { logReceipt, receiptsByTarget, setReceiptOutcome, type ReceiptOutcome } from '../lib/commitments';
 import { CATEGORY, TargetStack, fmtDate, type Channel, type TargetDone, type TargetHandlers } from './Target';
 import SummaryCard from './SummaryCard';
 import type { NextStep, ReceiptModalProps } from './ReceiptModal';
@@ -138,7 +138,19 @@ function OtherAction({ g, photo }: { g: GoalCard; photo?: string }) {
 }
 
 const FAILED = (channel: Channel) => `Couldn't count this one. Your ${channel === 'email' ? 'message' : 'call'} still counts with the office.`;
-type Modal = Pick<ReceiptModalProps, 'g' | 'target' | 'channel' | 'outcome'>;
+/** `block` is the goal the receipt and the report belong to (a leadership card's House or Senate block). */
+type Modal = Pick<ReceiptModalProps, 'g' | 'target' | 'channel' | 'at' | 'outcome' | 'answer'> & { block: GoalCard };
+/** results-pages §4: the ask's outcomes that reach `POST /api/report`; the rest live only on this device. */
+const REPORTED: ReadonlySet<ReceiptOutcome> = new Set(['will_support', 'undecided', 'opposed', 'no_answer']);
+/** The act page's report, without a note: `{goal, target, outcome, device}`. False on a non-2xx or a network failure. */
+async function report(goal: string, target: string, outcome: ReceiptOutcome): Promise<boolean> {
+  try {
+    const res = await fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, target, outcome, device: deviceId() }) });
+    return res.ok;
+  } catch { return false; }
+}
+/** The block of the card whose target this is (a split card holds two). */
+const blockOf = (g: GoalCard, id: string): GoalCard => blocksOf(g).find((b) => b.targets.some((t) => targetId(t) === id)) ?? g;
 
 /**
  * §1.3 results: exactly two cards for the stored district; §1.5 "change address". `photos` maps a goal slug to its
@@ -152,6 +164,8 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
   const [next, setNext] = useState<string | null>(null); // §3.2: the office whose call square wears the ring
   const [modal, setModal] = useState<Modal | null>(null);
   const [ModalView, setModalView] = useState<{ C: (p: ReceiptModalProps) => preact.JSX.Element } | null>(null);
+  // §4.4: an answer given while the receipt POST is still in flight; the row takes it when it is written.
+  const answers = useRef(new Map<string, ReceiptOutcome>());
 
   useEffect(() => {
     const cached = peekRoute<RouteResponse>();
@@ -198,13 +212,14 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
       onContact: b.action ? (t, channel) => {
         const id = targetId(t);
         if (next === id) setNext(null);
-        open({ g, target: t, channel, outcome: null });
+        answers.current.delete(id);
+        open({ g, block: b, target: t, channel, at: new Date().toISOString(), outcome: null, answer: null });
         const body = { goal: b.slug, action: b.action, target: id, state: data.state, district: b.category === 'state' ? null : data.district, device: deviceId(), channel };
         fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: true })
           .then(async (res) => {
             const d = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
-            if (res.ok || d.error === 'limit_repeat') { // §3.1: already counted is still done
-              logReceipt({ goal: b.slug, action: b.action!, target: id, channel });
+            if (res.ok || d.error === 'limit_repeat') { // §4: already counted is still done
+              logReceipt({ goal: b.slug, action: b.action!, target: id, channel, outcome: answers.current.get(id) });
               setDone(doneMap(g));
               return 'counted' as const;
             }
@@ -212,8 +227,23 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
           }, () => FAILED(channel))
           .then((outcome) => setModal((m) => (m && targetId(m.target) === id ? { ...m, outcome } : m)));
       } : undefined,
-      onShare: (t) => { const d = done.get(targetId(t)); if (d) open({ g, target: t, channel: d.channel, outcome: 'counted' }); }, // §3.4: no new POST
+      onShare: (t) => { // §7: no new POST
+        const id = targetId(t);
+        const d = done.get(id);
+        if (d) open({ g, block: blockOf(g, id), target: t, channel: d.channel, at: d.at, outcome: 'counted', answer: d.outcome ?? null });
+      },
     });
+    /** §4.3–4.4: post the report outcomes; keep every answer on the receipt row (when one was written). */
+    const answer = async (o: ReceiptOutcome): Promise<boolean> => {
+      if (!modal) return false;
+      const id = targetId(modal.target);
+      const b = modal.block;
+      if (REPORTED.has(o) && !(await report(b.slug, id, o))) return false;
+      answers.current.set(id, o);
+      if (b.action) setReceiptOutcome(b.slug, b.action, id, o);
+      setDone(doneMap(g));
+      return true;
+    };
     const st: CardState = { done, next, handlers };
 
     const step: NextStep = (() => {
@@ -242,7 +272,7 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
         </div>
         {other && <div class="mt-10 max-w-3xl"><OtherAction g={other} photo={photos[other.slug]} /></div>}
         {modal && ModalView && (
-          <ModalView.C g={modal.g} target={modal.target} channel={modal.channel} outcome={modal.outcome} state={data.state} district={g.category === 'state' ? null : data.district} next={step} onNext={toNext} onClose={closeModal} />
+          <ModalView.C g={modal.g} target={modal.target} channel={modal.channel} at={modal.at} outcome={modal.outcome} answer={modal.answer} onAnswer={answer} state={data.state} district={g.category === 'state' ? null : data.district} next={step} onNext={toNext} onClose={closeModal} />
         )}
       </div>
     );

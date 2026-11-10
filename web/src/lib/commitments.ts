@@ -39,8 +39,13 @@ export function clearFunnel(): void { write(COMMIT_KEY, null); write(CAPTAIN_KEY
 // a time; pruned to 24 h on every read. Never sent: the Worker already has the receipt row.
 export const RECEIPTS_KEY = 'cut-ties:receipts';
 export type ReceiptChannel = 'call' | 'email';
-/** `channel` arrived with results-pages §3.4; an older row without one was a call. */
-export interface LoggedReceipt { v: 1; goal: string; action: string; target: string; at: string; channel?: ReceiptChannel }
+/**
+ * results-pages §4 ask: what the office said. The first four are `POST /api/report` outcomes; `skip`, `sent` and
+ * `form_failed` are client-only (the write variant and Skip) and never posted.
+ */
+export type ReceiptOutcome = 'will_support' | 'undecided' | 'opposed' | 'no_answer' | 'skip' | 'sent' | 'form_failed';
+/** `channel` arrived with results-pages §3.4; an older row without one was a call. `outcome` is the ask's answer when one was given. */
+export interface LoggedReceipt { v: 1; goal: string; action: string; target: string; at: string; channel?: ReceiptChannel; outcome?: ReceiptOutcome }
 const DAY_MS = 24 * 60 * 60_000;
 export function recentReceipts(now: Date = new Date()): LoggedReceipt[] {
   const list = read<LoggedReceipt[]>(RECEIPTS_KEY);
@@ -53,9 +58,18 @@ export function logReceipt(r: Omit<LoggedReceipt, 'v' | 'at'>, now: Date = new D
 export function receiptedTargets(goal: string, action: string, now: Date = new Date()): Set<string> {
   return new Set(recentReceipts(now).filter((r) => r.goal === goal && r.action === action).map((r) => r.target));
 }
-/** results-pages §3.4: this device's receipt per target of one action in the last 24 h, with its channel and time. */
-export function receiptsByTarget(goal: string, action: string, now: Date = new Date()): Map<string, { channel: ReceiptChannel; at: string }> {
-  return new Map(recentReceipts(now).filter((r) => r.goal === goal && r.action === action).map((r) => [r.target, { channel: r.channel ?? 'call', at: r.at }]));
+/** results-pages §4: the ask's answer goes on the receipt row. No row (the receipt was not counted) → nothing is kept; returns whether a row was. */
+export function setReceiptOutcome(goal: string, action: string, target: string, outcome: ReceiptOutcome, now: Date = new Date()): boolean {
+  const list = recentReceipts(now);
+  const row = list.find((x) => x.goal === goal && x.action === action && x.target === target);
+  if (!row) return false;
+  row.outcome = outcome;
+  write(RECEIPTS_KEY, list);
+  return true;
+}
+/** results-pages §3.4: this device's receipt per target of one action in the last 24 h, with its channel, time and answer. */
+export function receiptsByTarget(goal: string, action: string, now: Date = new Date()): Map<string, { channel: ReceiptChannel; at: string; outcome?: ReceiptOutcome }> {
+  return new Map(recentReceipts(now).filter((r) => r.goal === goal && r.action === action).map((r) => [r.target, { channel: r.channel ?? 'call', at: r.at, ...(r.outcome ? { outcome: r.outcome } : {}) }]));
 }
 
 /** §2.1 return visit: anything still to do? */
