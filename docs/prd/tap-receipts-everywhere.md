@@ -28,7 +28,16 @@ The receipt is the funnel's private hard act (`CLAUDE.md` §Don'ts: the
 private act, then the public receipt); a call that leaves no receipt is
 invisible to the counts, the share card and the reminder. The owner's
 decision of 2026-11-10: every phone and email button on the site kicks
-off the receipt and share flow. The vote this serves is whichever goals
+off the receipt and share flow. The owner added the same day, for the
+"My 2 goals" page (`/results`): a call or email made toward a goal from
+any page counts toward that goal; a goal whose every office is done
+wears a DONE stamp like the CALLED / WROTE postmarks on
+`/results/house-caucus/`; and a done goal drops to the end of `/results`
+with its stamp while the next ranked goal takes its slot. Today
+`POST /api/route` returns at most two goals (`ranking.ts` `topTwo`), so
+there is nothing to roll in, and `cut-ties:receipts` rows are pruned at
+24 h on every read (`commitments.ts:52`), so a goal could stay "done"
+for a day at most. The vote this serves is whichever goals
 the site routes today, the Senate leader goal and the NDAA §219/§1217
 integration sections first.
 
@@ -48,7 +57,15 @@ integration sections first.
      (`personalised-documents.md` §4): a tap there posts the same receipt
      the "I did it" / "I sent it" button posts and renders that card; it
      does not open the results modal.
-  4. No new endpoint, table, outcome or settings key; every page's
+  4. A receipt counts toward the goal it was posted against, whichever
+     page posted it: the `/results` cards, the `/results/<goal>` done
+     cards and the `Counts` lines all read the same rows.
+  5. A goal whose every office has a receipt from this device in the
+     last 7 days is done: a DONE postmark on its summary card and its
+     one-action card, the card last on `/results`, and the next ranked
+     goal in its slot, so the page always offers two open actions while
+     the district has them.
+  6. No new endpoint, table, outcome or settings key; every page's
      performance budget holds; the modal chunk stays lazy on every page.
 - Non-goals:
   - Changing what the modal, the ask, the share card or the postmark look
@@ -59,6 +76,13 @@ integration sections first.
     tap: the act page's "I did it" button stays for that case; no other
     page gains one.
   - Share before receipt, anywhere (`CLAUDE.md` §Don'ts).
+  - A server-side notion of "done": the Worker never learns which goals
+    a device finished; `/results` orders the cards in the browser from
+    `cut-ties:receipts`.
+  - Changing the ranking, eligibility rules or the state-goal padding
+    (`action-router.md` §Data): the route returns more of the same
+    ranked list, in the same order.
+  - A goal-level receipt limit or a "done" badge on `/goals` cards.
   - Footer, About, Privacy or partner links: none is a phone or email
     control.
 
@@ -70,6 +94,8 @@ Relies on: `docs/research/post-contact-share-prompt.md`.
 | One contact component everywhere a rep appears | 5 Calls, Resistbot | adopt | One engine, one contract, one set of tests; a page passes the goal and gets the flow |
 | A page with no campaign context still logs the call | 5 Calls member search | adapt | The member page posts against the member's first open goal (§4); no goal, no receipt, plain link |
 | "I did it" button beside the number | this site's act page | keep | Stays for calls dialled from another phone; the tap now posts the same receipt first |
+| Completed items sink to the bottom with a check; the list refills from the queue | Todoist, 5 Calls "done" issues | adopt | Done goals last with the DONE postmark; the next ranked goal fills the slot |
+| Done state expires with the campaign week | 5 Calls weekly reset | adapt | 7 days from the last receipt, matching "this week" on the page and the counts |
 
 ## Users
 The visitor who reached a goal page from a share link, a search or the
@@ -79,7 +105,10 @@ visitor on a member page (from the whip table, a search, the "Your
 representative" line) who taps the DC number: a receipt against the
 member's first open goal, then the share card. The act-page visitor who
 taps "Call Rep. Correa · (202) …": the receipt card fills in behind the
-dialer, as if "I did it" had been pressed. Nobody types anything new.
+dialer, as if "I did it" had been pressed. The visitor back on
+`/results` after finishing a goal: the finished one sits last, stamped
+DONE, and a new open action sits in its place. Nobody types anything
+new.
 
 ## Expected behavior
 
@@ -186,12 +215,88 @@ dialer, as if "I did it" had been pressed. Nobody types anything new.
    page, which takes its own receipt).
 3. Closed goals (`member-pages.md` §11) keep plain links.
 
-### 6. Owner device test
+### 6. Receipts count from every page
+1. A receipt is one `cut-ties:receipts` row and one `receipts` row keyed
+   on goal, action, target, device and channel, whichever page posted it
+   (§1–5). `doneMap` on `/results/<goal>`, the summary card of §7, the
+   goal page's stack and the `Counts` lines read those rows, so a call
+   made from `/goals/<slug>`, `/m/<id>`, the whip table or the act page
+   shows as a done office on the goal's `/results/<goal>` card and in
+   its count, and the other way round.
+2. The act page's receipt (`logReceipt` in `ActForm.tsx:224`) writes
+   `channel` (`'email'` for "I sent it" or a contact-form tap) so the
+   results done card reads WROTE for it; today it writes none, which
+   reads as a call.
+3. A member-page or whip-table receipt posts against that member's first
+   open goal (§4.1); when that goal is one of the visitor's slots the
+   office shows done there. A goal the visitor's district is not routed
+   to still takes the receipt and the count; it is simply not on
+   `/results`.
+
+### 7. Goal done stamp
+1. A goal is done on this device when every target of its card (both
+   blocks of a split leadership card) has a receipt row from this device
+   in the last 7 days; `commitments.ts` gains `goalDone(goal, action,
+   targetIds, now) → {at} | null` where `at` is the newest of those
+   receipts. The rows are kept 7 days (`DAY_MS` → 7 × `DAY_MS` in the
+   prune); `receiptsByTarget` keeps its 24 h window, so the office
+   squares return after a day while the goal stays done for the week.
+2. On `/results` a done summary card wears the `Postmark` at 96 px with
+   the word DONE (`data-postmark="done"`), the day above and the time
+   below from `at`, in place of the card's countdown stamp at the band's
+   top-right; `role="img"` named "Done: <goal title>, <day> <time>". The
+   band is newsprint-muted like a done target card, the "Action n" chip
+   reads "Done", the meta line's first chip reads "All <n> offices", the
+   offices line is unchanged and the CTA reads "See your receipts →"
+   (bordered). The card still links to `/results/<goal>`.
+3. On `/results/<goal>` a done goal's card wears the same DONE postmark
+   on its band, its target cards are the done cards of
+   `results-pages.md` §7 (postmarks, pills, answer chips), and the
+   receipt modal's filled control reads "Your next action →" to the
+   first open goal of §8 ("See all goals →" when none).
+4. The `lg` page stamp on `/results` is the soonest decision across the
+   open goals only; with no open goal it is absent.
+5. The goal page (`/goals/<slug>`) and `/goals` cards show no goal
+   stamp (Non-goals); the stack's done cards are enough there.
+
+### 8. Rollover on `/results`
+1. `POST /api/route` returns `goals` as the top **four** ranked slots for
+   the district instead of two (`ranking.ts` `topTwo` → `topSlots(goals,
+   d, today, 4)`): the first two are exactly today's two (the state-goal
+   padding rule included, so a district with one eligible goal still
+   gets it plus the state goal), followed by the next ranked eligible
+   slots; fewer when the district has fewer. Each is a full `GoalCard`.
+   The response stays cached in `sessionStorage` `cut-ties:route`.
+2. `/results` splits the cards in the browser: `open` = goals not done
+   (§7.1) in route order, `done` = the rest, newest `at` first. The grid
+   shows the first two of `open` as "Action 1" and "Action 2" (first
+   CTA filled, second bordered, as today), then every done goal with its
+   DONE postmark. Two open and one done is three cards; both done and
+   two more eligible is four; a district with only two eligible goals
+   and both done shows the two stamped cards and the message "You have
+   done every action open for your district this week." with the
+   `/goals` link.
+3. The H1 stays "Your two actions this week"; the delegation line and
+   "change address" are unchanged. The page-wide stamp follows §7.4.
+4. `/results/<goal>` for a goal in `open`: "Action n of N" counts the
+   open goals; "Your other action" is the other open goal in the pair
+   (the next in `open` when the goal is beyond the pair). For a done
+   goal: "Done · <day>" in the ticker, the §7.3 card, and the mini card
+   is "Your next action" for the first open goal. A goal in the route's
+   four is never "not one of your two actions"; one outside them still
+   gets that message.
+5. The first band of the grid keeps `eager` + `fetchpriority="high"`; the
+   third and fourth bands load lazily. A done goal falling out of the
+   7-day window moves back into `open` at its rank on the next render.
+
+### 9. Owner device test
 1. Owner runs on iPhone Safari and Android Chrome against production:
    `/goals/senate-leader/` call and write square → modal → postmark;
    district line → modal; `/m/<id>` DC button → modal; whip table number
    → modal; act page "Call" button → receipt card; `/results/<goal>`
-   unchanged. One screenshot per surface.
+   unchanged; finish every office of one goal from the goal page →
+   `/results` shows it last with DONE and a new "Action 2". One
+   screenshot per surface.
 
 ## Data & contracts
 - `POST /api/receipt`, `POST /api/report`, `GET /api/goals/:slug/targets`
@@ -211,7 +316,20 @@ dialer, as if "I did it" had been pressed. Nobody types anything new.
   `WhipReceipts.tsx` (one per whip table, click delegation on
   `a[data-receipt-target]`).
 - Persisted client state: `cut-ties:receipts` rows, unchanged shape, now
-  written from every surface; `cut-ties:place` read, never written.
+  written from every surface and kept 7 days instead of 24 h
+  (`commitments.ts` prune; `receiptsByTarget` still filters to 24 h);
+  `goalDone(goal, action, targetIds, now) → {at: string} | null`;
+  `cut-ties:place` read, never written; `cut-ties:route` holds up to four
+  goals.
+- `POST /api/route` response: `goals` is at most **four** `GoalCard`s in
+  rank order (was two); the first two are unchanged. `ranking.ts`
+  `topSlots(goals, d, today, n)` replaces `topTwo` (`topTwo` = `n: 2`,
+  kept for the tests). No request change.
+- `Postmark` props: `wrote: boolean` → `kind: 'called' | 'wrote' | 'done'`
+  (`wrote` kept as an alias for a release), `name` is the goal title for
+  `done`; `data-postmark="done"`.
+- `SummaryCard` gains `done?: {at: string}`; `Results` computes it per
+  card from `goalDone` over `officesOf(g)`.
 
 ## Spec delta
 - MODIFIED `docs/specs/results-pages.md` §Purpose: "The goal detail
@@ -225,7 +343,32 @@ dialer, as if "I did it" had been pressed. Nobody types anything new.
   flow lives in `receipt-flow.tsx` `useReceiptFlow`, which `Results`
   mounts.
 - MODIFIED `docs/specs/results-pages.md` §Data & contracts: add
-  `receipt-flow.tsx` and `ReceiptGoal`.
+  `receipt-flow.tsx` and `ReceiptGoal`; `cut-ties:receipts` rows kept 7
+  days, `goalDone`; `Postmark` `kind`; `SummaryCard` `done`; route
+  `goals` up to four.
+- MODIFIED `docs/specs/results-pages.md` §1: "The two slots are …" → the
+  open goals' first two as Action 1 and 2, then every done goal with the
+  96 px DONE postmark in place of its countdown, muted band, "Done" chip,
+  "All <n> offices" chip and "See your receipts →" (§7.2, §8.2 above);
+  the both-done message; the page stamp over open goals only.
+- MODIFIED `docs/specs/results-pages.md` §2: "Action n of N" over the
+  open goals; the done goal's ticker, card postmark and "Your next
+  action" mini card (§8.4); "not one of your two actions" only for a
+  goal outside the route's four.
+- MODIFIED `docs/specs/results-pages.md` §5: the filled link when every
+  target has a receipt → "Your next action →" to the first open goal,
+  "See all goals →" with none.
+- MODIFIED `docs/specs/results-pages.md` §7: the 24 h office window
+  unchanged; add "a goal whose every office has a receipt in 7 days is
+  done (§7.1 above); done is computed in the browser, never sent".
+- MODIFIED `docs/specs/action-router.md` §Data & contracts: "`goals` is at
+  most two `GoalCard`s" → "at most four, the first two as before";
+  `topTwo` → `topSlots(…, 4)`.
+- MODIFIED `docs/specs/action-router.md` §Invariants: "Two slots for a
+  resolved district" → "The first two slots for a resolved district are
+  the same two as before; up to two more follow in rank order".
+- MODIFIED `docs/specs/personalised-documents.md` §4 (second entry): the
+  act page's `logReceipt` row carries `channel`.
 - MODIFIED `docs/specs/goal-pages.md` §Behavior 2: the "Who to call"
   island's squares and district lines post the receipt and open the
   receipt modal of `results-pages.md` §4–7 (§2 above); Next links to
@@ -286,20 +429,47 @@ dialer, as if "I did it" had been pressed. Nobody types anything new.
 - [ ] `/results/<goal>`: every behaviour of `results-pages.md` §3–8
       unchanged; `results-page.test.tsx` passes without edits to its
       assertions.
+- [ ] A call square tapped on `/goals/<slug>` shows as a done office on
+      `/results/<goal>` and in its `Counts` line; "I sent it" on the act
+      page shows as WROTE on the results done card.
+- [ ] Finish every office of a goal (from any mix of pages): `/results`
+      shows that card last with the 96 px DONE postmark (day and time of
+      the last receipt), muted band, "Done" chip, "All <n> offices",
+      "See your receipts →"; a third goal appears as "Action 2"; the page
+      stamp is the soonest open goal's.
+- [ ] The done card persists across reloads and days 2–7 while its office
+      squares on `/results/<goal>` have returned after 24 h; on day 8 it
+      is an open card again at its rank.
+- [ ] Both slots done in a district with four eligible goals: two new
+      open cards first, two stamped cards last. Both done with only two
+      eligible: two stamped cards and "You have done every action open
+      for your district this week."
+- [ ] `/results/<goal>` for a done goal: DONE postmark on the band, done
+      target cards, "Your next action" mini card; the modal's filled link
+      reads "Your next action →" once every target is done.
+- [ ] `POST /api/route` returns the same first two goals as before for
+      every fixture district in `worker/test/route.test.ts`, then up to
+      two more in rank order; nothing about "done" is in the request.
 - [ ] No share control renders before a receipt on any surface.
 - [ ] Budgets: `/goals/<slug>` ≤100 KB transferred before any tap, LCP
       ≤1.5 s on a mid-range phone over 4G; `/m/<id>` and the whip page
-      initial requests include no modal or poster chunk; `/api/receipt`
-      ≤2 s p95; $0/month infra. The PR quotes the measured chunk sizes
-      for `GoalTargets`, `MemberContact`, `WhipReceipts` and `Results`.
+      initial requests include no modal or poster chunk; `/results` with
+      four goals ≤100 KB transferred (two extra lazy bands) and
+      `/api/route` ≤2 s p95 with four slots; `/api/receipt` ≤2 s p95;
+      $0/month infra. The PR quotes the measured chunk sizes for
+      `GoalTargets`, `MemberContact`, `WhipReceipts` and `Results` and the
+      four-slot route's p95.
 
 ## Rollout & metrics
 No flag; ships with the next deploy, one PR per section in build order
 (§1 first, since every other section mounts it). Measure in the weekly
 digest: receipts by page (`/goals`, `/m`, whip, act, `/results`) for two
-weeks after each section ships. Success: receipts per visit to
-`/goals/<slug>` rise from zero to within 20 % of `/results/<goal>`'s, with
-no drop in `/results` receipts.
+weeks after each section ships, and the share of devices with a receipt
+on a third or fourth slot (a rollover happened). Success: receipts per
+visit to `/goals/<slug>` rise from zero to within 20 % of
+`/results/<goal>`'s, no drop in `/results` receipts, and ≥10 % of devices
+that finish one goal post a receipt on the goal that rolled in within the
+week.
 
 ## State (updated 2026-11-10)
 - Sections:
@@ -308,7 +478,10 @@ no drop in `/results` receipts.
   - [ ] 3. Act page buttons
   - [ ] 4. Member page
   - [ ] 5. Whip table
-  - [ ] 6. Owner device test
+  - [ ] 6. Receipts count from every page
+  - [ ] 7. Goal done stamp
+  - [ ] 8. Rollover on `/results`
+  - [ ] 9. Owner device test
 - Completed: none
 - Folded: none
 - Branch / open PRs: `docs/tap-receipts-everywhere` (this PRD)
@@ -317,13 +490,23 @@ no drop in `/results` receipts.
   handler at `Target.tsx:143`; §2 touches `GoalTargets.tsx` and
   `pages/goals/[slug].astro:107`; §3 `ActForm.tsx:384,398,409`; §4
   `pages/m/[id].astro:47-49` + `Offices.astro` → `MemberContact.tsx`; §5
-  `WhipTable.astro:88` + `WhipReceipts.tsx`.
+  `WhipTable.astro:88` + `WhipReceipts.tsx`; §6 `ActForm.tsx:224`
+  (`channel` on the row); §7 `commitments.ts:49-52` (7-day prune,
+  `goalDone`), `Postmark.tsx:18` (`kind`), `SummaryCard.tsx`,
+  `Results.tsx` (`/results` render, `/results/<goal>` ticker and mini
+  card, modal Next); §8 `worker/src/ranking.ts:177` (`topSlots`),
+  `route.ts:197` (`buildRoute`), `Results.tsx` open/done split,
+  `worker/test/route.test.ts`.
 - Tests run + result: none yet
-- Remaining: §1–6
+- Remaining: §1–9
 - Decisions since last update: owner 2026-11-10: every phone and email
   button kicks off the receipt and share flow (reverses the
   `share-from-results` scope of `/results` only); the act page keeps its
-  own receipt card rather than the modal (Goals 3).
+  own receipt card rather than the modal (Goals 3). Owner 2026-11-10:
+  receipts count toward the goal from any page; a finished goal wears a
+  DONE postmark and drops last on `/results` while the next ranked goal
+  rolls in (§6–8); the done window is 7 days (Open question 4's
+  proposal).
 - Known failures / blockers: none
 - Next action: /implement-prd-section tap-receipts-everywhere.md (next: §1. Receipt engine)
 
@@ -339,9 +522,22 @@ no drop in `/results` receipts.
    cover the script the caller is reading.
 3. Should the whip table's "Call" button also post a receipt? Proposal:
    no; it leads to the act page, which posts on the tap there.
+4. How long is a goal done? Proposal: 7 days from the last receipt, the
+   "this week" the page and the counts name; the office squares keep
+   their 24 h window so a second call to the same office later in the
+   week is still one tap. A 24 h goal window would put the finished
+   goal back in slot 1 the next morning.
+5. How many slots should the route return? Proposal: four; a device
+   that finishes four goals in a week sees the both-done message and the
+   `/goals` link rather than a longer list, and the response stays
+   small (two more cards of targets the district already has).
 
 ## Changes
 - 2026-11-10 — created (READY, auto) from the owner's report that the
   `/goals/senate-leader/` squares open the dialer without the receipt and
   share flow, and the decision that every phone and email button on the
   site runs it.
+- 2026-11-10 — owner adds the `/results` asks: receipts count toward the
+  goal from any page (§6), a DONE postmark on a finished goal (§7), the
+  finished goal last and the next ranked goal rolled in (§8); the route
+  returns four slots, done is computed in the browser for 7 days.
