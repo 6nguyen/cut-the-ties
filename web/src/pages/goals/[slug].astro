@@ -95,7 +95,7 @@ const electoral = goal.category === 'electoral'; // primary-2028 §1.2: decision
         <section aria-labelledby="targets">
           <p class="label-code">Your people in Congress</p>
           <h2 id="targets" class="headline-md mt-1 mb-3">Who to call</h2>
-          <GoalTargets client:load slug={goal.slug} />
+          <GoalTargets client:load slug={goal.slug} title={goal.title} what={goal.what_we_want} category={goal.category} action={actions[0]?.slug ?? null} />
         </section>
       )}
       {goal.prep_md && <p><a href={`/goals/${goal.slug}/prep`} class="btn btn-ghost">Prep: what to say →</a></p>}

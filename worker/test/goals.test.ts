@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/index';
 import { MANIFEST_FILE, activateSuccessors, checkImage, checkPicks, imageIds, loadRows, manifestPath } from '../src/load';
+import { fillLeader, leaderName } from '../src/leader';
 import { MemoryRepo } from '../src/repo';
 import { buildRoute } from '../src/route';
 import type { Goal } from '../src/types';
@@ -87,6 +88,18 @@ describe('§2.3 goal lifecycle', () => {
     expect(() => loadRows(dataWith({ 'ndaa-1217': set(JSON.stringify(Array(7).fill({ angle: 'A', points: ['p'] }))) }))).toThrow(/max 6/);
     const real = loadRows(DATA);
     for (const g of real.goals.filter((x) => x.status !== 'upcoming')) expect(JSON.parse(g.reasons).length, g.slug).toBeGreaterThan(0);
+  });
+  it('{{leader}} is the one placeholder: allowed on a goal with a leader, rejected elsewhere, counted filled (tap-receipts-everywhere §9)', () => {
+    const set = (v: string) => (y: string) => y.replace(/^reasons:[\s\S]*?(?=^[a-z_]+:|(?![\s\S]))/m, `reasons: ${v}\n`);
+    expect(() => loadRows(dataWith({ 'ndaa-1217': set('[{"angle": "A", "points": ["Led by {{leader}}."]}]') }))).toThrow(/goal ndaa-1217: reasons\[0\]\.points\[0\] holds a placeholder/);
+    expect(() => loadRows(dataWith({ 'senate-leader': set('[{"angle": "A", "points": ["Led by {{x}}."]}]') }))).toThrow(/goal senate-leader: reasons\[0\]\.points\[0\] holds a placeholder/);
+    expect(() => loadRows(dataWith({ 'senate-leader': set(`[{"angle": "A", "points": ["${'x'.repeat(115)} {{leader}}"]}]`) }))).toThrow(/senate-leader: reasons\[0\]\.points\[0\] is over 130 chars with the leader named/);
+    const rows = loadRows(dataWith({ 'senate-leader': set('[{"angle": "A", "points": ["Led by {{leader}}."]}]') }));
+    expect(JSON.parse(rows.goals.find((g) => g.slug === 'senate-leader')!.reasons)[0].points[0]).toBe('Led by {{leader}}.');
+    expect(leaderName(rows.goals.find((g) => g.slug === 'senate-leader')!, rows.actions, rows.members)).toBe('Charles E. Schumer');
+    expect(leaderName(rows.goals.find((g) => g.slug === 'house-caucus')!, rows.actions, rows.members)).toBe('Hakeem S. Jeffries');
+    expect(leaderName(rows.goals.find((g) => g.slug === 'ndaa-1217')!, rows.actions, rows.members)).toBeNull();
+    expect(fillLeader('Led by {{leader}}.', 'Charles E. Schumer')).toBe('Led by Charles E. Schumer.');
   });
 });
 

@@ -14,26 +14,25 @@ stores identifies them. Address routing, goals and ranking are in
    matters to you" 280 multiline, optional affiliation 80) with live
    counts and a Turnstile widget. Beside the form (below it on narrow
    screens) an open "Not sure what to say?" panel opens with a boxed
-   instruction (hazard-yellow, bordered, "How it works" tab: pick one
-   reason, it drops into the "why" field, then rewrite it) and lists the
-   goal's `reasons` as one radio group: first-person starting points
-   grouped by angle (who our government answers to, being dragged into
-   wars, my money, Gaza, readiness, speech), each at most 130 characters.
-   Picking one puts it in the "why" field in place of the previous pick
-   (after the caller's own words, if any) and focuses the field. The
-   Turnstile widget sits outside the form, so it renders once the island
-   has a target (not on the "Loading your target…" render) and stays
-   through the output state for Regenerate; an expired token is dropped
-   and re-issued, and a 403 `turnstile` answer is retried once with a
-   fresh token before the error shows.
+   instruction (hazard-yellow, bordered, "How it works" tab: pick any
+   that fit, they drop into the "why" field, then rewrite them) and lists
+   the goal's `reasons` as checkboxes: first-person starting points
+   grouped by angle. Each pick is appended after the caller's own words in panel order and
+   focuses the field; an uncheck removes that point's exact text; an
+   edited point clears its box; a pick past 280 characters is refused
+   with a status line. `{{leader}}` in a point is the goal leader's name
+   (`leaderOf`; `tap-receipts-everywhere` §9). The
+   Turnstile widget sits outside the form, renders once the island has
+   a target and stays through the output state; an expired token is
+   re-issued, and a 403 `turnstile` answer is retried once with a fresh
+   token before the error shows.
    `?target=<bioguide_id>` (state code
    for treasurer actions) preselects the target; otherwise the island
    loads the stored district's targets for the goal and offers a radio
    list, or "Enter your address" with nothing stored. Nothing submits
-   until every required field is present and within its limit. The
-   goal's countdown stamp (`countdown-stamp.md`) sits to the
-   right of the ask H1 from 768 px and between the H1 and the form below
-   that; no stamp when the goal has no upcoming date.
+   until every required field is within its limit. The
+   goal's countdown stamp (`countdown-stamp.md`) sits right of the ask
+   H1 from 768 px, between the H1 and the form below that.
 2. **Generation.** `POST /api/generate` runs the §4.8 guardrails in
    order, all before any Opus call: request shape → action and goal
    active → target on file for the action's scope → field shape and
@@ -95,8 +94,7 @@ stores identifies them. Address routing, goals and ranking are in
 4. **Receipt, share, report.** From 1024 px the output screen is two
    columns: the script with its copy / download / regenerate row on the
    left, the call buttons and the receipt card beside it on the right
-   (stacked in that order below). It offers copy, download
-   `.txt`, one `tel:` link for the office the call action names
+   (stacked below). It offers copy, download `.txt`, one `tel:` link for the office the call action names
    (`call-the-right-office` §1: `dc` by default, the DC number or the
    labelled Capitol switchboard 202-224-3121) with its open/closed chip
    (`web/src/lib/hours.ts`); when it is closed, `data-voicemail` reads
@@ -105,8 +103,10 @@ stores identifies them. Address routing, goals and ranking are in
    closed." for `district`; none for a treasurer) and "I can't call
    right now" becomes the primary button "The office is closed. Email
    instead"), the contact-form link
-   for letters and comments, and "I did it" → `POST /api/receipt`
-   (goal, action, target, stored state/district, device hash). After a
+   for letters and comments; a tap on a call button, the contact-form
+   link or "I did it" / "I sent it" → `POST /api/receipt` (goal, action,
+   target, stored state/district, device hash, channel), once per office,
+   the buttons staying. After a
    receipt, one screen in this order: the stamp ("I CALLED" / "I WROTE",
    office, day; `role="status"`), the "You're one of <N>" line when it
    has a number, the share row of `social-sharing.md` §3–5, the next
@@ -174,22 +174,21 @@ stores identifies them. Address routing, goals and ranking are in
   stored on the row; any other value, or a `channel` on a captain list,
   is 400 `bad_request`; `action: 'captain-list'` with no target records a
   completed captain list, `commitment-funnel.md`); `POST /api/report` `{goal, target, outcome, note?,
-  device}` → `{id}` (note sanitised to ≤140 chars). Both 400
+  device}` → `{id}` (note ≤140 chars). Both 400
   `bad_request | no_action | no_target | bad_outcome`.
-- Anthropic is called through the injected `fetch` (raw Messages API,
-  no SDK): `claude-opus-5-5` streaming with `output_config` JSON schema
-  and `cache_control` on the system prefix; `claude-haiku-5-5`
-  non-streaming for the screen. `ANTHROPIC_API_KEY`,
+- Anthropic is called through the injected `fetch` (raw Messages API):
+  `claude-opus-5-5` streaming with `output_config` JSON schema and
+  `cache_control` on the system prefix; `claude-haiku-5-5` for the screen. `ANTHROPIC_API_KEY`,
   `MAX_GENERATIONS_PER_DAY` and `LLM_MONTHLY_BUDGET_USD` (default 15; 0
-  = standard scripts only) come from `worker/.dev.vars` (template:
-  `worker/.dev.vars.example`).
+  = standard scripts only) come from `worker/.dev.vars` (template
+  `.dev.vars.example`).
 - `worker/src/cost.ts`: `PRICES` (USD per MTok by model id, read
   `PRICES_READ`), `SCREEN_ALLOWANCE_USD` 0.0001 per model-drafted row,
   `costUsd(rows)`, `blendedCost(rows)`, `dailyCap(...)`,
   `currentCap(repo, now, budget, ceiling)` and `parseBudget`; pure
   arithmetic over `Repo.tokensSince(iso)` sums (per model, action and
   `check_fail`).
-- D1 tables added for §4 (`worker/schema.sql`): `generations`
+- D1 tables (`worker/schema.sql`): `generations`
   (action_id, target_id, shingles BLOB, device_hash, ip_hash, tokens,
   model, `attempt` INTEGER DEFAULT 1, `check_fail` TEXT), `screenings` (device_hash, action_id, class), `blocks`
   (device_hash, until), `receipts`, `reports` (outcome CHECK, `hidden`).
@@ -198,16 +197,17 @@ stores identifies them. Address routing, goals and ranking are in
   (`name, label, max, required, multiline?, hint?`), `prompt_template`
   (action guidance appended to the system prompt), `doc_format`
   (`kind, min_words, max_words, mentions[], ask`; `max_words` defaults
-  to 160 and the five call actions set 60–160 since 2026-11, 120 before) and
-  `standard_template` (`standard-scripts.md`; required while the goal is active)
-  and, on call actions, `email_subject` (required while the goal is
+  to 160, the call actions set 60–160) and `standard_template`
+  (`standard-scripts.md`; required while the goal is active) and, on call
+  actions, `email_subject` (required while the goal is
   active, ≤80 characters, no URL, email or phone, `{city}` the one
   placeholder; the loader rejects anything else, `data/README.md`);
   `mentions` and `ask` are the exact phrases the output check requires.
-  `ActForm` receives `email_subject` with the action props.
+  `ActForm` gets `email_subject` as a prop.
 - Goal YAML `reasons[]` (`angle`, `points[]`): at most six angles, one to
-  five points each, ≤130 characters, no digits; the seed rejects anything
-  else (`data/README.md`).
+  five points each, ≤130 characters with `{{leader}}` filled (the one
+  placeholder, leadership goals only), no digits; the seed rejects
+  anything else (`data/README.md`).
 - Receipt limits (`district-counters.md` §8–9): `POST /api/receipt`
   answers 429 `limit_day` after 10 receipts per device hash in 24 h,
   `limit_repeat` for a second receipt on the same device, goal, action

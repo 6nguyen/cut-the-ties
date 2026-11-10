@@ -6,8 +6,10 @@
 where a tap on a call or write square is itself the receipt: the dialer (or
 the office's contact form) opens, `POST /api/receipt` is sent, and a receipt
 modal with the stamp, the count echo, one ask about the office's answer, the
-share card and the next office is on screen when the visitor comes back. The goal detail page's squares are
-unchanged (no tap receipt there). Shipped from
+share card and the next office is on screen when the visitor comes back. The same flow runs on every phone
+and email control on the site (`tap-receipts-everywhere`): the goal page's
+stack, the member page, the whip table; the act page posts its own receipt
+card on a tap. Shipped from
 `docs/prd/share-from-results.md` (§1–3) and
 `docs/prd/receipt-sheet-and-done-stamps.md` (§1–3, the ask and the
 postmarks); the owner device tests (§4 of each) are open.
@@ -65,7 +67,9 @@ postmarks); the owner device tests (§4 of each) are open.
    `rel="noopener noreferrer"`, `target="_blank"` only when the card has an
    `onContact` handler). A member-elect's hazard Contact square counts as
    the write square. The call square is unchanged in look.
-4. **Tap = receipt.** On `/results/<goal>` a tap on either square lets the
+4. **Tap = receipt.** The flow is `web/src/components/receipt-flow.tsx`
+   `useReceiptFlow`, which `Results`, `GoalTargets`, `MemberContact` and
+   `WhipReceipts` mount. On `/results/<goal>` a tap on either square lets the
    link proceed and, in the same handler, posts `POST /api/receipt {goal,
    action, target, state, district, device, channel: 'call' | 'email'}`
    with `keepalive: true` (state goals send `district: null`) and opens the
@@ -141,6 +145,12 @@ postmarks); the owner device tests (§4 of each) are open.
 ## Data & contracts
 - Routes: `/results` (`web/src/pages/results/index.astro`) and
   `/results/<goal>` (`[goal].astro`), both static.
+- `receipt-flow.tsx`: `useReceiptFlow({goal: ReceiptGoal | null, state,
+  district, other: {href, label}}) → {done, next, handlers(block), modal}`.
+  `ReceiptGoal` is the `GoalCard` slice the flow reads (`slug`, `title`,
+  `what_we_want`, `category`, `action`, `targets`, optional `chamber` and
+  `also`); `action: null` → no handlers, plain links. `state` '' means no
+  stored place and the receipt takes the tapped office's own seat.
 - `POST /api/route` goal cards carry `action` (slug), `short_label`
   (nullable, `data/actions/*.yaml` `short_label`, D1 `actions.short_label`)
   and `what_we_want`; targets carry `contact_form_url` and `contact_kind`

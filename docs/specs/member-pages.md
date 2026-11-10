@@ -5,18 +5,16 @@ Gives every sitting member of Congress a static public page that says where
 they stand on each active goal and how to reach them, and gives every
 federal goal a "where everyone stands" table whose counts come from the
 sourced rows in `data/positions/`. It also fills `data/members.csv` from
-the public roster so both pages, the router and the whip counts cover all
-435 representatives, 6 delegates and 100 senators. It stops at display:
-positions are entered by the maintainer tooling (`maintainer-tooling.md`),
-never by this capability, and nothing here calls an LLM.
+the public roster so every page, the router and the whip counts cover all
+541 members. Positions are entered by the maintainer tooling
+(`maintainer-tooling.md`), never here, and nothing here calls an LLM.
 
 ## Behavior
 1. **Roster import (`npm run import-members -w worker`).** Reads the
    `unitedstates/congress-legislators` `legislators-current.yaml`
-   (the path given as the first argument, else downloaded from raw
-   `main`) and, with `--senate-xml <path|url>`, the
-   Senate directory `senators_cfm.xml` as a second source, and merges each
-   person's last term into `data/members.csv`. A row already
+   (first argument, else downloaded from `main`) and, with
+   `--senate-xml <path|url>`, the Senate directory `senators_cfm.xml`, and
+   merges each person's last term into `data/members.csv`. A row already
    in the file keeps its `name` (the file's common name wins over
    `official_full`, so "Lou Correa" stays), its `district_phone`, `money_url`, `not_returning`, `left_office` and
    every flag column (`hasc`, `conferee`, `rc243`, `jrd_april_2026`,
@@ -33,15 +31,14 @@ never by this capability, and nothing here calls an LLM.
    (`TRANSITION_DATE`) they print under `stale:`, unchanged; from that
    day the import sets `left_office` to the run date (kept once set) and
    prints them under `left:`. Rows sort by state,
-   House before Senate, district, name; a second run changes no bytes.
+   House before Senate, district, name.
    At-large seats, DC and the territories keep district `0`; senators
-   an empty one. `--portraits` alone writes the portraits and never the
-   CSV (`site-imagery.md` §Behavior 14).
+   an empty one. `--portraits` alone writes only the portraits
+   (`site-imagery.md` §14).
 2. **Seed checks.** `loadRows` rejects `members.csv` when a `bioguide_id`
    repeats, a senator carries a district, a House district is outside the
-   state's seat count (`worker/src/districts.ts`, labelled by
-   `SEATS_CONGRESS`, 119 today; the 2020 apportionment holds through the
-   120th), a
+   state's seat count (`worker/src/districts.ts`, `SEATS_CONGRESS` 119; the 2020
+   apportionment holds through the 120th), a
    single-seat state uses a district other than `0`, a state code is
    unknown, `contact_kind` is outside `form · zip_gate · homepage`, a
    `contact_form_url` is not https or has no kind, or
@@ -56,31 +53,35 @@ never by this capability, and nothing here calls an LLM.
    built from `data/`. Hero: the portrait (`site-imagery.md` §Behavior 15),
    party and seat chip (`CA-46`, `TX at large`,
    `VT` for a senator), chamber chip, title "Rep./Del./Sen. Name", `tel:` buttons for the DC office and the
-   district office (the derived or hand-filled `district_phone`) and the
+   district office (`district_phone`) and the
    contact link labelled by `contact_kind`: "Contact form", "Contact form (asks
    for your ZIP)" or "Office website"; a link without a kind is never
    shown. Each `tel:` button carries an "Open now" / "Closed · opens
-   <weekday> <time>" chip (`web/src/components/OpenChip.tsx`) computed
-   from the visitor's clock after hydration: DC is Mon–Fri 09:00–18:00 ET,
+   <weekday> <time>" chip (`web/src/components/OpenChip.tsx`) after hydration: DC is Mon–Fri 09:00–18:00 ET,
    the district office follows its sourced `hours` in the state's zone or
    the same default shifted there (`web/src/lib/hours.ts`); the static
-   order stays DC first. Under the hero (`components/Offices.astro`): for a
+   order stays DC first. The buttons are the `MemberContact` island
+   (`tap-receipts-everywhere` §4): while the member's first open goal has
+   an action, a tap on any of them or on a district-office number below
+   posts one receipt against that goal (stored place, else the member's
+   seat) and opens the receipt modal of `results-pages.md` §4–7, whose
+   Next is `/results` (`/goals` with no place); for 24 h the title wears
+   the 64 px postmark and the row a ✓ Share pill. Otherwise plain links.
+   Under the hero (`components/Offices.astro`): for a
    `not_returning` member the line "Leaves office 2027-01-03. Votes on the
    NDAA and the funding bill until then.", then every district office from
-   `data/district_offices.csv` in file order (city, phone as `tel:`,
-   street address with suite and building, hours when present), or "No
+   `data/district_offices.csv` in file order (city, `tel:` phone,
+   address, hours when present), or "No
    district office listed yet" when the member has none. Below,
    one block per active goal whose targets include the member (same
    first-action scope rule as the result cards): goal title linking to
    `/goals/<slug>`, the newest sourced position as a chip (`for`,
    `uncommitted`, `against`, `unknown`) with its source link and date, or
    "No sourced statement yet"; the member's prior-vote and role flags
-   spelled out ("NDAA conferee", "House Armed Services Committee member",
-   "Roll call 243 …", "April 2026 joint resolutions of disapproval …",
-   "Block the Bombs Act cosponsor") or "No recorded vote yet" when every
-   flag is empty; the action's ask text and a "Call →" button to
-   `/goals/<slug>/act/<action>?target=<bioguide_id>`, which preselects
-   this member on the act page. A member no active goal targets sees "No
+   spelled out ("NDAA conferee", "Roll call 243 …", …) or "No recorded
+   vote yet" when every flag is empty; the action's ask text and a
+   "Call →" button to the act page with `?target=<bioguide_id>`, which
+   preselects the member. A member no active goal targets sees "No
    open decision" and the contact buttons. All of this renders without
    JavaScript.
 4. **Your representative.** One inline script reads the stored
@@ -93,18 +94,15 @@ never by this capability, and nothing here calls an LLM.
    and, when `latest` is non-null, shows one line: "Latest call: office
    said they are undecided — "<note>" (<date>; reported by a constituent,
    unverified)". A report never changes the position chip or any count;
-   those come only from `data/positions/`.
 6. **Share card (`/m/<bioguide_id>/card.png`).** 1200×630 PNG built like
    the goal cards: category stripe, "<Name> on <goal title>" and the
-   position line ("Rep. Lou Correa (D, CA-46): unknown on …"). Members
-   without an open goal get "Rep./Sen. Name" and "no open decision right
-   now". Built by `renderCard`: the logo mark, no photo. The page's
-   Open Graph tags point at it.
-7. **Unknown ids.** The build emits only sitting members: a row with
-   `left_office` is not built, listed in the sitemap, given a share card
-   or counted in any whip table (`web/src/lib/members.ts` `members()`
-   drops it; `whipTargets` drops it too), though its row stays in `data/`
-   so positions and receipts keep resolving. Any other `/m/…` path (and
+   position line; members without an open goal get "no open decision
+   right now". `renderCard`, logo mark, no photo; the page's Open Graph
+   tags point at it.
+7. **Unknown ids.** Only sitting members are built: a row with
+   `left_office` gets no page, sitemap entry, share card or whip count
+   (`web/src/lib/members.ts` `members()` and `whipTargets` drop it),
+   though its row stays in `data/` so positions and receipts resolve. Any other `/m/…` path (and
    any unknown goal path) is served the static 404 page ("Nothing on file
    at this address", link to `/goals`).
 8. **Whip table (`/goals/<slug>/whip`).** Exists for every published goal
@@ -117,33 +115,32 @@ never by this capability, and nothing here calls an LLM.
    member's newest position row; delegates are listed but never counted.
    Then the filter links and the table: member (link to `/m/…`), seat,
    position chip, source date linking to the source, role (`conferee`,
-   `HASC`, `delegate, no floor vote`), DC phone as `tel:`, and a "Call"
-   button to the act page with `?target=` while the goal is open.
+   `HASC`, `delegate, no floor vote`), DC phone as `tel:` and, while the
+   goal is open, a "Call" button to the act page with `?target=`. The
+   open goal's numbers carry `data-receipt-target`; the `WhipReceipts`
+   island posts the receipt on tap and opens the modal, and a row called
+   in 24 h shows a 32 px postmark in place of its number.
 9. **Sort and default view.** Rows sort conferees first, then HASC
    members, then by position (`uncommitted`, `unknown`, `against`,
    `for`), then state, House before Senate, district, name; delegates
-   last. The default page shows the movable set: for a House or
-   both-chambers goal, House Democrats and Independents plus every
-   conferee; for a Senate goal, Senate Democrats and Independents plus
-   conferees. Leadership goals target one party's caucus, so their table
+   last. The default view is the movable set: the chamber's Democrats
+   and Independents plus every conferee (House for a House or
+   both-chambers goal, Senate for a Senate goal). Leadership goals target one party's caucus, so their table
    is that caucus.
 10. **Filters.** Every filter is a pre-rendered page reached by a plain
-    link, so filtering works with JavaScript disabled: `/whip/all` (every
-    targeted member), `/whip/<STATE>`, `/whip/<STATE>/<PARTY>` and
-    `/whip/party/<PARTY>`. An explicit state or party filter applies to
-    the full target set, not just the movable set. A shared link of the
-    form `?state=TX&party=R` (or `?all`) is mapped onto the matching page
-    by a three-line inline script; without JavaScript that link shows the
-    default view with the filter links.
+    link, so it works without JavaScript: `/whip/all` (every targeted
+    member), `/whip/<STATE>`, `/whip/<STATE>/<PARTY>` and
+    `/whip/party/<PARTY>`; a state or party filter applies to the full
+    target set. A `?state=TX&party=R` (or `?all`) link is mapped onto the
+    matching page by an inline script, else it shows the default view.
 11. **Closed goals.** A `completed` or `expired` goal keeps its table and
     counts; a status chip and an "Outcome" block with the `outcome_note`
     and decision date sit above the tiles, and the "Call" column is empty.
 12. **Goal detail link.** The goal page's sidebar shows "Where everyone
     stands →" for every goal that has a whip table.
-13. **Sitemap and robots.** `/sitemap.xml` lists `/`, `/goals`, `/about`,
-    `/donate`, `/privacy`, every published goal, prep page, whip page and
-    member page, absolute when `SITE_URL` is set at build. `/robots.txt`
-    allows everything except `/api/` and names the sitemap.
+13. **Sitemap and robots.** `/sitemap.xml` lists every static page,
+    goal, prep, whip and member page, absolute when `SITE_URL` is set at
+    build. `/robots.txt` allows everything except `/api/` and names it.
 
 ## Data & contracts
 - `data/members.csv`: one row per member the roster has listed, columns
@@ -153,11 +150,9 @@ never by this capability, and nothing here calls an LLM.
   contact_kind,not_returning,left_office,caucus` (`district_office_*` are
   empty until sourced, see office-visits; `district_phone` empty means
   "derive"; `contact_kind` ∈ `form · zip_gate · homepage`; `not_returning`
-  is `1` or empty, hand-set from election results with the source URL in
-  the commit body; `left_office` is an ISO date the import sets; `caucus`
-  is `D`, `R` or empty, where empty derives from a `D` or `R` party and an
-  `I` row left empty fails the seed naming the member, so King and Sanders
-  carry `D` by hand). Provenance and the merge rules in `data/README.md`.
+  is `1` or empty, hand-set with the source URL in the commit body; `left_office` is an ISO date the import sets; `caucus`
+  is `D`, `R` or empty, derived from a `D`/`R` party; an empty `I` row
+  fails the seed, so King and Sanders carry `D`). Provenance and the merge rules in `data/README.md`.
 - `data/members_elect.csv` (leadership-routing §1.3): one row per called
   race, columns `elect_id,name,party,caucus,chamber,state,district,replaces,
   contact_url,phone,source_url,source_date`. `elect_id` is
@@ -165,19 +160,18 @@ never by this capability, and nothing here calls an LLM.
   of the departing member (`not_returning` or `left_office` set);
   `contact_url` is the member-elect's own https site; `phone` optional, ten
   digits, from that site; `source_url`/`source_date` cite the call. Any
-  caucus is accepted. The seed (`checkMembersElect`, `worker/src/load.ts`)
-  fails naming the row on a duplicate or seat-mismatched `elect_id`, a
-  `replaces` that is unknown, in another seat or returning, two rows for
-  one `replaces`, a bad phone, URL or date, and on any row present after
-  `ELECT_EXPIRY` 2027-01-10. Seeded into the `members_elect` D1 table;
+  caucus is accepted. `checkMembersElect` (`worker/src/load.ts`) fails
+  naming the row on a duplicate or seat-mismatched `elect_id`, an
+  unknown, other-seat or returning `replaces`, two rows for one
+  `replaces`, a bad phone, URL or date, or a row after `ELECT_EXPIRY`
+  2027-01-10. Seeded into the `members_elect` D1 table;
   `Repo.membersElect(state)` returns a state's rows in file order.
 - `data/district_offices.csv`: one row per district office, columns
   `bioguide_id,office_id,city,state,zip,address,suite,building,phone,fax,
   hours,lat,lng`, sorted by `bioguide_id` then `office_id`; generated by
   `npm run import-offices -w worker [path]` from
-  `legislators-district-offices.yaml` (CC0), which drops offices of members
-  not in `members.csv` and clears (and prints) a phone that is not ten
-  digits. Seeded into the `district_offices` table with members.
+  `legislators-district-offices.yaml` (CC0), dropping offices of unknown
+  members and clearing (and printing) phones that are not ten digits. Seeded into the `district_offices` table with members.
 - `worker/scripts/import-members.ts` — `senateContacts(xml)`,
   `contactFor(term, senate?)`, `rosterRows(yaml, senate?)`,
   `merge(existing, roster, today) → {rows, stale, left, added, changed}`,
@@ -201,8 +195,7 @@ never by this capability, and nothing here calls an LLM.
 - `GET /api/members/:bioguide_id/reports?goal=<slug>` → `{latest: {outcome,
   note, created_at} | null}`: the newest non-hidden report for that member
   and goal. 404 `no_member` / `no_goal`, 400 `no_goal` when `goal` is
-  missing. `Repo.latestReport(bioguideId, goalId)` backs it in D1 and the
-  in-memory repo.
+  missing. `Repo.latestReport(bioguideId, goalId)` backs it.
 - Pages: `web/src/pages/m/[id].astro`, `web/src/pages/m/[id]/card.png.ts`,
   `web/src/pages/goals/[slug]/whip.astro`,
   `web/src/pages/goals/[slug]/whip/[...filter].astro` (shared component
@@ -230,17 +223,21 @@ never by this capability, and nothing here calls an LLM.
       a `district_offices.csv` row with an unknown member, state or a
       seven-digit phone.
 - [ ] `/m/C001110` lists the Santa Ana office with a `tel:` link and the
-      ZIP-gate contact label; every one of the 539 members has a contact
-      link with a kind; a `not_returning` member shows the departing line
+      ZIP-gate contact label; every member has a contact link with a kind; a `not_returning` member shows the departing line
       and a `left_office` member has no page, no sitemap entry and no whip
       row while its positions still load.
 - [ ] `/sitemap.xml` lists every `/m/` and `/whip` page; `/robots.txt`
       disallows `/api/`.
+- [ ] Every `tel:` link on `/m/<id>` and the whip table posts one receipt
+      on tap while the member has an open goal with an action
+      (`web/src/components/receipt-surfaces.test.tsx`).
 
 ## Performance budget
 - Member page ≤100 KB transferred, fonts excluded (2026-11-08, 390 px,
   gzip: 65.0 to 66.4 KB with a portrait, 61.2 KB without; the share card
   loads only for link previews). LCP ≤1.5 s on a mid-range phone over 4G.
+  The member and whip pages each gain one island (1.3 and 1.0 KB gzip plus
+  `receipt-flow` 2.8 KB, 2026-11-10); the modal chunk is lazy.
 - House whip page ≤150 KB transferred (measured: default view 11.4 KB
   gzipped HTML, `/whip/all` 23.2 KB).
 - Zero LLM calls at build or request time; infra cost unchanged at

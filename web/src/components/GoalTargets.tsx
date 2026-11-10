@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'preact/hooks';
-import { districtLabel, viaQuery, type TargetCard } from '../lib/api';
+import { useEffect, useMemo, useState } from 'preact/hooks';
+import { districtLabel, viaQuery, type GoalCard, type TargetCard } from '../lib/api';
 import { loadPlace, type Place } from '../lib/store';
 import { Target } from './Target';
 import Counts from './Counts';
+import { targetId, useReceiptFlow, type ReceiptGoal } from './receipt-flow';
 
 type State = { kind: 'loading' } | { kind: 'no_place' } | { kind: 'error'; message: string } | { kind: 'ok'; where: string; place: Place; targets: TargetCard[] };
 
-/** §2.2 "your targets": the stored {state, district} only; nothing else leaves the browser. */
-export default function GoalTargets({ slug }: { slug: string }) {
+/**
+ * §2.2 "your targets": the stored {state, district} only; nothing else leaves the browser. tap-receipts-everywhere §2:
+ * the stack takes receipts like `/results/<goal>` (the same engine, the same `cut-ties:receipts` rows), with `action`
+ * the goal's first action slug; null → plain links. `other` points at `/results` once every office is done.
+ */
+export default function GoalTargets({ slug, title, what, category, action }: { slug: string; title: string; what: string; category: GoalCard['category']; action: string | null }) {
   const [s, setS] = useState<State>({ kind: 'loading' });
 
   useEffect(() => {
@@ -23,6 +28,9 @@ export default function GoalTargets({ slug }: { slug: string }) {
       .catch((e: Error) => setS({ kind: 'error', message: e.message }));
   }, [slug]);
 
+  const goal = useMemo<ReceiptGoal | null>(() => (s.kind === 'ok' ? { slug, title, what_we_want: what, category, action, targets: s.targets } : null), [s, slug, title, what, category, action]);
+  const flow = useReceiptFlow({ goal, state: s.kind === 'ok' ? s.place.state : '', district: s.kind === 'ok' ? s.place.district : null, other: { href: '/results', label: 'Your two actions →' } });
+
   if (s.kind === 'loading') return <p class="label-code" aria-busy="true">Loading your targets…</p>;
   if (s.kind === 'no_place') return (
     <div class="card p-4">
@@ -36,13 +44,15 @@ export default function GoalTargets({ slug }: { slug: string }) {
       <a href="/" class="btn btn-ghost mt-4">Change address</a>
     </div>
   );
+  const handlers = goal ? flow.handlers(goal) : {};
   return (
     <div class="flex flex-col gap-3" data-target-stack>
       <p class="label-code">Who to call in {s.where} ({s.targets.length}) · <a href="/results" class="underline">your two actions</a></p>
       {s.targets.length === 0
         ? <p class="text-sm">No one in your delegation decides this goal.</p>
-        : <ul class="flex flex-col gap-3">{s.targets.map((t) => <Target t={t} />)}</ul>}
+        : <ul class="flex flex-col gap-3">{s.targets.map((t) => <Target t={t} done={flow.done.get(targetId(t))} ring={flow.next === targetId(t)} {...handlers} />)}</ul>}
       {s.targets.length > 0 && <Counts goal={slug} state={s.place.state} district={s.place.district} />}
+      {flow.modal}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { fmtDate } from '../../lib/goals';
-import { contactLabel, goalsFor, members, officesFor, PARTY, positionLine, role, seat, tel, type Member } from '../../lib/members';
+import { contactLabel, goalsFor, members, officesFor, PARTY, positionLine, role, seat, type Member } from '../../lib/members';
 import Offices from '../../components/Offices.astro';
+import MemberContact from '../../components/MemberContact';
 import Counts from '../../components/Counts';
 import Visits from '../../components/Visits';
-import OpenChip from '../../components/OpenChip';
 import { PARTY_CLASS, portraitSrc } from '../../components/Target';
 import { TREATMENT, hasPortraitFile } from '../../lib/images';
 // One static page per sitting member; unknown ids fall through to the 404 page.
@@ -20,6 +20,9 @@ const first = goals[0];
 const title = first ? `${m.name} on ${first.goal.title}` : `${role(m)} ${m.name}`;
 const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
 const partner = goals.find((g) => g.goal.partner_url)?.goal.partner_url ?? null;
+// tap-receipts-everywhere §4: the hero's buttons are one island; a tap counts toward the first open goal with an action.
+const contact = { bioguide_id: m.bioguide_id, name: m.name, role: role(m), party: m.party, chamber: m.chamber, state: m.state, district: m.district, dc_phone: m.dc_phone, district_phone: m.district_phone, contact_form_url: m.contact_form_url, contact_kind: m.contact_kind, contact_label: contactLabel(m) };
+const receiptGoal = first?.action ? { slug: first.goal.slug, title: first.goal.title, what_we_want: first.goal.what_we_want, category: first.goal.category, action: first.action.slug } : null;
 const POS: Record<string, string> = { for: 'bg-acid text-ink', uncommitted: 'bg-hazard text-ink', against: 'bg-crimson text-paper', unknown: 'bg-newsprint-muted text-ink' };
 ---
 <Base title={`${title} — Cut the Ties`} description={positionLine(m, first)} image={`/m/${m.bioguide_id}/card.png`}>
@@ -39,15 +42,11 @@ const POS: Record<string, string> = { for: 'bg-acid text-ink', uncommitted: 'bg-
         <span class="chip bg-newsprint text-ink border-ink">{m.chamber === 'house' ? 'House' : 'Senate'}</span>
         <span class="chip bg-acid text-ink border-ink hidden" data-yours>Your representative</span>
       </div>
-      <h1 class="display-lg max-w-4xl">{role(m)} {m.name}</h1>
+      <h1 class="display-lg max-w-4xl">{role(m)} {m.name} <span data-postmark-slot class="inline-block align-middle ml-2"></span></h1>
       <p class="mt-5 text-lg max-w-2xl">{m.state}{m.chamber === 'house' ? ` · District ${m.district === 0 ? 'at large' : m.district}` : ' · Senator'} · {PARTY[m.party]}</p>
         </div>
       </div>
-      <div class="mt-6 flex flex-wrap gap-3">
-        {m.dc_phone && <span class="flex items-center gap-2"><a href={tel(m.dc_phone)} class="btn btn-primary">Call DC office · {m.dc_phone}</a><OpenChip client:load /></span>}
-        {m.district_phone && <span class="flex items-center gap-2"><a href={tel(m.district_phone)} class="btn bg-newsprint text-ink hover:bg-paper">District office · {m.district_phone}</a><OpenChip client:load state={m.state} /></span>}
-        {contactLabel(m) && <a href={m.contact_form_url} rel="noopener" class="btn bg-newsprint text-ink hover:bg-paper">{contactLabel(m)} ↗</a>}
-      </div>
+      <MemberContact client:load member={contact} goal={receiptGoal} />
       {m.district_office_address && <p class="mt-4 text-sm label-ticker" data-office>District office: {m.district_office_address}{m.district_office_city ? `, ${m.district_office_city}` : ''}</p>}
     </div>
   </section>
