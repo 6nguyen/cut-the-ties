@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt sheet v2 — single ask + compact postmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#090A0F;--news:#FAF7F0;--news-m:#EDE8DC;--rule:#D8D2C4;--acid:#00E876;--crimson:#E11148;--hazard:#FACC15;--cobalt:#2563EB;--paper:#fff;
+--cond:"Bebas Neue","Arial Narrow",sans-serif;--sans:"Inter",system-ui,sans-serif;--mono:"Space Mono",ui-monospace,monospace;
+--sh-sm:2px 2px 0 var(--ink);--sh:4px 4px 0 var(--ink);--sh-lg:6px 6px 0 var(--ink)}
+*{box-sizing:border-box}body{margin:0;background:var(--news);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.4}
+.screen{width:375px;min-height:812px;margin:0 auto;position:relative;overflow:hidden;background:var(--news);border-bottom:6px dashed var(--rule)}
+.tag{position:absolute;top:8px;left:8px;z-index:9;background:var(--ink);color:var(--hazard);font:700 10px/1 var(--mono);letter-spacing:.14em;padding:5px 7px;text-transform:uppercase}
+.page{padding:56px 16px 24px}
+.ticker{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(9,10,15,.7)}
+h1{font:400 44px/0.92 var(--cond);margin:10px 0 14px;letter-spacing:.01em}
+.label{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px}
+.card{background:var(--paper);border:2px solid var(--ink);box-shadow:var(--sh-sm);padding:14px;position:relative}
+.card.done{background:rgba(237,232,220,.6)}
+.row{display:flex;gap:12px;align-items:flex-start}
+.ava{width:40px;height:40px;flex:none;border:2px solid var(--ink);box-shadow:var(--sh-sm);background:var(--cobalt);color:#fff;font:400 20px/1 var(--cond);display:flex;align-items:center;justify-content:center}
+.name{font:400 24px/1 var(--cond);text-transform:uppercase;letter-spacing:.02em}
+.role{font:400 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.sub{font:400 11px/1.3 var(--mono);color:rgba(9,10,15,.7);margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+.sq{width:44px;height:44px;flex:none;border:2px solid var(--ink);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:center}
+.sq.acid{background:var(--acid)}.sq.paper{background:var(--paper)}
+.chip{display:inline-block;border:2px solid var(--ink);padding:3px 8px;font:700 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--news)}
+.btn{display:block;width:100%;text-align:center;padding:14px 20px;border:2px solid var(--ink);box-shadow:var(--sh);font:700 15px/1 var(--sans);background:var(--paper);text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--acid)}.btn.ghost{background:transparent;box-shadow:var(--sh-sm);font-weight:600}
+.pill{border:2px solid var(--ink);box-shadow:var(--sh-sm);background:transparent;font:600 13px/1 var(--sans);padding:8px 12px;flex:none}
+.link{font:600 14px/1 var(--sans);text-decoration:underline;text-align:center;display:block;margin:14px 0 0}
+/* dialog / sheet */
+.backdrop{position:absolute;inset:0;background:rgba(9,10,15,.7)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-top:3px solid var(--ink);padding:14px 16px 24px}
+.grab{width:44px;height:4px;background:var(--ink);margin:0 auto 12px}
+.modal{position:absolute;left:16px;right:16px;top:64px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--sh-lg);padding:16px}
+.x{position:absolute;top:8px;right:10px;font:400 26px/1 var(--cond)}
+.q{font:400 30px/0.95 var(--cond);margin:0 0 10px;letter-spacing:.01em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips .chip{padding:10px 12px;font-size:12px;background:var(--paper);cursor:pointer}
+.chips .chip.on{background:var(--ink);color:var(--acid)}
+.chips .chip.quiet{border-style:dashed;color:rgba(9,10,15,.65)}
+.echo{font:400 13px/1.35 var(--sans);margin:12px 0 0}
+.echo b{font:400 22px/1 var(--cond)}
+.saved{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--crimson);margin-left:8px}
+.hr{border:0;border-top:2px solid var(--rule);margin:14px 0}
+/* big receipt stamp (shipped) */
+.rstamp{display:inline-flex;flex-direction:column;align-items:center;gap:4px;border:5px dashed var(--crimson);background:var(--paper);color:var(--crimson);padding:8px 16px;transform:rotate(-4deg);margin:6px 0 8px 4px;
+-webkit-mask-image:radial-gradient(ellipse at center,#000 45%,rgba(0,0,0,.78) 72%,rgba(0,0,0,.38) 100%);mask-image:radial-gradient(ellipse at center,#000 45%,rgba(0,0,0,.78) 72%,rgba(0,0,0,.38) 100%)}
+.rstamp .big{font:400 48px/1 var(--cond);letter-spacing:.06em;white-space:nowrap}
+.rstamp .small{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+/* ---- done-card stamp variants ---- */
+.grain{filter:url(#grain)}
+/* V1 rubber stamp over the corner */
+.st1{position:absolute;top:-12px;right:6px;transform:rotate(-7deg);border:4px dashed var(--crimson);color:var(--crimson);background:rgba(255,255,255,.85);padding:4px 10px 3px;display:flex;flex-direction:column;align-items:center;line-height:1;
+-webkit-mask-image:radial-gradient(ellipse at center,#000 50%,rgba(0,0,0,.8) 75%,rgba(0,0,0,.4) 100%);mask-image:radial-gradient(ellipse at center,#000 50%,rgba(0,0,0,.8) 75%,rgba(0,0,0,.4) 100%)}
+.st1 .w{font:400 28px/1 var(--cond);letter-spacing:.08em}.st1 .d{font:700 9px/1 var(--mono);letter-spacing:.14em;margin-top:2px}
+/* V2 ink block tag, flush top-left */
+.st2{position:absolute;top:-2px;left:-2px;background:var(--ink);color:var(--acid);padding:6px 10px 5px;display:flex;align-items:baseline;gap:8px;box-shadow:var(--sh-sm)}
+.st2 .w{font:400 22px/1 var(--cond);letter-spacing:.1em}.st2 .d{font:700 9px/1 var(--mono);letter-spacing:.12em;color:var(--paper)}
+.st2.wrote{color:var(--hazard)}
+/* V3 perforated receipt strip across the top */
+.st3{margin:-14px -14px 12px;border-bottom:2px dashed var(--ink);background:var(--news-m);padding:7px 14px;display:flex;justify-content:space-between;align-items:center;font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.st3 .w{font:400 18px/1 var(--cond);letter-spacing:.1em;color:var(--crimson)}
+.st3::before,.st3::after{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:var(--news);border:2px solid var(--ink);top:24px}
+.st3::before{left:-8px}.st3::after{right:-8px}
+/* V4 postmark circle */
+.st4{position:absolute;top:-14px;right:8px;width:84px;height:84px;border-radius:50%;border:3px solid var(--crimson);color:var(--crimson);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-12deg);background:rgba(255,255,255,.8);
+-webkit-mask-image:radial-gradient(circle at 40% 45%,#000 55%,rgba(0,0,0,.75) 80%,rgba(0,0,0,.35) 100%);mask-image:radial-gradient(circle at 40% 45%,#000 55%,rgba(0,0,0,.75) 80%,rgba(0,0,0,.35) 100%)}
+.st4::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1.5px solid var(--crimson)}
+.st4 .w{font:400 24px/1 var(--cond);letter-spacing:.08em}.st4 .d{font:700 8px/1 var(--mono);letter-spacing:.16em}
+.st4 .waves{position:absolute;right:86px;top:30px;width:70px;height:26px;border-top:2px solid var(--crimson);border-bottom:2px solid var(--crimson);opacity:.85}
+.st4 .waves::before{content:"";position:absolute;left:0;right:0;top:11px;border-top:2px solid var(--crimson)}
+.caption{font:400 12px/1.4 var(--mono);color:rgba(9,10,15,.7);margin:6px 0 18px;padding-left:2px}
+.caption b{color:var(--ink)}
+.vh{font:400 15px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;color:var(--crimson)}
+</style>
+</head>
+
+<style>
+/* compact postmarks */
+.pm{border-radius:50%;border:3px solid var(--crimson);color:var(--crimson);display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.8);position:absolute;
+-webkit-mask-image:radial-gradient(circle at 45% 45%,#000 72%,rgba(0,0,0,.8) 90%,rgba(0,0,0,.55) 100%);mask-image:radial-gradient(circle at 45% 45%,#000 72%,rgba(0,0,0,.8) 90%,rgba(0,0,0,.55) 100%)}
+.pm::before{content:"";position:absolute;inset:4px;border-radius:50%;border:1.5px solid var(--crimson)}
+.pm .w{font:400 16px/1 var(--cond);letter-spacing:.06em}.pm .d{font:700 7px/1 var(--mono);letter-spacing:.14em}
+.pm.a{width:64px;height:64px;top:-8px;right:10px;transform:rotate(-12deg)}
+.pm.b{width:54px;height:54px;left:4px;top:28px;transform:rotate(-14deg)}
+.pm.b .w{font-size:14px}.pm.b .d{font-size:6.5px}
+.pm.c{position:static;width:44px;height:44px;flex:none;transform:rotate(-12deg)}
+.pm.c .w{font-size:11px;letter-spacing:.04em}.pm.c .d{display:none}
+.pm.c::before{inset:3px}
+.pillrow{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:nowrap;margin-right:-56px}
+.pillrow .pill{padding:6px 10px;font-size:12px}
+.share{border:2px solid var(--rule);padding:12px;margin-top:12px}
+.share .label{margin-bottom:8px}
+.poster{height:64px;background:var(--ink);color:var(--acid);font:400 22px/1 var(--cond);display:flex;align-items:center;justify-content:center;letter-spacing:.06em;margin-bottom:10px}
+.srow{display:flex;gap:8px}.srow .btn{padding:10px;font-size:13px;box-shadow:var(--sh-sm)}
+</style>
+<body>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute"><filter id="grain" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+
+<!-- S5: single ask, share prompt right below, nothing gated -->
+<section class="screen" id="s5">
+  <span class="tag">S5 · one ask, then today's receipt</span>
+  <div class="page"><p class="ticker">← Your two actions · Action 1 of 2</p><h1>Strip §1217 from the NDAA</h1></div>
+  <div class="backdrop"></div>
+  <div class="sheet" style="top:40px">
+    <div class="grab"></div>
+    <p class="q" style="font-size:26px;margin-bottom:8px">How did the call go?</p>
+    <div class="chips"><span class="chip">With us</span><span class="chip">Undecided</span><span class="chip">Opposed</span><span class="chip">No answer</span><span class="chip quiet">Skip</span></div>
+    <hr class="hr" style="margin:12px 0 4px">
+    <div class="rstamp grain" style="transform:rotate(-4deg) scale(.86);transform-origin:left;margin:4px 0 0"><span class="big">I CALLED ✓</span><span class="small">Rep. Correa's office · Nov 9</span></div>
+    <p class="echo" style="margin-top:0">You're one of <b>212</b> in CA-46 who called this week.</p>
+    <div class="share"><p class="label">Tell one person</p><div class="poster">212 IN CA-46 CALLED TODAY</div><div class="srow"><a class="btn">Share…</a><a class="btn">Copy link</a></div></div>
+    <a class="btn primary" style="margin-top:12px">Next: call Sen. Padilla →</a>
+    <a class="link" style="margin-top:12px">Not now</a>
+  </div>
+</section>
+
+<!-- S6: after one tap -->
+<section class="screen" id="s6">
+  <span class="tag">S6 · after "No answer"</span>
+  <div class="page"><p class="ticker">← Your two actions · Action 1 of 2</p><h1>Strip §1217 from the NDAA</h1></div>
+  <div class="backdrop"></div>
+  <div class="sheet" style="top:40px">
+    <div class="grab"></div>
+    <p class="q" style="font-size:22px;margin-bottom:8px">How did the call go? <span class="saved">Saved</span></p>
+    <div class="chips"><span class="chip on">No answer</span><span class="chip quiet" style="border-color:var(--rule);color:rgba(9,10,15,.4)">Change</span></div>
+    <hr class="hr" style="margin:12px 0 4px">
+    <div class="rstamp grain" style="transform:rotate(-4deg) scale(.86);transform-origin:left;margin:4px 0 0"><span class="big">I CALLED ✓</span><span class="small">Rep. Correa's office · Nov 9</span></div>
+    <p class="echo" style="margin-top:0">You're one of <b>212</b> in CA-46 who called this week.</p>
+    <div class="share"><p class="label">Tell one person</p><div class="poster">212 IN CA-46 CALLED TODAY</div><div class="srow"><a class="btn">Share…</a><a class="btn">Copy link</a></div></div>
+    <a class="btn primary" style="margin-top:12px">Next: call Sen. Padilla →</a>
+    <div style="display:flex;justify-content:space-between;margin-top:12px"><a class="link" style="margin:0">Not now</a><a class="link" style="margin:0;font-weight:400">Remind me tomorrow</a></div>
+  </div>
+</section>
+
+<!-- compact postmarks -->
+<section class="screen" id="pm" style="min-height:900px">
+  <span class="tag">Postmark · 3 compact placements</span>
+  <div class="page" style="padding-top:48px">
+    <p class="vh">P1 · Corner, 62 px, no extra padding</p>
+    <div class="card done" style="margin-top:10px"><div class="pm a grain"><span class="d">NOV 9</span><span class="w">CALLED</span><span class="d">2:14 PM</span></div>
+      <div class="row"><span class="ava">D</span><div style="flex:1;min-width:0;padding-right:56px"><p class="name" style="margin:0">Lou Correa</p><p class="role">Representative · CA-46</p><p class="sub">No recorded vote yet</p>
+        <div class="pillrow"><span class="pill">✓ Share</span><span class="chip">Said: undecided</span></div></div></div></div>
+    <p class="caption">Postmark shrunk to 62 px, hangs 8 px over the top edge, card padding unchanged. The ✓ Share pill and the answer chip move under the role line, so the card is ~14 px taller than today's done card and 40 px shorter than V4.</p>
+
+    <p class="vh">P2 · Cancels the portrait</p>
+    <div class="card done"><div class="pm b grain"><span class="d">NOV 9</span><span class="w">WROTE</span><span class="d">2:14 PM</span></div>
+      <div class="row"><span class="ava">D</span><div style="flex:1;min-width:0"><p class="name" style="margin:0">Lou Correa</p><p class="role">Representative · CA-46</p><p class="sub">No recorded vote yet</p></div><span class="pill">✓ Share</span></div>
+      <p style="margin:10px 0 0 0;text-align:right"><span class="chip">Said: with us</span></p></div>
+    <p class="caption">54 px postmark struck across the portrait's corner, like a cancelled stamp on an envelope. Header row and pill exactly as today; zero extra height except the answer chip line.</p>
+
+    <p class="vh">P3 · In the square slot</p>
+    <div class="card done" style="margin-bottom:0"><div class="row"><span class="ava">D</span><div style="flex:1;min-width:0"><p class="name" style="margin:0">Lou Correa</p><p class="role">Representative · CA-46</p><p class="sub">No recorded vote yet</p></div>
+      <span class="pill">✓ Share</span><span class="pm c grain"><span class="w">CALLED</span></span></div>
+      <p style="margin:10px 0 0 0;display:flex;gap:8px;align-items:center"><span class="chip">Said: with us</span><span class="sub" style="margin:0">2:14 PM</span></p></div>
+    <p class="caption" style="margin-bottom:0">44 px postmark sits where the call square was, beside the pill; time stays in the role line. Same height as today's done card; the word is small (14 px).</p>
+  </div>
+</section>
+</body>
+</html>

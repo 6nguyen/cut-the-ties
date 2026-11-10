@@ -71,7 +71,7 @@ it is generated from the same markers.
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [receipt-sheet-and-done-stamps.md](receipt-sheet-and-done-stamps.md) | READY | — | Receipt sheet on `/results/<goal>` asks "Did someone pick up?" / "Did your message go through?" (reuses `POST /api/report`), then stamp, count, next office, share; CALLED / WROTE stamp on done cards; §4 owner device test |
+| 1 | [receipt-sheet-and-done-stamps.md](receipt-sheet-and-done-stamps.md) | READY | — | Receipt sheet on `/results/<goal>` asks "Did someone pick up?" / "Did your message go through?" (reuses `POST /api/report`), one chip row above today's receipt (stamp, count, share, next office); CALLED / WROTE postmark on done cards; §4 owner device test |
 | 2 | [share-from-results.md](share-from-results.md) | IN PROGRESS (§4 owner device test) | — | `/results` as two summary cards with stamps, `/results/<goal>` one-action page, write square beside the call square, tap = receipt + share modal ("I called" / "I wrote"), per-office repeat key; §1–3 code, §4 owner device test |
 | 3 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
 | 4 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
