@@ -15,7 +15,7 @@
 | member-pages | BUILDING | Roster import, member page with contact and position, whip… | [spec](specs/member-pages.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 | 2026-11-08 |
 | on-device-districts | BUILDING | Browser location → district on the device, per-state TopoJS… | [spec](specs/on-device-districts.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 | 2026-11-08 |
 | personalised-documents | BUILDING | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | [social-sharing](prd/social-sharing.md) 3/4 | 2026-11-08 |
-| results-pages | BUILDING | `/results` summary cards, one-action page `/results/<goal>`… | [spec](specs/results-pages.md) | [share-from-results](prd/share-from-results.md) 0/4 +1 | 2026-11-09 |
+| results-pages | BUILDING | `/results` summary cards, one-action page `/results/<goal>`… | [spec](specs/results-pages.md) | [receipt-sheet-and-done-stamps](prd/receipt-sheet-and-done-stamps.md) 0/4 +1 | 2026-11-09 |
 | social-sharing | BUILDING | On-device 1080×1920 poster after a receipt, file-only to th… | [spec](specs/social-sharing.md) | [share-from-results](prd/share-from-results.md) 0/4 +1 | 2026-11-09 |
 | target-cards | BUILDING | One spec 06 card per target (badge, name, role line, call s… | [spec](specs/target-cards.md) | [share-from-results](prd/share-from-results.md) 0/4 | 2026-11-09 |
 | decision-feed | SHIPPED | Public `.ics` feed of decision dates, subscribe line on `/g… | [spec](specs/decision-feed.md) | - | 2026-11-05 |

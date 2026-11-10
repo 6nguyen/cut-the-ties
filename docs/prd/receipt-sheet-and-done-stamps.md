@@ -1,5 +1,5 @@
 # Receipt sheet and done-card stamps — PRD
-Status: READY 2026-11-09 (auto) · Owner: George Nguyen · Last updated: 2026-11-09
+Status: IN PROGRESS · Owner: George Nguyen · Last updated: 2026-11-09
 
 ## Problem
 On `/results/<goal>` a tap on a call or write square is the receipt: the
@@ -154,8 +154,10 @@ to the page later reads the stamp before any text.
   'skip' | 'sent' | 'form_failed'` (the last three are client-only, never
   posted). `logReceipt` writes it; `receiptsByTarget` returns it.
 - `Target` `done` becomes `{channel, at, outcome?}`; `ReceiptModal`
-  gains an `outcome` prop and `onOutcome(outcome)`; the postmark is
-  `web/src/components/Postmark.tsx`.
+  gains `at`, `answer?` and `onAnswer(outcome) → Promise<boolean>` (named
+  `answer`, not `outcome`: the modal's `outcome` prop is already the
+  receipt result); the postmark is `web/src/components/Postmark.tsx`,
+  bundled with `Target` since the done card renders it on load.
 - No schema, seed or endpoint change; no new settings key.
 
 ## Spec delta
@@ -217,25 +219,48 @@ with no drop in receipts per visit.
 
 ## State (updated 2026-11-09)
 - Sections:
-  - [ ] 1. Receipt sheet after a call
-  - [ ] 2. Write variant
-  - [ ] 3. Done-card postmark
-  - [ ] 4. Owner device test
-- Completed: none
-- Folded: none
-- Branch / open PRs: `docs/receipt-sheet-prd` (this PRD)
-- Files changed (file:line map): —
-- Tests run + result: —
-- Remaining: §1–4
+  - [~] 1. Receipt sheet after a call · feat/receipt-sheet-and-done-stamps · PR #91
+  - [~] 2. Write variant · feat/receipt-sheet-and-done-stamps · PR #91
+  - [~] 3. Done-card postmark · feat/receipt-sheet-and-done-stamps · PR #91
+  - [ ] 4. Owner device test · local QA done 2026-11-09 (375 + 1024 px); production device run is the owner's
+- Completed: none (§1–3 built, PR open, not merged)
+- Folded: §1, §2, §3 → `docs/specs/results-pages.md` (§Purpose, §4, §5,
+  §7, Data & contracts, Invariants, Performance budget)
+- Branch / open PRs: `docs/receipt-sheet-prd` (this PRD, PR #90, merged);
+  `feat/receipt-sheet-and-done-stamps` (§1–3, PR #91)
+- Files changed (file:line map): `web/src/components/Postmark.tsx` (new,
+  the 96/64 px CALLED/WROTE postmark; `relative` only when the caller
+  passes no position class); `web/src/styles/global.css:39-40`
+  `.postmark-round`, the one exception to the site-wide
+  `border-radius: 0`; `ReceiptModal.tsx:32-36` chips + `:107-125` hazard
+  strip + `:127-131` Call-instead/Next; `Target.tsx:102-130` done card
+  (postmark, pill row, answer chip, call square after form_failed);
+  `Results.tsx` `report()`, `answer()`, `answers` ref;
+  `web/src/lib/commitments.ts:46-73` `ReceiptOutcome`,
+  `setReceiptOutcome`, `receiptsByTarget` outcome; tests in
+  `results-page.test.tsx` ("the ask" describe) and `SummaryCard.test.tsx`.
+- Tests run + result: quiet-check `test-web` PASS (281), `build` PASS,
+  `tsc` PASS, `test` PASS (2026-11-09). Chunks gzip after the QA fixes:
+  ReceiptModal 2.29 KB (from 1.45), Target 3.88 KB (from 3.07, holds
+  Postmark), Results 4.79 KB (from 4.61), ShareRow 3.99 KB unchanged;
+  results page initial ≤61 KB counting every site chunk. Browser QA
+  (localhost, NJ route, 375 and 1024 px): call ask → Saved + filled chip +
+  done-card "No answer" chip; Skip → "Skipped", chip removed; write ask →
+  "Form didn't work" → "Call Rep. Pallone instead →" closes the modal and
+  rings the done card's call square; pill reopen shows the stored answer;
+  postmark 12 px in / 6 px over the card at both widths. Three render
+  bugs the happy-dom tests could not see were fixed (squared postmark,
+  done-card postmark in flow, modal who-line truncation) in commit 3c00221.
+- Remaining: merge §1–3; §4 owner device test on production
 - Decisions since last update: owner 2026-11-09: one ask on today's
   receipt card (no two-step flow, no gating, no bottom-sheet redesign),
   Next after the share card; the ask is the S8 hazard strip; the modal
   header is the postmark (S10); done-card postmark P1; proposals of Open
-  questions 1–2 are the decisions.
+  questions 1–2 are the decisions. §1–3 build in one PR (owner
+  2026-11-09: "complete the entire prd"). Build: modal props `answer` /
+  `onAnswer`; done card keeps a ringed call square after "Form didn't work".
 - Known failures / blockers: none
-- Next action: merge the PRD PR, then `/implement-prd-section
-  docs/prd/receipt-sheet-and-done-stamps.md` (§1)
-
+- Next action: merge PR #91, then /implement-prd-section receipt-sheet-and-done-stamps.md (next: §4. Owner device test)
 ## Open questions
 1. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
    client-only until the digest shows it is chosen often enough to count.
@@ -257,3 +282,10 @@ with no drop in receipts per visit.
 - 2026-11-09 — owner review 3: the ask is S8 (hazard strip, 2×2 chips,
   Skip); the modal header swaps the dashed "I CALLED" stamp for the same
   circular postmark as the done card (S10). No open questions on design.
+- 2026-11-09 — §1–3 built (`feat/receipt-sheet-and-done-stamps`): the
+  modal props are `answer` / `onAnswer` (see Data & contracts); after "Form
+  didn't work" the done card keeps the call square in its pill row, ringed
+  as Next, so "Call <Surname> instead →" has a square to ring; the answer
+  is written with `setReceiptOutcome`, or by `logReceipt` when the chip is
+  tapped before the receipt POST returns; `Postmark` ships in the `Target`
+  chunk, not the lazy one. Spec folded into `docs/specs/results-pages.md`.

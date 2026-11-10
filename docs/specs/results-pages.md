@@ -5,10 +5,12 @@
 `/results/<goal>`, a one-action page where the full result card renders and
 where a tap on a call or write square is itself the receipt: the dialer (or
 the office's contact form) opens, `POST /api/receipt` is sent, and a receipt
-modal with the stamp, the count echo, the share block and the next office is
-on screen when the visitor comes back. The goal detail page's squares are
+modal with the stamp, the count echo, one ask about the office's answer, the
+share card and the next office is on screen when the visitor comes back. The goal detail page's squares are
 unchanged (no tap receipt there). Shipped from
-`docs/prd/share-from-results.md` (§1–3); the owner device test (§4) is open.
+`docs/prd/share-from-results.md` (§1–3) and
+`docs/prd/receipt-sheet-and-done-stamps.md` (§1–3, the ask and the
+postmarks); the owner device tests (§4 of each) are open.
 
 ## Behavior
 1. **Summary cards (`/results`).** Header, delegation line and the page's
@@ -60,14 +62,36 @@ unchanged (no tap receipt there). Shipped from
    the count echo; `limit_day`, `limit_ip` and a network failure write no
    row and show the server's `message` (or "Couldn't count this one. Your
    call still counts with the office." / "… Your message …") in its place.
-   Nothing asks whether the office answered.
+   **The ask.** A hazard strip in the modal (§5) asks one question, with no
+   gate on anything else in it. Call: "What did the office say?" and a 2×2
+   grid of chips "With us · Undecided · Opposed · No answer"
+   (`data-ask-chip="will_support|undecided|opposed|no_answer"`); a tap
+   fills the chip (ink, acid text, `aria-pressed`), posts `POST /api/report
+   {goal, target, outcome, device}` (no `note`) and on a 2xx shows a
+   crimson mono "Saved" beside the question; a second chip posts again and
+   the last tap stands. A failed post reads "Could not save that. Try
+   again." under the grid and leaves the chips tappable; the rest of the
+   modal is unchanged. A small "Skip" link under the grid posts nothing and
+   collapses the strip to "Skipped". Write: "Did it go through?" with
+   "Sent it · Form didn't work" (`sent` / `form_failed`), no reminder line;
+   neither posts; "Form didn't work" swaps Next for a filled "Call <Role
+   Surname> instead →" (`data-call-instead`) when the office has a phone,
+   which closes the modal and rings the call square on the done card, whose
+   tap is a call receipt of its own. The answer goes on the device's receipt
+   row (`outcome`); a receipt that was not counted keeps none, though the
+   report still posts. A report never changes a count.
 5. **The modal** (`web/src/components/ReceiptModal.tsx`) is a `<dialog>`
    opened with `showModal()`: backdrop ink at 70 %, paper panel with a 2 px
    ink border and the large shadow, 16 px side gutters, max 440 px wide,
    scrollable inside, ✕ at the top-right; Esc, ✕ and a backdrop tap close it.
-   Top to bottom: the act page's `ReceiptStamp` ("I CALLED" / "I WROTE",
-   accessible name "I called <office>, <day>"); the `Counts` island in
-   `echo` mode (or the message of §4); the share block of
+   Top to bottom: the header, a 96 px circular crimson postmark
+   (`web/src/components/Postmark.tsx`, "CALLED" / "WROTE" between the day
+   and the local time, double ring, −12°, the act stamp's grain; `role="img"`
+   named "Called <name>, <day> <time>" / "Wrote to <name>, …",
+   `data-postmark="called|wrote"`) with three cancellation lines and a mono
+   "<Role Surname> · <seat>" (`data-receipt-who`) beside it; the `Counts`
+   island in `echo` mode (or the message of §4); the hazard strip of §4
+   (`data-ask="call|write"`); the share block of
    `social-sharing.md` §3–5 unchanged, the poster drawn from
    `receiptSpec(channel === 'email' ? 'letter' : 'call', …)` while the
    dialer is open; one filled button "Next: call <Role Name> →" for the
@@ -84,10 +108,17 @@ unchanged (no tap receipt there). Shipped from
    dynamic `import()` on the first tap; the initial requests of
    `/results/<goal>` never include it.
 7. **After closing.** The tapped target's card is newsprint-muted
-   (`data-done="call|email"`), its role line gains "· Called 2:14 pm" /
-   "· Wrote 2:14 pm", and both squares give way to one bordered "✓ Share"
-   pill (`data-share-pill`) that reopens the modal with the counted outcome
-   and no new POST; focus returns to the pill on close. The state is
+   (`data-done="call|email"`) and wears the 64 px `Postmark` on its top-right
+   corner, hanging 8 px over the border (`data-postmark-size="64"`); the
+   header text keeps 56 px clear of it and the role line carries no suffix.
+   Both squares give way to one row under the record line: the bordered
+   "✓ Share" pill (`data-share-pill`), which reopens the modal with the
+   counted outcome, the saved answer (chip filled, or "Skipped") and no new
+   POST, and an answer chip (`data-answer-chip`) "Said: with us · Said:
+   undecided · Said: opposed · No answer" when one of the four was given
+   (none for Skip, "Sent it" or "Form didn't work"); after "Form didn't
+   work" the call square stands in that row too, ringed as the Next office.
+   Focus returns to the pill on close. The state is
    `commitments.ts` `receiptsByTarget` over `cut-ties:receipts` (24 h), so
    a reload keeps it and the squares return after 24 h. A second office's
    tap posts its own receipt and opens the modal again.
@@ -105,14 +136,24 @@ unchanged (no tap receipt there). Shipped from
 - `POST /api/receipt`: body unchanged; the `repeat` SUM in
   `worker/src/repo.ts` `receiptLimitCounts` also matches `target_id`.
 - `cut-ties:receipts` rows (`LoggedReceipt`) gain `channel?: 'call' |
-  'email'` (missing = call); `cut-ties:commitments` `retry` rows come from
-  the modal's reminder. `cut-ties:route` is read without being cleared.
-- `Target` props: `done?: {channel, at}`, `ring?: boolean`,
+  'email'` (missing = call) and `outcome?: 'will_support' | 'undecided' |
+  'opposed' | 'no_answer' | 'skip' | 'sent' | 'form_failed'` (the last
+  three client-only, never posted; `setReceiptOutcome` writes it,
+  `receiptsByTarget` returns it); `cut-ties:commitments` `retry` rows come
+  from the modal's reminder.
+- `POST /api/report` unchanged (`worker/src/index.ts` `OUTCOMES`); the modal
+  posts the four office answers only, with the device id and no `note`. `cut-ties:route` is read without being cleared.
+- `Target` props: `done?: {channel, at, outcome?}`, `ring?: boolean`,
   `onContact?(target, channel)`, `onShare?(target)`; `TargetStack` takes
   `done` (map by target id), `next` and the handlers. Without them the goal
   page renders as before.
 - `lib/contact.ts`: `CONTACT_LABEL` (square title) and `CONTACT_ACTION`
   (act page link text) by `contact_kind`.
+- `ReceiptModal` props gain `at` (the receipt's time for the postmark),
+  `answer?` (the row's saved answer on a pill reopen) and `onAnswer(outcome)
+  → Promise<boolean>` (false = the report failed); `Postmark` takes
+  `{wrote, name, at, size: 96 | 64, id, class?}`. The act page keeps
+  `ReceiptStamp`.
 
 ## Invariants (regression checklist)
 - [ ] No share control renders on `/results` or `/results/<goal>` before
@@ -129,11 +170,19 @@ unchanged (no tap receipt there). Shipped from
 - [ ] A reload after a receipt shows the pill, not the squares; the pill
       reopens the modal without a POST.
 - [ ] Two offices within 10 minutes both return 201.
+- [ ] The ask has a Skip and gates nothing; the postmark, count, ask, share
+      card and Next are on screen when the modal opens; Next follows the
+      share card.
+- [ ] A report never changes a count; Skip, "Sent it" and "Form didn't
+      work" never post; a chip tap posts exactly one report.
 
 ## Performance budget
 `/results` and `/results/<goal>` ≤100 KB transferred before any tap (build
 2026-11-09: HTML 4.1 KB + CSS 6.6 KB + island JS closure 24.0 KB gzip, plus
 the first band ≤26 KB at 768 w); LCP ≤1.5 s on a mid-range phone over 4G;
-the share chunk `ShareRow` ≤4 KB gzip (3.99 KB; `ReceiptModal` 1.45 KB and
-`ReceiptStamp` 1.05 KB ride with it), requested only after the tap;
+the share chunk `ShareRow` ≤4 KB gzip (3.99 KB; `ReceiptModal` 2.35 KB
+rides with it, grown ≤2 KB from 1.45 KB for the ask and the postmark header;
+build 2026-11-09), requested only after the tap; `Postmark` lives in the
+`Target` chunk (3.93 KB, from 3.07 KB) since the done card renders it on
+load, so no request is added;
 `/api/route` ≤2 s p95; $0/month infra.

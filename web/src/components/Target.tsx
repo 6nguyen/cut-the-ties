@@ -6,6 +6,8 @@ import { RESEARCH_URL } from '@worker/state-copy';
 import { BIOGUIDE, visitLine, visitsFor, type VisitPublic } from '../lib/visits';
 import NO_PORTRAIT from '../assets/portraits/missing.json';
 import { CONTACT_LABEL } from '../lib/contact';
+import type { ReceiptOutcome } from '../lib/commitments';
+import Postmark from './Postmark';
 
 export const CATEGORY: Record<GoalCard['category'], string> = { federal_vote: 'Vote in Congress', leadership: 'Who leads the Democrats', state: 'Your state', electoral: 'Election' };
 const POSITION: Record<TargetCard['position'], string> = { for: 'With us', uncommitted: 'Uncommitted', against: 'Against', unknown: 'No stated position' };
@@ -54,9 +56,13 @@ export function Avatar({ t }: { t: TargetCard }) {
 /** urgency-and-readability §7.3: "Senator · VA", "Representative · KY-04", "Representative-elect · NY-10", "Treasurer · MD". */
 export function roleLine(t: Pick<TargetCard, 'role' | 'state' | 'district'>): string {
   const role = ROLE[t.role] ?? t.role;
-  if (!t.state) return role;
-  const seat = t.district === null || t.district === undefined ? t.state : t.district === 0 ? `${t.state} at large` : `${t.state}-${String(t.district).padStart(2, '0')}`;
-  return `${role} · ${seat}`;
+  const seat = seatOf(t);
+  return seat ? `${role} · ${seat}` : role;
+}
+/** "VA", "KY-04", "NY at large"; null without a state. */
+export function seatOf(t: Pick<TargetCard, 'state' | 'district'>): string | null {
+  if (!t.state) return null;
+  return t.district === null || t.district === undefined ? t.state : t.district === 0 ? `${t.state} at large` : `${t.state}-${String(t.district).padStart(2, '0')}`;
 }
 
 const PHONE_SVG = (
@@ -73,8 +79,10 @@ const SQUARE = 'w-11 h-11 shrink-0 border-2 border-ink shadow-brutal-sm flex ite
 const RING = 'ring-[3px] ring-crimson ring-offset-2 ring-offset-paper';
 
 export type Channel = 'call' | 'email';
-/** results-pages §3.4: this device's receipt for one office in the last 24 h; the card renders muted with a ✓ Share pill. */
-export interface TargetDone { channel: Channel; at: string }
+/** results-pages §7: this device's receipt for one office in the last 24 h; the card renders muted with the postmark, a ✓ Share pill and the answer chip. */
+export interface TargetDone { channel: Channel; at: string; outcome?: ReceiptOutcome }
+/** §7: the chip reading the office's answer; Skip, "Sent it" and "Form didn't work" show none. */
+export const ANSWER_CHIP: Partial<Record<ReceiptOutcome, string>> = { will_support: 'Said: with us', undecided: 'Said: undecided', opposed: 'Said: opposed', no_answer: 'No answer' };
 export interface TargetHandlers {
   /** A tap on the call or write square (results-pages §3.1); the href still opens. Absent → plain links. */
   onContact?: (t: TargetCard, channel: Channel) => void;
@@ -82,39 +90,46 @@ export interface TargetHandlers {
   onShare?: (t: TargetCard) => void;
 }
 
-/** §3.4: "2:14 pm" for the role-line suffix. */
-export const doneAt = (iso: string): string => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
-
 /**
  * One target card (urgency-and-readability §7, style-guide spec 06): paper, 2 px ink border, small shadow. Header row =
  * portrait or party badge (`Avatar`), name over the role line, the prior-vote status line, and the 44 px squares: write
  * (paper, results-pages §1.1, when the office has a contact form) then call (acid), or a hazard contact square for a
  * member-elect. Below it, in order: elect line, district line, position chip, holdings, visit, "On the record".
- * Every value is a data/ row.
+ * Every value is a data/ row. A `done` office (results-pages §7) is muted, wears the 64 px postmark on its top-right
+ * corner (the header text keeps 56 px clear of it), and under the role line carries the ✓ Share pill, the answer chip
+ * and, after "Form didn't work", the call square again so "Call <Surname> instead" has something to ring.
  */
 export function Target({ t, partner, done, ring, onContact, onShare }: { t: TargetCard; partner?: string | null; done?: TargetDone; ring?: boolean } & TargetHandlers) {
   const id = t.bioguide_id ?? t.name;
   const tap = (channel: Channel) => (onContact ? () => onContact(t, channel) : undefined);
   const external = onContact ? { target: '_blank' } : {};
+  const callSquare = t.phone && (
+    <a href={`tel:${t.phone.replace(/[^\d+]/g, '')}`} class={ring ? `${SQUARE} ${RING} bg-acid` : `${SQUARE} bg-acid`} aria-label={`Call ${t.name}`} title={`Call ${t.phone}`} onClick={tap('call')} data-call-square data-next={ring ? '' : undefined}>{PHONE_SVG}</a>
+  );
+  const chip = done?.outcome ? ANSWER_CHIP[done.outcome] : undefined;
   return (
-    <li class={done ? 'bg-newsprint/60 border-2 border-ink shadow-brutal-sm p-3.5' : 'bg-paper border-2 border-ink shadow-brutal-sm p-3.5 hover:bg-hazard/10'} data-target={id} data-done={done ? done.channel : undefined}>
+    <li class={done ? 'relative bg-newsprint/60 border-2 border-ink shadow-brutal-sm p-3.5' : 'bg-paper border-2 border-ink shadow-brutal-sm p-3.5 hover:bg-hazard/10'} data-target={id} data-done={done ? done.channel : undefined}>
+      {done && <Postmark wrote={done.channel === 'email'} name={t.name} at={done.at} size={64} id={`done-${id}`} class="absolute -top-2 right-2.5 z-10" />}
       <div class="flex items-start gap-3">
         <Avatar t={t} />
-        <div class="min-w-0 flex-1">
+        <div class={done ? 'min-w-0 flex-1 pr-14' : 'min-w-0 flex-1'}>
           <p class="font-condensed uppercase tracking-wide text-2xl leading-none">{t.name}</p>
-          <p class="font-mono text-xs uppercase tracking-[0.08em] mt-1" data-role-line>{roleLine(t)}{done ? ` · ${done.channel === 'email' ? 'Wrote' : 'Called'} ${doneAt(done.at)}` : ''}</p>
+          <p class="font-mono text-xs uppercase tracking-[0.08em] mt-1" data-role-line>{roleLine(t)}</p>
           <p class="label-ticker text-ink/70 mt-1">{t.prior_vote}</p>
+          {done && (
+            <div class="mt-2 -mr-14 flex items-center gap-2 flex-wrap" data-done-row>
+              <button type="button" class="btn btn-ghost shrink-0 px-3 py-2 text-sm" onClick={onShare ? () => onShare(t) : undefined} data-share-pill aria-label={`Share that you ${done.channel === 'email' ? 'wrote to' : 'called'} ${t.name}`}>✓ Share</button>
+              {chip && <span class="chip bg-paper" data-answer-chip={done.outcome}>{chip}</span>}
+              {done.outcome === 'form_failed' && callSquare}
+            </div>
+          )}
         </div>
-        {done ? (
-          <button type="button" class="btn btn-ghost shrink-0 px-3 py-2 text-sm" onClick={onShare ? () => onShare(t) : undefined} data-share-pill aria-label={`Share that you ${done.channel === 'email' ? 'wrote to' : 'called'} ${t.name}`}>✓ Share</button>
-        ) : (
+        {!done && (
           <>
             {t.contact_form_url && (
               <a href={t.contact_form_url} class={`${SQUARE} bg-paper`} rel="noopener noreferrer" {...external} aria-label={`Write to ${t.name}`} title={CONTACT_LABEL[t.contact_kind ?? 'homepage']} onClick={tap('email')} data-write-square>{ENVELOPE_SVG}</a>
             )}
-            {t.phone && (
-              <a href={`tel:${t.phone.replace(/[^\d+]/g, '')}`} class={ring ? `${SQUARE} ${RING} bg-acid` : `${SQUARE} bg-acid`} aria-label={`Call ${t.name}`} title={`Call ${t.phone}`} onClick={tap('call')} data-call-square data-next={ring ? '' : undefined}>{PHONE_SVG}</a>
-            )}
+            {callSquare}
             {!t.phone && t.elect && (
               <a href={t.elect.contact_url} class={`${SQUARE} bg-hazard`} rel="noopener noreferrer" {...external} aria-label={`Contact ${t.name}`} title="Contact" onClick={tap('email')} data-write-square>{ARROW_SVG}<span class="sr-only">Contact</span></a>
             )}
