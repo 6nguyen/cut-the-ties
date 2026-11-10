@@ -124,3 +124,37 @@ describe('write square (results-pages §2.3)', () => {
     expect(called).toContain('data-answer-chip="undecided">Said: undecided<');
 });
 });
+
+describe('done card (tap-receipts-everywhere §7.2)', () => {
+  const at = '2026-11-06T22:14:00Z';
+  it('wears the 96 px DONE postmark named by the title in place of the countdown, a muted band, a Done chip, "All n offices" and a bordered receipts CTA; still links to /results/<goal>', () => {
+    const out = render(h(SummaryCard, { g: goal({}), n: 1, done: { at } }));
+    expect(out).toMatch(/^<a href="\/results\/ndaa-1217" class="relative card-lg[^"]*mt-8"[^>]*data-done="goal" aria-label="Done: Strip §1217. See your receipts"/);
+    expect(out).toMatch(/role="img" aria-label="Done: Strip §1217, Nov 6 \d{1,2}:\d{2} [AP]M" data-postmark="done" data-postmark-size="96"/);
+    expect(out).toContain('absolute -top-8 right-3.5');
+    expect(out).toContain('>DONE<');
+    expect(out).not.toContain('data-countdown');
+    expect(out).toContain('>Done<');
+    expect(out).not.toContain('>Action 1<');
+    expect(out).toContain('opacity-60');
+    expect(out).toContain('bg-newsprint-muted');
+    expect(metaChips(goal({}), true)).toEqual(['All 3 offices', 'NDAA §219 / §1217']);
+    expect(out).toContain('>Correa · Padilla · Schiff<');
+    expect(out).toContain('class="btn btn-ghost self-start mt-auto">See your receipts →</span>');
+    expect(out).toContain('Decision: Nov 18, 2026'); // the date line stands in for the stamp
+    expect(out).not.toContain('tel:');
+  });
+  it('a split card holding two goals: the pair title names the postmark; chips Done / All n offices / House + Senate; both offices lines stay; no chamber stamp', () => {
+    const senate = goal({ slug: 'senate-leader', chamber: 'senate', targets: [padilla, schiff], short_label: 'Schumer vote' });
+    const g = goal({ slug: 'house-caucus', chamber: 'house', targets: [correa], also: senate, short_label: 'Jeffries vote' });
+    const pair = { title: 'Kick out Jeffries and Schumer', summary: 'Both.' };
+    const out = render(h(SummaryCard, { g, n: 2, pair, done: { at } }));
+    expect(out).toMatch(/aria-label="Done: Kick out Jeffries and Schumer, Nov 6 [^"]+" data-postmark="done"/);
+    expect(out).toContain('<h2 class="relative headline-lg">Kick out Jeffries and Schumer</h2>');
+    expect(metaChips(g, true)).toEqual(['All 3 offices', 'House + Senate']);
+    expect(out).toContain('data-offices="Jeffries vote"');
+    expect(out).toContain('data-offices="Schumer vote"');
+    expect(out).not.toContain('data-countdown');
+    expect(out).not.toContain('>House<');
+  });
+});

@@ -3,7 +3,8 @@ import type { LeadershipPair } from '@worker/types';
 import { surname } from '@worker/names';
 import { CATEGORY, PARTY_CLASS, fmtDate, portraitSrc, showsPortrait } from './Target';
 import Countdown from './Countdown';
-import { bandHtml, blocksOf, cardCopy, soonest } from './Results';
+import Postmark from './Postmark';
+import { bandHtml, blocksOf, cardCopy, soonest, type GoalDone } from './Results';
 
 /** results-pages §1.1–1.2: every office the card's blocks name, House block first on a split card. */
 export function officesOf(g: GoalCard): TargetCard[] {
@@ -23,11 +24,15 @@ export function officesLines(g: GoalCard): { label: string | null; targets: Targ
   return blocksOf(g).filter((b) => b.targets.length > 0).map((b) => ({ label: b.short_label, targets: b.targets }));
 }
 
-/** §1.1: the meta chips in order; a chip is one bordered Space Mono label. A card holding two goals drops the `short_label` chip (leadership-card-two-goals §4.2). */
-export function metaChips(g: GoalCard): string[] {
+/**
+ * §1.1: the meta chips in order; a chip is one bordered Space Mono label. A card holding two goals drops the `short_label`
+ * chip (leadership-card-two-goals §4.2). A done card (tap-receipts-everywhere §7.2) opens with "All <n> offices" instead.
+ */
+export function metaChips(g: GoalCard, done = false): string[] {
   const offices = officesOf(g);
   const writes = offices.some((t) => t.contact_form_url || t.elect);
-  const chips = [writes ? 'Call or write' : 'Call', `${offices.length} ${offices.length === 1 ? 'office' : 'offices'}`];
+  const n = `${offices.length} ${offices.length === 1 ? 'office' : 'offices'}`;
+  const chips = done ? [`All ${n}`] : [writes ? 'Call or write' : 'Call', n];
   if (g.also) chips.push('House + Senate');
   else if (g.short_label) chips.push(g.short_label);
   return chips;
@@ -42,30 +47,33 @@ export function eagerBand(html: string | null): string | null {
  * results-pages §1: one summary card on `/results` in the `/goals` card anatomy. The whole card is the link to
  * `/results/<goal>`; no phone number, ask, counts line or target card renders here. `photo` is the band's image id.
  * `pair` (leadership-card-two-goals §4): a card holding two goals takes the pair title and one offices line per block.
+ * `done` (tap-receipts-everywhere §7.2): every office has a receipt from this device this week; the card wears the
+ * DONE postmark in place of the countdown, a muted band, a "Done" chip and a bordered "See your receipts" CTA.
  */
-export default function SummaryCard({ g, n, photo, pair }: { g: GoalCard; n: number; photo?: string; pair?: LeadershipPair | null }) {
+export default function SummaryCard({ g, n, photo, pair, done = null }: { g: GoalCard; n: number; photo?: string; pair?: LeadershipPair | null; done?: GoalDone | null }) {
   const band = n === 1 ? eagerBand(bandHtml(photo)) : bandHtml(photo);
-  const stamp = soonest([g]);
+  const stamp = done ? null : soonest([g]);
   const date = fmtDate(g.decision_date);
   const title = cardCopy(g, pair).title;
   return (
-    <a href={`/results/${g.slug}`} class={`relative card-lg flex flex-col no-underline text-ink hover:bg-hazard/10 ${stamp ? 'mt-6' : ''}`} data-summary-card={g.slug} aria-label={`Action ${n}: ${title}. Open this action`}>
+    <a href={`/results/${g.slug}`} class={`relative card-lg flex flex-col no-underline text-ink hover:bg-hazard/10 ${done ? 'mt-8' : stamp ? 'mt-6' : ''}`} data-summary-card={g.slug} data-done={done ? 'goal' : undefined} aria-label={done ? `Done: ${title}. See your receipts` : `Action ${n}: ${title}. Open this action`}>
+      {done && <Postmark kind="done" name={title} at={done.at} size={96} id={`summary-${g.slug}`} class="absolute -top-8 right-3.5 z-10" />}
       {stamp && (
         <Countdown at={stamp.g.decision_at} date={stamp.g.decision_date} confirmed={stamp.g.decision_date_confirmed} id={`summary-${g.slug}`}
           title={g.also && stamp.g.chamber ? (stamp.g.chamber === 'house' ? 'House' : 'Senate') : null} class="absolute -top-6 right-3.5 z-10" />
       )}
-      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end ${stamp ? 'pt-16' : ''}`} data-band={photo}>
+      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end ${stamp || done ? 'pt-16' : ''} ${done ? 'opacity-60' : ''}`} data-band={photo}>
         <div class="absolute inset-0 halftone pointer-events-none" />
         {band && <div class="contents" dangerouslySetInnerHTML={{ __html: band }} />}
         <div class="relative flex gap-2 mb-3">
           <span class="chip bg-hazard text-ink border-ink">{CATEGORY[g.category]}</span>
-          <span class="chip bg-ink text-newsprint border-newsprint">Action {n}</span>
+          <span class="chip bg-ink text-newsprint border-newsprint">{done ? 'Done' : `Action ${n}`}</span>
         </div>
         <h2 class="relative headline-lg">{title}</h2>
         {date && !stamp && <p class="relative label-code mt-2 text-hazard">{g.election ? 'Primary' : 'Decision'}: {date}</p>}
       </div>
-      <div class="p-5 flex flex-col gap-3 flex-1">
-        <p class="flex flex-wrap gap-2" data-meta>{metaChips(g).map((c) => <span class="chip border-ink bg-paper">{c}</span>)}</p>
+      <div class={`p-5 flex flex-col gap-3 flex-1 ${done ? 'bg-newsprint-muted' : ''}`}>
+        <p class="flex flex-wrap gap-2" data-meta>{metaChips(g, !!done).map((c) => <span class="chip border-ink bg-paper">{c}</span>)}</p>
         {officesLines(g).map(({ label, targets }) => {
           const faces = targets.filter((t) => showsPortrait(t)).slice(0, 3);
           return (
@@ -82,7 +90,7 @@ export default function SummaryCard({ g, n, photo, pair }: { g: GoalCard; n: num
             </p>
           );
         })}
-        <span class={`btn ${n === 1 ? 'btn-primary' : 'btn-ghost'} self-start mt-auto`}>Open this action →</span>
+        <span class={`btn ${!done && n === 1 ? 'btn-primary' : 'btn-ghost'} self-start mt-auto`}>{done ? 'See your receipts →' : 'Open this action →'}</span>
       </div>
     </a>
   );

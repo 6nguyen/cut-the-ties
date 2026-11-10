@@ -36,7 +36,8 @@ export function dropCaptain(): void { write(CAPTAIN_KEY, null); }
 export function clearFunnel(): void { write(COMMIT_KEY, null); write(CAPTAIN_KEY, null); write(VISITS_KEY, null); write(RECEIPTS_KEY, null); }
 
 // call-follow-through §3: the device's own receipts for the next-office chain. Goal, action, target and
-// a time; pruned to 24 h on every read. Never sent: the Worker already has the receipt row.
+// a time; the rows are kept 7 days (tap-receipts-everywhere §7.1, the goal done stamp) while the office
+// squares read a 24 h window. Never sent: the Worker already has the receipt row.
 export const RECEIPTS_KEY = 'cut-ties:receipts';
 export type ReceiptChannel = 'call' | 'email';
 /**
@@ -46,13 +47,16 @@ export type ReceiptChannel = 'call' | 'email';
 export type ReceiptOutcome = 'will_support' | 'undecided' | 'opposed' | 'no_answer' | 'skip' | 'sent' | 'form_failed';
 /** `channel` arrived with results-pages §3.4; an older row without one was a call. `outcome` is the ask's answer when one was given. */
 export interface LoggedReceipt { v: 1; goal: string; action: string; target: string; at: string; channel?: ReceiptChannel; outcome?: ReceiptOutcome }
-const DAY_MS = 24 * 60 * 60_000;
-export function recentReceipts(now: Date = new Date()): LoggedReceipt[] {
+export const DAY_MS = 24 * 60 * 60_000;
+/** §7.1: a receipt row lives a week; `goalDone` reads the week, the office squares the last day. */
+export const KEEP_MS = 7 * DAY_MS;
+/** The device's receipt rows of the last `within` ms (default a day: the office squares and the next-office chain). */
+export function recentReceipts(now: Date = new Date(), within: number = DAY_MS): LoggedReceipt[] {
   const list = read<LoggedReceipt[]>(RECEIPTS_KEY);
-  return Array.isArray(list) ? list.filter((r) => r?.v === 1 && typeof r.at === 'string' && now.getTime() - Date.parse(r.at) < DAY_MS) : [];
+  return Array.isArray(list) ? list.filter((r) => r?.v === 1 && typeof r.at === 'string' && now.getTime() - Date.parse(r.at) < within) : [];
 }
 export function logReceipt(r: Omit<LoggedReceipt, 'v' | 'at'>, now: Date = new Date()): void {
-  write(RECEIPTS_KEY, [...recentReceipts(now).filter((x) => !(x.goal === r.goal && x.action === r.action && x.target === r.target)), { v: 1, ...r, at: now.toISOString() }]);
+  write(RECEIPTS_KEY, [...recentReceipts(now, KEEP_MS).filter((x) => !(x.goal === r.goal && x.action === r.action && x.target === r.target)), { v: 1, ...r, at: now.toISOString() }]);
 }
 /** The targets of one action this device filed a receipt for in the last 24 h. */
 export function receiptedTargets(goal: string, action: string, now: Date = new Date()): Set<string> {
@@ -60,8 +64,8 @@ export function receiptedTargets(goal: string, action: string, now: Date = new D
 }
 /** results-pages §4: the ask's answer goes on the receipt row. No row (the receipt was not counted) → nothing is kept; returns whether a row was. */
 export function setReceiptOutcome(goal: string, action: string, target: string, outcome: ReceiptOutcome, now: Date = new Date()): boolean {
-  const list = recentReceipts(now);
-  const row = list.find((x) => x.goal === goal && x.action === action && x.target === target);
+  const list = recentReceipts(now, KEEP_MS);
+  const row = list.find((x) => x.goal === goal && x.action === action && x.target === target && now.getTime() - Date.parse(x.at) < DAY_MS);
   if (!row) return false;
   row.outcome = outcome;
   write(RECEIPTS_KEY, list);
@@ -70,6 +74,22 @@ export function setReceiptOutcome(goal: string, action: string, target: string, 
 /** results-pages §3.4: this device's receipt per target of one action in the last 24 h, with its channel, time and answer. */
 export function receiptsByTarget(goal: string, action: string, now: Date = new Date()): Map<string, { channel: ReceiptChannel; at: string; outcome?: ReceiptOutcome }> {
   return new Map(recentReceipts(now).filter((r) => r.goal === goal && r.action === action).map((r) => [r.target, { channel: r.channel ?? 'call', at: r.at, ...(r.outcome ? { outcome: r.outcome } : {}) }]));
+}
+
+/**
+ * tap-receipts-everywhere §7.1: the goal is done on this device when every one of `targetIds` has a receipt row for
+ * this action in the last 7 days; `at` is the newest of them. No targets, or any without a row → null.
+ */
+export function goalDone(goal: string, action: string, targetIds: readonly string[], now: Date = new Date()): { at: string } | null {
+  if (targetIds.length === 0) return null;
+  const rows = recentReceipts(now, KEEP_MS).filter((r) => r.goal === goal && r.action === action);
+  let at = '';
+  for (const id of targetIds) {
+    const row = rows.find((r) => r.target === id);
+    if (!row) return null;
+    if (row.at > at) at = row.at;
+  }
+  return { at };
 }
 
 /** §2.1 return visit: anything still to do? */

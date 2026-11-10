@@ -41,12 +41,13 @@ const q = (sel: string) => root.querySelector(sel);
 const qa = (sel: string) => [...root.querySelectorAll(sel)];
 const click = async (sel: string) => { await act(() => { (q(sel) as HTMLElement).click(); }); await flush(); };
 
-async function mount(goal = 'ndaa-1217') {
-  sessionStorage.setItem('cut-ties:route', JSON.stringify(routeResponse));
+/** `goal` null mounts the /results grid (a default parameter would swallow `undefined`). */
+async function mount(goal: string | null = 'ndaa-1217', data: RouteResponse = routeResponse) {
+  sessionStorage.setItem('cut-ties:route', JSON.stringify(data));
   localStorage.setItem('cut-ties:place', JSON.stringify({ state: 'CA', district: 46 }));
   root = document.createElement('div');
   document.body.appendChild(root);
-  await act(() => { render(h(Results, { goal, photos: {} }), root); });
+  await act(() => { render(h(Results, { goal: goal ?? undefined, photos: {} }), root); });
   await flush();
 }
 
@@ -156,8 +157,12 @@ describe('receipt modal (results-pages §3)', () => {
     expect(q('[data-ask="write"]')).not.toBeNull();
     expect(qa('[data-ask-chip]').map((c) => c.textContent)).toEqual(['Sent it', "Form didn't work"]);
     expect(q('[data-next-office]')).toBeNull();
+    // tap-receipts-everywhere §7.3: the third receipt finishes the goal, so the control is the next open goal
     expect(q('[data-next-link]')?.getAttribute('href')).toBe('/results/state-bonds');
-    expect(q('[data-next-link]')?.textContent).toBe('Your other action →');
+    expect(q('[data-next-link]')?.textContent).toBe('Your next action →');
+    expect(q('.label-ticker')?.textContent).toContain('Done · Nov 6');
+    expect(q('article[data-done="goal"] [data-postmark="done"]')?.getAttribute('aria-label')).toMatch(/^Done: Strip §1217, Nov 6/);
+    expect(q('[data-other-action="state-bonds"]')?.textContent).toContain('Your next action');
     expect(q('[data-remind]')).toBeNull();
     expect(q('[data-target="C001110"] [data-role-line]')?.textContent).toBe('Representative · CA-46');
     expect(q('[data-target="C001110"] [data-postmark="wrote"]')).not.toBeNull();
@@ -361,5 +366,67 @@ describe('the ask (results-pages §4, PRD receipt-sheet-and-done-stamps §1–3)
     // after 24 h the row is gone and the squares are back
     localStorage.setItem('cut-ties:receipts', JSON.stringify([{ v: 1, goal: 'ndaa-1217', action: 'ndaa-1217-call', target: 'C001110', at: '2026-11-05T22:13:00Z', channel: 'call', outcome: 'opposed' }]));
     expect(recentReceipts()).toEqual([]);
+  });
+});
+
+// tap-receipts-everywhere §7.3–7.4, §8: a goal with a receipt for every office this week is done; /results shows
+// today's two open goals then the done ones, and a goal in the route's four opens by its slug.
+describe('goal done and rollover (tap-receipts-everywhere §7–8)', () => {
+  const third = { ...ndaa, slug: 'primary-2028', title: 'Primary', category: 'electoral', action: 'primary-2028-call', short_label: null, targets: [correa], decision_date: '2026-11-20' } as GoalCard;
+  const fourth = { ...ndaa, slug: 'senate-leader', title: 'Senate', category: 'leadership', action: 'senate-leader-call', short_label: null, targets: [padilla], decision_date: '2027-01-05' } as GoalCard;
+  const soon = { ...ndaa, decision_date: '2026-11-15' }; // the soonest decision, so the page stamp must skip it once done
+  const four: RouteResponse = { ...routeResponse, goals: [soon, third, fourth, bonds] };
+  const row = (goal: string, action: string, target: string, at: string) => ({ v: 1, goal, action, target, at, channel: 'call' });
+  const ndaaDone = ['C001110', 'P000145', 'S001150'].map((t, i) => row('ndaa-1217', 'ndaa-1217-call', t, `2026-11-04T1${i}:00:00Z`));
+  const seed = (rows: unknown[]) => localStorage.setItem('cut-ties:receipts', JSON.stringify(rows));
+  const cards = () => qa('[data-summary-card]').map((c) => c.getAttribute('data-summary-card'));
+
+  it('/results: the open goals come first as Action 1 and 2, then the done goal with its DONE postmark; the page stamp skips the done goal', async () => {
+    seed(ndaaDone);
+    await mount(null, four);
+    expect(cards()).toEqual(['primary-2028', 'senate-leader', 'ndaa-1217']);
+    expect(q('[data-summary-card="primary-2028"]')?.textContent).toContain('Action 1');
+    expect(q('[data-summary-card="senate-leader"]')?.textContent).toContain('Action 2');
+    const done = q('[data-summary-card="ndaa-1217"][data-done="goal"]');
+    expect(done?.querySelector('[data-postmark="done"]')?.getAttribute('aria-label')).toMatch(/^Done: Strip §1217, Nov 4/);
+    expect(done?.textContent).toContain('All 3 offices');
+    expect(done?.textContent).toContain('See your receipts →');
+    expect(q('h1')?.textContent).toBe('Your two actions this week');
+    expect(q('[data-countdown="page"]')?.textContent).toContain('Nov 20');
+    expect(q('[data-countdown="page"]')?.textContent).not.toContain('Nov 15');
+    expect(q('[data-all-done]')).toBeNull();
+  });
+  it('/results: every goal done → the stamped cards newest first, the all-done message with the /goals link and no page stamp', async () => {
+    seed([...ndaaDone, row('primary-2028', 'primary-2028-call', 'C001110', '2026-11-05T09:00:00Z')]);
+    await mount(null, { ...routeResponse, goals: [soon, third] });
+    expect(cards()).toEqual(['primary-2028', 'ndaa-1217']);
+    expect(qa('[data-done="goal"]')).toHaveLength(2);
+    expect(q('[data-all-done]')?.textContent).toContain('You have done every action open for your district this week.');
+    expect(q('[data-all-done] a[href="/goals"]')).not.toBeNull();
+    expect(q('[data-countdown="page"]')).toBeNull();
+  });
+  it('a receipt older than 7 days moves the goal back into the open ones', async () => {
+    seed([...ndaaDone.slice(0, 2), row('ndaa-1217', 'ndaa-1217-call', 'S001150', '2026-10-30T22:00:00Z')]);
+    await mount(null, four);
+    expect(cards()).toEqual(['ndaa-1217', 'primary-2028']);
+    expect(qa('[data-done="goal"]')).toHaveLength(0);
+  });
+  it('/results/<done goal>: "Done · <day>" in the ticker, the DONE postmark on the card and the "Your next action" mini card for the first open goal', async () => {
+    seed(ndaaDone);
+    await mount('ndaa-1217', four);
+    expect(q('.label-ticker')?.textContent).toBe('← Your two actions · Done · Nov 4');
+    expect(q('article[data-done="goal"] [data-postmark="done"]')?.getAttribute('aria-label')).toMatch(/^Done: Strip §1217, Nov 4/);
+    expect(q('[data-countdown="ndaa-1217"]')).toBeNull();
+    expect(q('[data-other-action="primary-2028"]')?.textContent).toContain('Your next action');
+    expect(root.textContent).not.toContain("This isn't one of your two actions");
+  });
+  it('a goal beyond the pair opens by its slug: "Action 3 of 4" with the next open goal as its other; the last one points back to the first', async () => {
+    await mount('senate-leader', four);
+    expect(q('.label-ticker')?.textContent).toBe('← Your two actions · Action 3 of 4');
+    expect(q('[data-other-action="state-bonds"]')?.textContent).toContain('Your other action');
+    root.remove();
+    await mount('state-bonds', four);
+    expect(q('.label-ticker')?.textContent).toBe('← Your two actions · Action 4 of 4');
+    expect(q('[data-other-action="ndaa-1217"]')).not.toBeNull();
   });
 });

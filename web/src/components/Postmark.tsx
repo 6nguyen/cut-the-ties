@@ -17,14 +17,19 @@ const SIZE = {
  * the stamp's grain. 96 px heads the receipt modal; 64 px sits on a done card's corner. `role="img"` with the
  * sentence as its name; `id` keys the SVG grain filter, one per instance. 32 px sits after a whip-table row's number.
  */
-export default function Postmark({ wrote, name, at, size = 96, id, class: cls = '' }: { wrote: boolean; name: string; at: string | Date; size?: 96 | 64 | 32; id: string; class?: string }) {
+export type PostmarkKind = 'called' | 'wrote' | 'done';
+const WORD: Record<PostmarkKind, string> = { called: 'CALLED', wrote: 'WROTE', done: 'DONE' };
+/** `kind` (tap-receipts-everywhere §7.2): `done` stamps a finished goal, named "Done: <title>, <day> <time>"; otherwise `wrote` picks CALLED or WROTE. */
+export default function Postmark({ wrote, kind, name, at, size = 96, id, class: cls = '' }: { wrote?: boolean; kind?: PostmarkKind; name: string; at: string | Date; size?: 96 | 64 | 32; id: string; class?: string }) {
   const d = typeof at === 'string' ? new Date(at) : at;
+  const k: PostmarkKind = kind ?? (wrote ? 'wrote' : 'called');
+  const verb = k === 'done' ? 'Done:' : k === 'wrote' ? 'Wrote to' : 'Called';
   const s = SIZE[size];
   const filter = `postmark-grain-${id}`;
   // The ring is `absolute inset-0`, so the box must be positioned; a caller that places it (`absolute …`) wins.
   const positioned = /\b(absolute|fixed|sticky|relative)\b/.test(cls);
   return (
-    <div class={`shrink-0 ${positioned ? '' : 'relative'} ${cls}`.replace(/\s+/g, ' ').trim()} style={{ width: `${size}px`, height: `${size}px` }} role="img" aria-label={`${wrote ? 'Wrote to' : 'Called'} ${name}, ${postmarkDay(d)} ${postmarkTime(d)}`} data-postmark={wrote ? 'wrote' : 'called'} data-postmark-size={size}>
+    <div class={`shrink-0 ${positioned ? '' : 'relative'} ${cls}`.replace(/\s+/g, ' ').trim()} style={{ width: `${size}px`, height: `${size}px` }} role="img" aria-label={`${verb} ${name}, ${postmarkDay(d)} ${postmarkTime(d)}`} data-postmark={k} data-postmark-size={size}>
       <svg aria-hidden="true" width="0" height="0" class="absolute">
         <filter id={filter} x="-5%" y="-5%" width="110%" height="110%">
           <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="noise" />
@@ -35,7 +40,7 @@ export default function Postmark({ wrote, name, at, size = 96, id, class: cls = 
         style={{ filter: `url(#${filter})`, WebkitMaskImage: MASK, maskImage: MASK }}>
         <span class={`postmark-round absolute ${s.inner} border-crimson`} />
         <span class={`font-mono font-bold ${s.date} leading-none tracking-[0.16em] uppercase`}>{postmarkDay(d)}</span>
-        <span class={`font-condensed ${s.word} leading-none tracking-[0.06em]`}>{wrote ? 'WROTE' : 'CALLED'}</span>
+        <span class={`font-condensed ${s.word} leading-none tracking-[0.06em]`}>{WORD[k]}</span>
         <span class={`font-mono font-bold ${s.date} leading-none tracking-[0.16em]`}>{postmarkTime(d)}</span>
       </div>
     </div>

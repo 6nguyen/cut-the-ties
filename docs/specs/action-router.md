@@ -60,11 +60,9 @@ documents, receipts and reports are in `personalised-documents.md`.
 4. **Unresolved.** No match returns 404 `unresolved` with "retry, or pick
    your state and district"; the page shows the message, keeps the field
    and opens a state + district picker that posts `{state, district}` and
-   skips the geocoder. When a suggestion provider is set the page shows
-   "We could not place that address. Pick one of the suggestions, check
-   the address, or pick your state and district." instead of the Worker's
-   text (`UNRESOLVED_WITH_SUGGESTIONS` in `AddressForm.tsx`); `none`
-   keeps the Worker's message. A state/district with no members in `data/` returns
+   skips the geocoder. With a suggestion provider the page shows its own
+   text (`UNRESOLVED_WITH_SUGGESTIONS` in `AddressForm.tsx`, naming the
+   suggestions); `none` keeps the Worker's message. A state/district with no members in `data/` returns
    404 `no_delegation`.
 5. **Results (`/results`).** Header `<STATE-NN> · change address`, H1
    "Your two actions this week", one line naming the delegation ("Your
@@ -112,7 +110,8 @@ documents, receipts and reports are in `personalised-documents.md`.
 - `POST /api/route` body `{address, turnstile?}` or `{state, district,
   by_location?, by_suggestion?, turnstile?}`, plus optional `via`
   (`social-sharing.md` §6; malformed → 400 `bad_request`). 200 `{state, district, house, senators, state_row, goals}`
-  where `goals` is at most two `GoalCard`s (`worker/src/route.ts`). A
+  where `goals` is at most four `GoalCard`s, the first two as before
+  (`worker/src/route.ts` `SLOTS`, `ranking.ts` `topSlots(…, 4)`). A
   leadership `GoalCard` carries `chamber`, `uncalled: Chamber[]` (the
   Democratic-caucus seats with no called result) and, when both goals
   share the slot, `also: GoalCard` for the second chamber. A `TargetCard`
@@ -210,7 +209,8 @@ documents, receipts and reports are in `personalised-documents.md`.
       `unresolved` (`worker/test/route.test.ts`).
 - [ ] A failed submit resets the Turnstile widget, so the retry carries
       a fresh token.
-- [ ] Two slots for a resolved district, each with ≥1 target; an
+- [ ] The first two slots for a resolved district are unchanged, each
+      with ≥1 target; up to two more follow in rank order; an
       all-Republican delegation with no incoming change gets the NDAA
       goal plus the state goal.
 - [ ] Leadership-goal targets caucus with the Democrats and come from the

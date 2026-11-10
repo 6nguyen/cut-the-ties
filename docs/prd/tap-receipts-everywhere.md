@@ -1,5 +1,5 @@
 # Tap receipts everywhere — PRD
-Status: IN PROGRESS (§7–8 next) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: DEV COMPLETE (§10 owner device test) · Owner: George Nguyen · Last updated: 2026-11-10
 
 ## Problem
 On `/goals/senate-leader/` the "Who to call" squares open the dialer or
@@ -582,17 +582,19 @@ week.
   - [x] 4. Member page
   - [x] 5. Whip table
   - [x] 6. Receipts count from every page
-  - [ ] 7. Goal done stamp
-  - [ ] 8. Rollover on `/results`
+  - [x] 7. Goal done stamp
+  - [x] 8. Rollover on `/results`
   - [x] 9. Reason picks name the leader
   - [ ] 10. Owner device test
-- Completed: §1–6, §9 (2026-11-10, one PR on `feat/tap-receipts-everywhere`)
+- Completed: §1–6, §9 (2026-11-10, PR 101); §7–8 (2026-11-10, PR on
+  `feat/tap-receipts-rollover`)
 - Folded: §1–6, §9 → `docs/specs/results-pages.md` (Purpose, §4, Data &
   contracts), `goal-pages.md` (§2, Invariants, Performance budget),
   `member-pages.md` (§3, §8, Invariants, Performance budget),
-  `personalised-documents.md` (§1, §4, Data & contracts)
-- Branch / open PRs: `feat/tap-receipts-everywhere` (§1–6 + §9); §7–8
-  follow on their own branch
+  `personalised-documents.md` (§1, §4, Data & contracts); §7–8 →
+  `results-pages.md` (§1, §2, §5, §7, Data & contracts, Invariants,
+  Performance budget), `action-router.md` (Data & contracts, Invariants)
+- Branch / open PRs: `feat/tap-receipts-rollover` (§7–8); PR 101 merged
 - Files changed (file:line map): `web/src/components/receipt-flow.tsx`
   (new: `useReceiptFlow`, `blocksOf`, `whereOf` seat fallback, `report`,
   `ReceiptFlow`), `Results.tsx` (mounts the engine), `GoalTargets.tsx`
@@ -609,15 +611,22 @@ week.
   `data/goals/house-caucus.yaml`, `data/goals/senate-leader.yaml`
   (`{{leader}}` points). Tests: `web/src/components/receipt-surfaces.test.tsx`
   (8), `reasons.test.tsx` (4), `worker/test/goals.test.ts` (+1).
+  §7–8: `worker/src/ranking.ts` (`topSlots`), `route.ts` (`SLOTS = 4`),
+  `web/src/lib/commitments.ts` (`KEEP_MS`, `goalDone`, 7-day rows),
+  `Postmark.tsx` (`kind="done"`), `SummaryCard.tsx` (`done` card),
+  `Results.tsx` (`goalDoneAt`, `splitGoals`, done ticker/card, "Your
+  next action" mini card, all-done message, re-split after each receipt).
+  Tests: `worker/test/ranking.test.ts` (+1), `route.test.ts` (four
+  slots), `web/src/lib/commitments.test.ts` (+1 describe),
+  `SummaryCard.test.tsx` (+2), `results-page.test.tsx` (+5).
 - Tests run + result: `quiet-check test` PASS, `test-web` PASS (307),
   `build` PASS, `tsc` PASS (web tsc at its 22-error baseline), `prd-lint`
   and `doc-lint` PASS. Chunks (gzip): receipt-flow 2.8 KB, GoalTargets
   1.2 KB, MemberContact 1.3 KB, WhipReceipts 1.0 KB, ActForm 7.9 KB.
-- Remaining: §7–8 (next PR), §10 owner device test
+- Remaining: §10 owner device test
 - Decisions since last update: see 2026-11-10 entries under Changes.
 - Known failures / blockers: none
-- Next action: /implement-prd-section tap-receipts-everywhere.md (next:
-  §7. Goal done stamp, in one PR with §8)
+- Next action: §10 owner device test on the live site, then archive
 
 ## Open questions
 1. Which goal does a member-page or whip-table call count toward when the
@@ -679,3 +688,11 @@ week.
   the whip-table modal has no next office (Next links to `/results`,
   `/goals` without a place); a receipt tapped without a stored place
   takes the tapped office's own seat.
+- 2026-11-10 — §7–8 shipped: the "Done" chip replaces "Action n" and one
+  "All <n> offices" chip replaces the "Call or write" / count pair on a
+  done card; `setReceiptOutcome` answers only a row within 24 h though
+  rows are kept 7 days; a route goal beyond the pair opens as "Action n
+  of N" with the next open goal as its other action; a done goal's other
+  is the first open goal, titled "Your next action"; `Results` re-splits
+  open/done after every receipt (`tick` on `flow.done`), so finishing the
+  last office turns the page into the done card without a reload.

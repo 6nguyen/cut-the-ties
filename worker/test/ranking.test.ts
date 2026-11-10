@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
-import { evaluate, parseRule, rank, ruleInput, slots, topTwo, urgency } from '../src/ranking';
+import { evaluate, parseRule, rank, ruleInput, slots, topSlots, topTwo, urgency } from '../src/ranking';
 import { loadRows } from '../src/load';
 import { MemoryRepo } from '../src/repo';
 import type { Delegation, Goal, Member } from '../src/types';
@@ -145,6 +145,23 @@ describe('ranking table (§5.4): six delegations', () => {
     const mk = (slug: string, date: string): Goal => ({ ...base, slug, decision_date: date, priority: 1, eligibility: '{"always":true}' });
     const out = rank([mk('b', '2027-06-01'), mk('a', '2027-05-01')], delegation('D', []), TODAY);
     expect(out.map((x) => x.goal.slug)).toEqual(['a', 'b']);
+  });
+  it('tap-receipts-everywhere §8.1: topSlots(…, 4) keeps today\'s two first, then the next ranked slots; one eligible goal still pads with the state goal', async () => {
+    const goals = await repo.activeGoals();
+    const d = delegation('D', ['D', 'D']);
+    const four = topSlots(goals, d, TODAY, 4);
+    expect(four.slice(0, 2)).toEqual(topTwo(goals, d, TODAY));
+    expect(four.map((s) => s.goal.slug)).toEqual(['ndaa-1217', 'house-caucus']); // D/DD: the leadership pair is one slot; the state goal is not eligible
+    expect(four[1].also?.slug).toBe('senate-leader');
+    expect(topSlots(goals, delegation('R', ['D', 'R']), TODAY, 4).map((s) => s.goal.slug)).toEqual(['ndaa-1217', 'senate-leader']);
+    const base = rows.goals[0];
+    const mk = (slug: string, priority: number): Goal => ({ ...base, slug, priority, category: 'federal_vote', eligibility: '{"always":true}' }); // not leadership: those merge into one slot
+    const many = [mk('a', 3), mk('b', 2), mk('c', 1), mk('d', 1), mk('e', 1)];
+    expect(topSlots(many, d, TODAY, 4).map((s) => s.goal.slug)).toEqual(['a', 'b', 'c', 'd']);
+    const ndaa: Goal = { ...base, slug: 'n', category: 'federal_vote', eligibility: '{"house":{}}' };
+    const state: Goal = { ...base, slug: 's', category: 'state', eligibility: '{"state":{"nonempty":["campaign_name"]}}' };
+    expect(topSlots([ndaa, state], delegation('D', []), TODAY, 4).map((s) => s.goal.slug)).toEqual(['n', 's']);
+    expect(topSlots([ndaa, state], delegation(null, []), TODAY, 4)).toEqual([]);
   });
   it('one eligible goal → state goal is the second card; none → empty', () => {
     const base = rows.goals[0];

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { goalDone } from '../lib/commitments';
+import Postmark, { postmarkDay } from './Postmark';
 import { districtLabel, route, type GoalCard, type RouteResponse } from '../lib/api';
 import type { Chamber, LeadershipPair } from '@worker/types';
 import { cacheRoute, clearPlace, loadPlace, peekRoute } from '../lib/store';
@@ -7,8 +9,37 @@ import SummaryCard from './SummaryCard';
 import Counts from './Counts';
 import { useReceiptFlow } from './receipt-flow';
 export { blocksOf, targetId, doneMap, nextTarget } from './receipt-flow';
-import { blocksOf } from './receipt-flow';
+import { blocksOf, targetId } from './receipt-flow';
 import Countdown, { targetOf } from './Countdown';
+
+/** tap-receipts-everywhere §7.1: a goal this device finished this week; `at` is its newest receipt. */
+export interface GoalDone { at: string }
+/**
+ * §7.1: done when every target of every block (both blocks of a split card) has a receipt row from this device in
+ * the last 7 days; `at` is the newest across the blocks. A block without an action or any targets is never done.
+ */
+export function goalDoneAt(g: GoalCard, now: Date = new Date()): GoalDone | null {
+  const blocks = blocksOf(g).filter((b) => b.targets.length > 0);
+  if (blocks.length === 0) return null;
+  let at = '';
+  for (const b of blocks) {
+    const d = b.action ? goalDone(b.slug, b.action, b.targets.map(targetId), now) : null;
+    if (!d) return null;
+    if (d.at > at) at = d.at;
+  }
+  return { at };
+}
+/** §8.2: the route's slots split into the open goals in route order and the done ones, newest `at` first. */
+export function splitGoals(goals: readonly GoalCard[], now: Date = new Date()): { open: GoalCard[]; done: { g: GoalCard; at: string }[] } {
+  const open: GoalCard[] = [];
+  const done: { g: GoalCard; at: string }[] = [];
+  for (const g of goals) {
+    const d = goalDoneAt(g, now);
+    if (d) done.push({ g, at: d.at }); else open.push(g);
+  }
+  done.sort((a, b) => (a.at > b.at ? -1 : a.at < b.at ? 1 : 0));
+  return { open, done };
+}
 
 /** urgency-and-readability §4: the soonest upcoming countdown target among cards (a leadership card holds two goals). */
 export function soonest(goals: GoalCard[], now = Date.now()): { g: GoalCard; target: number } | null {
@@ -69,8 +100,9 @@ function Block({ g, state, district, label, st, two }: { g: GoalCard; state: str
  * `st` (results-pages §3) wires the squares to the receipt modal on `/results/<goal>`; without it the card is static.
  * `pair` (leadership-card-two-goals §2–3): a card holding two goals takes its title and summary, gives each block an
  * h3 and a "More on this vote" link, and puts a 2 px rule above the Senate block.
+ * `done` (tap-receipts-everywhere §7.3): the goal is finished on this device; the DONE postmark replaces the countdown.
  */
-export function Card({ g, n, state, district, photo, st, pair }: { g: GoalCard; n: number; state: string; district: number; photo?: string; st?: CardState; pair?: LeadershipPair | null }) {
+export function Card({ g, n, state, district, photo, st, pair, done = null }: { g: GoalCard; n: number; state: string; district: number; photo?: string; st?: CardState; pair?: LeadershipPair | null; done?: GoalDone | null }) {
   const band = bandHtml(photo);
   const date = fmtDate(g.decision_date);
   const split = g.chamber !== undefined && (g.also !== undefined || (g.uncalled?.length ?? 0) > 0);
@@ -79,19 +111,20 @@ export function Card({ g, n, state, district, photo, st, pair }: { g: GoalCard; 
   const chambers: Chamber[] = ['house', 'senate'];
   // §4.4: the stamp counts to this card's target (on a split card, the sooner chamber block) and replaces the
   // "Decision:" line for an upcoming date; a past or empty date keeps the line and shows no stamp.
-  const stamp = soonest([g]);
+  const stamp = done ? null : soonest([g]);
   return (
-    <article class={`relative card-lg flex flex-col ${stamp ? 'mt-6' : ''}`}>
+    <article class={`relative card-lg flex flex-col ${done ? 'mt-8' : stamp ? 'mt-6' : ''}`} data-done={done ? 'goal' : undefined}>
+      {done && <Postmark kind="done" name={copy.title} at={done.at} size={96} id={`card-${g.slug}`} class="absolute -top-8 right-3.5 z-10" />}
       {stamp && (
         <Countdown at={stamp.g.decision_at} date={stamp.g.decision_date} confirmed={stamp.g.decision_date_confirmed} id={stamp.g.slug}
           title={split && stamp.g.chamber ? CHAMBER[stamp.g.chamber] : null} class="absolute -top-6 right-3.5 z-10" />
       )}
-      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end ${stamp ? 'pt-16' : ''}`} data-band={photo}>
+      <div class={`relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end ${stamp || done ? 'pt-16' : ''} ${done ? 'opacity-60' : ''}`} data-band={photo}>
         <div class="absolute inset-0 halftone pointer-events-none" />
         {band && <div class="contents" dangerouslySetInnerHTML={{ __html: band }} />}
         <div class="relative flex gap-2 mb-3">
           <span class="chip bg-hazard text-ink border-ink">{CATEGORY[g.category]}</span>
-          <span class="chip bg-ink text-newsprint border-newsprint">Action {n}</span>
+          <span class="chip bg-ink text-newsprint border-newsprint">{done ? 'Done' : `Action ${n}`}</span>
         </div>
         <h2 class="relative headline-lg">{copy.title}</h2>
         {date && !split && (!stamp || g.election) && <p class="relative label-code mt-2 text-hazard">{g.election ? 'Primary' : 'Decision'}: {date}</p>}
@@ -121,8 +154,8 @@ export function Card({ g, n, state, district, photo, st, pair }: { g: GoalCard; 
   );
 }
 
-/** results-pages §2.1: the "Your other action" mini card under the one-action page's card. */
-function OtherAction({ g, photo, pair }: { g: GoalCard; photo?: string; pair?: LeadershipPair | null }) {
+/** results-pages §2.1: the "Your other action" mini card under the one-action page's card; "Your next action" under a done goal (tap-receipts-everywhere §8.4). */
+function OtherAction({ g, photo, pair, label = 'Your other action' }: { g: GoalCard; photo?: string; pair?: LeadershipPair | null; label?: string }) {
   const band = bandHtml(photo);
   const stamp = soonest([g]);
   return (
@@ -133,7 +166,7 @@ function OtherAction({ g, photo, pair }: { g: GoalCard; photo?: string; pair?: L
         {band && <div class="contents" dangerouslySetInnerHTML={{ __html: band }} />}
       </div>
       <div class="p-4 flex flex-col gap-1 min-w-0">
-        <p class="label-code">Your other action</p>
+        <p class="label-code">{label}</p>
         <p class="font-condensed uppercase tracking-wide text-2xl leading-none">{cardCopy(g, pair).title}</p>
       </div>
     </a>
@@ -159,9 +192,18 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
   }, []);
 
   const current = useMemo(() => (goal && data ? cardFor(data.goals, goal) ?? null : null), [goal, data]);
-  const other = current && data ? data.goals.find((x) => x.slug !== current.slug) ?? null : null;
-  // tap-receipts-everywhere §1: the receipt engine (results-pages §3–4); the "Your other action" link once every office is done.
-  const flow = useReceiptFlow({ goal: current, state: data?.state ?? '', district: data?.district ?? null, other: other ? { href: `/results/${other.slug}`, label: 'Your other action →' } : { href: '/goals', label: 'See all goals →' } });
+  // tap-receipts-everywhere §8.2: the open goals in route order and the done ones; re-read after every receipt.
+  const [tick, setTick] = useState(0);
+  const { open, done } = useMemo(() => splitGoals(data?.goals ?? []), [data, tick]);
+  const doneAt = current ? done.find((d) => d.g === current)?.at ?? null : null;
+  // §8.4: an open goal's other is the other of the pair (the next open one beyond the pair); a done goal's next is the first open goal.
+  const idx = current ? open.indexOf(current) : -1;
+  const others = open.filter((x) => x !== current);
+  const other = !current ? null : doneAt ? others[0] ?? null : idx < 2 ? others.find((x) => open.indexOf(x) < 2) ?? others[0] ?? null : open[idx + 1] ?? others[0] ?? null;
+  const nextLabel = doneAt ? 'Your next action' : 'Your other action';
+  // tap-receipts-everywhere §1: the receipt engine (results-pages §3–4); the next-action link once every office is done.
+  const flow = useReceiptFlow({ goal: current, state: data?.state ?? '', district: data?.district ?? null, other: other ? { href: `/results/${other.slug}`, label: `${nextLabel} →` } : { href: '/goals', label: 'See all goals →' } });
+  useEffect(() => setTick((t) => t + 1), [flow.done]);
   // §2.3: the tab title follows the card (the static page carries the goal's own title).
   useEffect(() => { if (current && typeof document !== 'undefined') document.title = `${cardCopy(current, pair).title} — Cut the Ties`; }, [current]);
 
@@ -178,8 +220,7 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
   const where = districtLabel(data.state, data.district);
 
   if (goal) {
-    const n = current ? data.goals.indexOf(current) : -1;
-    if (n < 0 || !current) return (
+    if (!current) return (
       <div>
         <p class="label-ticker mb-2"><a href="/results" class="underline">← Your two actions</a></p>
         <div class="card p-5 max-w-xl">
@@ -190,21 +231,23 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
     );
     const g = current;
     const st: CardState = { done: flow.done, next: flow.next, handlers: flow.handlers };
+    const n = idx + 1;
 
     return (
       <div>
-        <p class="label-ticker mb-2"><a href="/results" class="underline">← Your two actions</a> · Action {n + 1} of {data.goals.length}</p>
+        <p class="label-ticker mb-2"><a href="/results" class="underline">← Your two actions</a> · {doneAt ? `Done · ${postmarkDay(new Date(doneAt))}` : `Action ${n} of ${open.length}`}</p>
         <h1 class="display-lg">{cardCopy(g, pair).title}</h1>
         <div class="mt-8 max-w-3xl">
-          <Card g={g} n={n + 1} state={data.state} district={data.district} photo={photos[g.slug]} st={st} pair={pair} />
+          <Card g={g} n={n} state={data.state} district={data.district} photo={photos[g.slug]} st={st} pair={pair} done={doneAt ? { at: doneAt } : null} />
         </div>
-        {other && <div class="mt-10 max-w-3xl"><OtherAction g={other} photo={photos[other.slug]} pair={pair} /></div>}
+        {other && <div class="mt-10 max-w-3xl"><OtherAction g={other} photo={photos[other.slug]} pair={pair} label={nextLabel} /></div>}
         {flow.modal}
       </div>
     );
   }
 
-  const page = soonest(data.goals); // §4.5: one page-wide stamp for the soonest target across both slots
+  const shown = open.slice(0, 2); // §8.2: today's two open goals; the rest of the open ones wait for a rollover
+  const page = soonest(shown); // §4.5 / §7.4: one page-wide stamp for the soonest target across the open goals
   return (
     <div>
       <div class={`relative ${page ? 'md:pr-[400px]' : ''}`}>
@@ -223,7 +266,14 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
         </div>
       ) : (
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-8">
-          {data.goals.map((g, i) => <SummaryCard g={g} n={i + 1} photo={photos[g.slug]} pair={pair} />)}
+          {shown.map((g, i) => <SummaryCard g={g} n={i + 1} photo={photos[g.slug]} pair={pair} />)}
+          {done.map(({ g, at }, i) => <SummaryCard g={g} n={shown.length + i + 1} photo={photos[g.slug]} pair={pair} done={{ at }} />)}
+        </div>
+      )}
+      {data.goals.length > 0 && shown.length === 0 && (
+        <div class="card p-5 mt-8 max-w-xl" data-all-done>
+          <p class="font-semibold">You have done every action open for your district this week.</p>
+          <a href="/goals" class="btn btn-ghost mt-4">See all goals →</a>
         </div>
       )}
       <p class="mt-8"><a href="/goals" class="label-code underline underline-offset-4">See all goals →</a></p>

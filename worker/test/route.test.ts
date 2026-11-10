@@ -4,7 +4,7 @@ import { createApp } from '../src/index';
 import { loadRows } from '../src/load';
 import { MemoryRepo } from '../src/repo';
 import { DEFAULT_VINTAGE, VINTAGE_OVERRIDES, classifyAddress, parseCensus } from '../src/geocode';
-import { buildRoute, type RouteResponse } from '../src/route';
+import { SLOTS, buildRoute, type RouteResponse } from '../src/route';
 import { ENV, FIXTURES, VINTAGE_POINTS, censusReply, fakeFetch, vintageCoordinatesReply } from './fixtures';
 
 const rows = loadRows(join(__dirname, '..', '..', 'data'), '2026-11-04T00:00:00Z');
@@ -38,8 +38,11 @@ describe('POST /api/route — six fixture addresses (§1 acceptance)', () => {
       const body = (await res.json()) as RouteResponse;
       expect(body.state).toBe(f.state);
       expect(body.district).toBe(f.district);
-      expect(body.goals).toHaveLength(2);
-      expect(body.goals.map((g) => g.slug)).toEqual(f.expectGoals);
+      // tap-receipts-everywhere §8.1: the first two are today's two; up to two more ranked slots ride behind them for rollover.
+      expect(body.goals.length).toBeGreaterThanOrEqual(2);
+      expect(body.goals.length).toBeLessThanOrEqual(SLOTS);
+      expect(body.goals.slice(0, 2).map((g) => g.slug)).toEqual(f.expectGoals);
+      expect(new Set(body.goals.map((g) => g.slug)).size).toBe(body.goals.length);
       expect(body.senators).toHaveLength(2);
       expect(body.house?.district).toBe(f.district);
       for (const g of body.goals) {
@@ -59,7 +62,7 @@ describe('POST /api/route — six fixture addresses (§1 acceptance)', () => {
     // live route uses (leadership-routing §2), so the elect rows are stripped for the all-Republican case.
     const repo = Object.assign(Object.create(new MemoryRepo(rows)) as MemoryRepo, { membersElect: async () => [] });
     const body = await buildRoute(repo, 'TX', 21, TODAY);
-    expect(body.goals.map((g) => g.slug)).toEqual(['ndaa-1217', 'state-bonds']);
+    expect(body.goals.slice(0, 2).map((g) => g.slug)).toEqual(['ndaa-1217', 'state-bonds']);
     expect(body.goals[1].targets[0].role).toBe('Treasurer');
     // NDAA targets: house + both senators; leadership goals never list the other party.
     expect(body.goals[0].targets.map((t) => t.role)).toEqual(['Rep.', 'Sen.', 'Sen.']);
@@ -151,7 +154,7 @@ describe('POST /api/route — refusals (§1.2, §1.4)', () => {
     const { post, calls } = app();
     const res = await post({ state: 'PA', district: 2 });
     expect(res.status).toBe(200);
-    expect(((await res.json()) as RouteResponse).goals.map((g) => g.slug)).toEqual(['ndaa-1217', 'house-caucus']);
+    expect(((await res.json()) as RouteResponse).goals.slice(0, 2).map((g) => g.slug)).toEqual(['ndaa-1217', 'house-caucus']);
     expect(calls.filter((u) => u.includes('census.gov'))).toHaveLength(0);
   });
   it('a picked suggestion posts {state, district, by_suggestion} and the Worker ignores the flag (address-autocomplete §3)', async () => {
