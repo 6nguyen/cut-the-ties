@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { CAUCUSES, CONTACT_KINDS, HOLDINGS_STATUSES, type Action, type Caucus, type Chamber, type Goal, type Member, type MemberElect, type Office, type Party, type Position, type StateRow } from './types';
+import { CAUCUSES, CONTACT_KINDS, HOLDINGS_STATUSES, type Action, type Caucus, type Chamber, type Goal, type LeadershipPair, type Member, type MemberElect, type Office, type Party, type Position, type StateRow } from './types';
 import { parseRule } from './ranking';
 import { checkPrep } from './prep';
 import { HOUSE_SEATS, districtError } from './districts';
@@ -20,6 +20,7 @@ export interface Rows {
   positions: Position[];
   states: StateRow[];
   elections: ElectionRow[]; // primary-2028 §1: folded into the electoral goals' dates and sources, not a D1 table
+  pairs: Record<string, LeadershipPair>; // leadership-card-two-goals §2: by goal slug; House leadership goals only, not a D1 column
 }
 
 /** One CSV line → cells. RFC 4180: a cell wrapped in double quotes may hold commas and doubled quotes. */
@@ -243,6 +244,25 @@ export function checkEmailSubject(a: Pick<Action, 'slug' | 'type' | 'email_subje
   if (bad.length) throw new Error(`action ${a.slug}: email_subject allows only {city}, not {${bad[0]}} (email-button §2.1)`);
 }
 
+/**
+ * leadership-card-two-goals §2.2: the optional `pair` block (the split card's combined title ≤40 and summary ≤400) is
+ * allowed only on a `leadership` goal; `loadRows` then checks its actions target the House. Anything else fails the
+ * seed and the web build naming the file. Returns null when the goal has none.
+ */
+export function checkPair(file: string, g: Pick<Goal, 'category'>, pair: unknown): LeadershipPair | null {
+  if (pair === undefined || pair === null) return null;
+  const where = `goals/${file}: pair`;
+  if (g.category !== 'leadership') throw new Error(`${where} is allowed only on a House leadership goal`);
+  if (typeof pair !== 'object') throw new Error(`${where} must be {title, summary}`);
+  const p = pair as Record<string, unknown>;
+  if (typeof p.title !== 'string' || !p.title.trim()) throw new Error(`${where}.title is required`);
+  if (typeof p.summary !== 'string' || !p.summary.trim()) throw new Error(`${where}.summary is required`);
+  if (p.title.length > 40) throw new Error(`${where}.title is ${p.title.length} characters, max 40`);
+  if (p.summary.length > 400) throw new Error(`${where}.summary is ${p.summary.length} characters, max 400`);
+  for (const k of Object.keys(p)) if (k !== 'title' && k !== 'summary') throw new Error(`${where}.${k} is not a field`);
+  return { title: p.title, summary: p.summary };
+}
+
 export function loadRows(dataDir: string, updatedAt = new Date().toISOString()): Rows {
   // stable-data-ids §2: ids come from the YAML and must match data/ids.md; the file order never numbers a row.
   const registry = readIds(dataDir);
@@ -250,6 +270,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
   let photoIds: Set<string> | null = null;
   let rosterIds: Set<string> | null = null;
   const actionIds = new Set<number>();
+  const pairs: Record<string, LeadershipPair> = {};
   const goals: Goal[] = readdirSync(join(dataDir, 'goals'))
     .filter((f) => f.endsWith('.yaml'))
     .sort()
@@ -298,6 +319,8 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
       checkJsonList(g.slug, 'sources', g.sources, ['title', 'url']);
       checkReasons(g.slug, g.reasons);
       checkPrep(g.slug, g.prep_md);
+      const pair = checkPair(f, g, y.pair);
+      if (pair) pairs[g.slug] = pair;
       checkImage(g, () => (photoIds ??= imageIds(manifestPath(dataDir))));
       return g;
     });
@@ -440,7 +463,12 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
   // fills and passes the output check for every target.
   checkStandardTemplates(goals, actions, members, positions, states, membersElect);
 
-  return { goals, actions, members, membersElect, offices, positions, states, elections };
+  // leadership-card-two-goals §2.2: `pair` belongs to the goal whose actions target the House (its block renders first).
+  for (const slug of Object.keys(pairs)) {
+    const g = goals.find((x) => x.slug === slug)!;
+    if (actions.filter((a) => a.goal_id === g.id).some((a) => a.target_scope !== 'house')) throw new Error(`goals/${slug}.yaml: pair is allowed only on a House leadership goal`);
+  }
+  return { goals, actions, members, membersElect, offices, positions, states, elections, pairs };
 }
 
 /** states.csv seed checks (state-holdings-sweep §1.2): no number without a source, no stale comment date. */

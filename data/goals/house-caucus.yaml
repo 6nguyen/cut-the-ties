@@ -9,6 +9,10 @@ window_start: 2026-11-01
 window_end: 2027-01-31
 decision_date: 2026-11-18   # placeholder: caucus meeting date
 priority: 2
+# leadership-card-two-goals §2: the split card's combined copy when this goal shares a slot with the Senate leadership goal. Only a House leadership goal may carry it; the loader rejects it elsewhere.
+pair:
+  title: Kick out Jeffries and Schumer
+  summary: Democrats in Congress are about to pick their leaders. House Democrats vote on whether Hakeem Jeffries keeps his job, and Senate Democrats vote on Chuck Schumer. Your representative votes in the first and your senators in the second, so this action has a call for each.
 eligibility: {"house": {"caucus": "D"}}
 our_picks: []
 sources:

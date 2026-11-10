@@ -3,7 +3,7 @@
 import { join } from 'node:path';
 import { marked } from 'marked';
 import { loadRows } from '@worker/load';
-import type { Action, Goal, Member } from '@worker/types';
+import type { Action, Goal, LeadershipPair, Member } from '@worker/types';
 
 export type { Action, Goal };
 export interface Pick { name: string; rationale: string; source_url: string; signal?: string; signal_date?: string; /** site-imagery §4: a `members.csv` id (the loader checks it); the pick then shows that member's portrait and party colour. */ bioguide_id?: string }
@@ -26,6 +26,11 @@ export function publishedGoals(): Goal[] { return [...activeGoals(), ...closedGo
 /** call-follow-through §5: every `upcoming` or `active` goal with a decision date, soonest first. */
 export function feedGoals(): Goal[] {
   return rows().goals.filter((g) => (g.status === 'upcoming' || g.status === 'active') && !!g.decision_date).sort((a, b) => a.decision_date!.localeCompare(b.decision_date!) || a.slug.localeCompare(b.slug));
+}
+/** leadership-card-two-goals §2: the active House leadership goal's `pair` copy (the split card's title and summary), or null. */
+export function leadershipPair(): LeadershipPair | null {
+  const g = activeGoals().find((x) => x.category === 'leadership' && rows().pairs[x.slug]);
+  return g ? rows().pairs[g.slug] : null;
 }
 export function actionsFor(goal: Goal): Action[] { return rows().actions.filter((a) => a.goal_id === goal.id).sort((a, b) => a.order - b.order); }
 export function picks(goal: Goal): Pick[] { return JSON.parse(goal.our_picks) as Pick[]; }

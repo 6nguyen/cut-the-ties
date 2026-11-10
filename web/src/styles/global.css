@@ -43,6 +43,7 @@
 
 @utility display-xl { font-family: var(--font-condensed); text-transform: uppercase; letter-spacing: 0.02em; font-size: 56px; line-height: 52px; @media (width >= 64rem) { font-size: 96px; line-height: 88px; } }
 @utility display-lg { font-family: var(--font-condensed); text-transform: uppercase; letter-spacing: 0.02em; font-size: 40px; line-height: 38px; @media (width >= 64rem) { font-size: 64px; line-height: 60px; } }
+@utility headline-sm { font-family: var(--font-condensed); font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; font-size: 22px; line-height: 22px; } /* leadership-card-two-goals §3: block titles on a split card */
 @utility headline-lg { font-family: var(--font-condensed); font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; font-size: 30px; line-height: 30px; @media (width >= 64rem) { font-size: 36px; line-height: 36px; } }
 @utility headline-md { font-family: var(--font-condensed); font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; font-size: 26px; line-height: 26px; }
 @utility label-code { font-family: var(--font-mono); font-weight: 700; font-size: 13px; line-height: 16px; letter-spacing: 0.05em; text-transform: uppercase; }

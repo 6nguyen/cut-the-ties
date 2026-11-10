@@ -28,19 +28,31 @@ postmarks); the owner device tests (§4 of each) are open.
    one `<a href="/results/<goal>">` (`data-summary-card`); the first card's
    CTA is filled, the second bordered. No phone number, ask text, counts line
    or target card renders here. A split leadership card (`also`) is one
-   summary card: its photo and stamp, the offices of both blocks House
-   first, one link. The first band loads `eager` with `fetchpriority="high"`
+   summary card: its photo and stamp, the `pair` title, no `short_label`
+   chip, one offices line per block House first, each led by its action's
+   `short_label` ("Jeffries vote · Correa"; `data-offices=<label>`, a
+   block with no targets is left out), one link. The first band loads `eager` with `fetchpriority="high"`
    (the LCP element), the second lazily. Zero eligible goals, "Change
    address" and the `/goals` link behave as before.
 2. **One-action page (`/results/<goal>`).** One static page per published
    goal (`web/src/pages/results/[goal].astro`, `getStaticPaths` over
    `publishedGoals()`) mounting the `Results` island with `goal=<slug>`.
    Ticker "← Your two actions" (link to `/results`) · "Action n of N"; H1
-   the goal title; the result card as `action-router.md` §5 describes it
+   and `document.title` the goal title, or the `pair` title on a split
+   card; the result card as `action-router.md` §5 describes it
    (band and stamp, ask, "Get my script →", target stack with the `Counts`
-   line, House and Senate blocks on a split card); below it the mini card
-   "Your other action" (`data-other-action`, the other goal's title, photo
-   and stamp, linking `/results/<other>`), omitted with one eligible goal.
+   line); on a split card (`also`) the headline and summary are the House
+   goal's `pair` copy (fallback: the card goal's own), then a "House"
+   block, then a "Senate" block under a 2 px full-width rule
+   (`data-split-rule`); each block opens with its goal's title as an h3
+   (`headline-sm`) and the "<Chamber> · Decision: <date>" label, then the
+   ask, CTA, targets and counter line, and ends with "More on this vote →"
+   to `/goals/<slug>` (`data-more`); below it the mini card
+   "Your other action" (`data-other-action`, the other goal's title, or
+   the `pair` title when the other is a split card, photo and stamp,
+   linking `/results/<other>`), omitted with one eligible goal. The island
+   finds the card by its slug or its `also` slug (`Results.tsx`
+   `cardFor`), so `/results/senate-leader` opens the split card.
    The route comes from `sessionStorage` `cut-ties:route` (`store.ts`
    `peekRoute`, which no longer clears the key) or a fresh `POST /api/route`
    with the stored place, cached on arrival; no stored place → `/`. A goal
@@ -133,6 +145,12 @@ postmarks); the owner device tests (§4 of each) are open.
   (nullable, `data/actions/*.yaml` `short_label`, D1 `actions.short_label`)
   and `what_we_want`; targets carry `contact_form_url` and `contact_kind`
   (`worker/src/route.ts` `GoalCard`, `TargetCard`).
+- `data/goals/<slug>.yaml` optional `pair: {title ≤40, summary ≤400}`,
+  allowed only on a `leadership` goal whose actions all target the House
+  (`worker/src/load.ts` `checkPair`, `Rows.pairs`; no D1 column). The
+  build reads it with `web/src/lib/goals.ts` `leadershipPair()` and both
+  results pages pass it to the `Results` island as `pair`; `Results.tsx`
+  `cardCopy(g, pair)` picks the pair copy only for a card with `also`.
 - `POST /api/receipt`: body unchanged; the `repeat` SUM in
   `worker/src/repo.ts` `receiptLimitCounts` also matches `target_id`.
 - `cut-ties:receipts` rows (`LoggedReceipt`) gain `channel?: 'call' |

@@ -1,5 +1,5 @@
 # Leadership card names both goals — PRD
-Status: READY 2026-11-10 (auto) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: DEV COMPLETE (§6 live check) 2026-11-10 (auto) · Owner: George Nguyen · Last updated: 2026-11-10
 
 ## Problem
 When a visitor has a Democratic representative and at least one Democratic
@@ -244,34 +244,51 @@ visitors who make at least one Senate-block call (receipts with
 `senate-leader-call` over visitors whose route returned a split card),
 before and after, from the existing receipt rows.
 
-## State (updated 2026-11-10, PR #96)
+## State (updated 2026-11-10, §2–5 built)
 - Sections:
   - [x] 1. Mock-ups, confirmed before any code · owner confirmed 2026-11-10 · PR #94
-  - [ ] 2. Pair copy and card framing
-  - [ ] 3. Block anatomy
-  - [ ] 4. Summary card on `/results`
-  - [ ] 5. Either slug opens the split card
+  - [x] 2. Pair copy and card framing · `feat/leadership-card-two-goals`
+  - [x] 3. Block anatomy · `feat/leadership-card-two-goals`
+  - [x] 4. Summary card on `/results` · `feat/leadership-card-two-goals`
+  - [x] 5. Either slug opens the split card · `feat/leadership-card-two-goals`
   - [ ] 6. Live check
-- Completed: §1 mock-ups (owner confirmed 2026-11-10: L1–L4, headline A)
-- Folded: none
+- Completed: §1 mock-ups (owner confirmed 2026-11-10: L1–L4, headline A);
+  §2–5 (`feat/leadership-card-two-goals`): `pair` on `house-caucus.yaml`
+  validated by the loader, the split card's pair headline and summary, an
+  h3 and "More on this vote →" per block with the 2 px rule above the
+  Senate block, the summary card's pair title and per-block offices lines,
+  either slug opening the card with the pair H1 and `document.title`.
+- Folded: §2–5 → `docs/specs/action-router.md` §Behavior 5 and §Data,
+  `docs/specs/results-pages.md` §Behavior 1–2, `data/README.md` (`pair`,
+  `short_label`).
 - Branch / open PRs: PRD and mock-ups merged in PR #94; confirmation
-  logged in PR #96; cohesion pass with `call-the-right-office` and
-  `tap-receipts-everywhere` in `docs/one-shot-plan`
-- Files changed (file:line map): §1 sent 2026-11-10:
-  `design/mockups/leadership-card.html` (L1 390+1024, L2–L5; `?only=<id>`
-  shows one screen) and `design/mockups/leadership-card/<id>.png`. §1 is
-  `design/mockups/leadership-card.html` alone, on this branch or its own
-  PR, and ends with the owner's confirmation. §2–5 then build as one PR:
-  `data/goals/house-caucus.yaml` (`pair`), `data/actions/*-call.yaml`
-  (`short_label`), `worker/src/load.ts:270-290` (validate `pair` in the
-  goal loader),
-  `web/src/lib/goals.ts` (`leadershipPair()`),
-  `web/src/pages/results/[goal].astro` + `results/index.astro` (prop),
-  `Results.tsx:57-120` (`Block` h3/rule/link, `Card` title/summary),
-  `:134` (mini card), `:178` (`also` lookup), `:269` (H1),
-  `SummaryCard.tsx:9-22,54`.
-- Tests run + result: none (mock-up only)
-- Remaining: §2–6
+  logged in PR #96; cohesion pass in PR #98; §2–5 on
+  `feat/leadership-card-two-goals` (this PR)
+- Files changed (file:line map): §1: `design/mockups/leadership-card.html`
+  (L1 390+1024, L2–L5; `?only=<id>` shows one screen) and
+  `design/mockups/leadership-card/<id>.png`. §2–5:
+  `data/goals/house-caucus.yaml` (`pair`),
+  `data/actions/{house-caucus,senate-leader}-call.yaml` (`short_label`
+  "Jeffries vote" / "Schumer vote"), `worker/src/types.ts`
+  (`LeadershipPair`), `worker/src/load.ts` (`checkPair`, `Rows.pairs`,
+  the House-only check after all goals load; no D1 column, the seed
+  iterates `Goal` keys), `web/src/lib/goals.ts` (`leadershipPair()`),
+  `web/src/pages/results/{index,[goal]}.astro` (`pair` prop),
+  `web/src/styles/global.css` (`headline-sm`), `Results.tsx` (`cardCopy`,
+  `cardFor`, `Block` h3/link with `two`, `Card` rule `data-split-rule`,
+  `OtherAction` title, H1 and `document.title`), `SummaryCard.tsx`
+  (`officesLines`, `metaChips` chip rule, `data-offices` lines).
+- Tests run + result: `quiet-check tsc` 0 errors; `test` (worker) pass;
+  `test-web` pass; `build` pass; `prd-lint`, `doc-lint` pass. New:
+  `Results.test.tsx` (pair copy, h3s, rule, links, fallback, unchanged
+  one-goal and uncalled-only cards, `cardFor`), `SummaryCard.test.tsx`
+  (pair title, chips, two `data-offices` lines, empty block omitted),
+  `leadership-page.test.tsx` (happy-dom: `/results/senate-leader` opens
+  the split card as Action 1 of 2 with the pair H1 and tab title, the
+  mini card and `/results` summary card), `worker/test/data.test.ts`
+  (`pair` loaded, refused on `senate-leader.yaml` naming the file,
+  `checkPair` field errors, absent `pair` loads).
+- Remaining: §6 owner live check on production.
 - Decisions since last update: owner 2026-11-10: the split card must
   say it is two goals; slot stays shared. Owner 2026-11-10 (review):
   mock-ups first, confirmed in chat before any code (§1); `pair` allowed
@@ -289,9 +306,9 @@ before and after, from the existing receipt rows.
   among the route's four) and its §7.2 keeps the pair title and both
   offices lines on a done split card. Whoever builds tap-receipts §7
   reads this PRD's §2–4 first.
-- Next action: `/implement-prd-section docs/prd/leadership-card-two-goals.md`
-  builds §2–5 in one PR, matching `design/mockups/leadership-card.html`;
-  then §6 owner live check.
+- Next action: after the deploy the owner runs §6 on production
+  (`/results` and `/results/senate-leader` for a CA address) and notes
+  the result here.
 ## Open questions
 1. Headline wording. Decided 2026-11-10 (owner, §1 mock-ups): "Kick out
    Jeffries and Schumer". It matches the two goal titles and fits
@@ -319,3 +336,8 @@ before and after, from the existing receipt rows.
   `call-the-right-office` §1); the done state of a split card is
   tap-receipts §7.2 (DONE postmark in the stamp's place, pair title and
   offices lines kept); no behaviour of §2–5 changes.
+- 2026-11-10 — §2–5 built (`feat/leadership-card-two-goals`): `pair`
+  block and loader check, pair headline/summary, block h3s, rule and
+  "More on this vote" links, summary card pair title and per-block
+  offices lines, either slug opens the card; specs and `data/README.md`
+  folded. Status READY → DEV COMPLETE; §6 remains.

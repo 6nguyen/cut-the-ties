@@ -77,17 +77,15 @@ documents, receipts and reports are in `personalised-documents.md`.
    a CTA to `/goals/<goal>/act/<action>`. The page header carries one
    stamp for the soonest target across both slots. When both leadership
    goals are eligible they share one slot: the higher-scoring goal is
-   the card and the other rides on it as `also`; the card shows a
-   "House" block, then a "Senate" block, each with that goal's decision
-   date, targets, counter line, ask and CTA (`Results.tsx`). A
+   the card and the other rides on it as `also` (the split card's anatomy:
+   `results-pages.md` §2). A
    Democratic-caucus seat whose race is not called shows "<Chamber>
    seat: race not called yet." in its block's place. A
    member-elect target shows the role "Representative-elect" or
    "Senator-elect", the line "Takes office <date>, replaces <name>" and a
    hazard "Contact" square (arrow glyph, `aria-label="Contact <name>"`)
    linking `contact_url` when it has no phone (never a `tel:` or the
-   switchboard). No eligible goal: a message and a `/goals` link. One column at 390 px, two from 1024 px. "Change address"
-   clears the stored district and returns to `/`. Under each card's
+   switchboard). No eligible goal: a message and a `/goals` link. One column at 390 px, two from 1024 px. "Change address" clears the stored district and returns to `/`. Under each card's
    target stack the `Counts` island adds one line ("12 constituents in
    TX-35 called this week", else the state line, else nothing) from `GET /api/counts`; buckets below the threshold arrive
    as 0 and the line waits for the response (`district-counters.md`).
@@ -125,7 +123,8 @@ documents, receipts and reports are in `personalised-documents.md`.
   takes_office: '2027-01-03', contact_url}`. Every `TargetCard` carries
   `state` and `district` (null for a senator or treasurer); every
   `GoalCard` carries `decision_at` and `decision_date_confirmed`
-  (`countdown-stamp.md`). Receipts, reports and the
+  (`countdown-stamp.md`); a goal's `pair` block never reaches `GoalCard`
+  (`results-pages.md` §Data). Receipts, reports and the
   counts line take that `elect_id` as the target id (`target_id` is free
   text). `GET /api/goals/:slug/targets` follows the same rules.
   Errors: 400 `bad_json | zip_only | incomplete | missing`, 403

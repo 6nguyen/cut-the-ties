@@ -108,6 +108,13 @@ so retiring a goal is one YAML edit. `summary` is at most 60 words;
 `our_picks` holds at most three `{name, rationale, source_url, signal,
 signal_date}` rows; `sources` holds `{title, url}` rows; `decider` is the
 one-line "who decides" shown on the detail page.
+`pair` (leadership-card-two-goals §2, optional, `{title ≤40 characters,
+summary ≤400}`) is the headline and summary of the split `/results` card
+when the two leadership goals share a slot ("Kick out Jeffries and
+Schumer"); it is allowed only on a `leadership` goal whose actions all
+target the House (today `house-caucus`), the loader refuses it anywhere
+else or with a missing field, and it has no D1 column: the web build reads
+it from the YAML.
 `reasons` holds at most six `{angle, points[]}` groups (one to five points
 each, at most 130 characters, no digits): first-person starting points the
 act form shows above its "why this matters to you" field, written from
@@ -179,8 +186,9 @@ eligible goal is paired with the state goal.
   for a leader who drops the integration section`.
 - `short_label` (share-from-results §1, optional): the decision the action
   bears on, as a chip on the `/results` summary card: `NDAA §219 / §1217`,
-  `Senate leader vote`. ≤24 characters; omit it and the card shows no
-  decision chip.
+  `Schumer vote`. ≤24 characters; omit it and the card shows no decision
+  chip. On the split leadership card it leads that block's offices line
+  instead ("Jeffries vote · Correa").
 - `standard_template` or `script_blocks` (one of the two while the goal
   is `active`): the script served when no model may run
   (`docs/specs/standard-scripts.md`). `script_blocks: <name>`

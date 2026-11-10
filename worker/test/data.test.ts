@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { appendFileSync, cpSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { checkEmailSubject, loadRows, parseCsv } from '../src/load';
+import { checkEmailSubject, checkPair, loadRows, parseCsv } from '../src/load';
 
 const rows = loadRows(join(__dirname, '..', '..', 'data'), '2026-11-04T00:00:00Z');
 
@@ -66,6 +66,30 @@ describe('data/ files', () => {
     expect(() => loadRows(copy, '2026-11-04T00:00:00Z')).toThrow(/actions\/house-caucus-call\.yaml: office must be dc or district, got capitol/);
     writeFileSync(file, readFileSync(file, 'utf8').replace(/^office: capitol\n/m, ''));
     expect(loadRows(copy, '2026-11-04T00:00:00Z').actions.find((a) => a.slug === 'house-caucus-call')!.office).toBe('dc');
+  });
+  it('pair: house-caucus carries the split card copy; the loader refuses it on any other goal or with a bad field (leadership-card-two-goals §2.2)', () => {
+    expect(rows.pairs).toEqual({ 'house-caucus': { title: 'Kick out Jeffries and Schumer', summary: expect.stringContaining('House Democrats vote on whether Hakeem Jeffries keeps his job, and Senate Democrats vote on Chuck Schumer') } });
+    expect(rows.pairs['house-caucus'].title.length).toBeLessThanOrEqual(40);
+    expect(rows.pairs['house-caucus'].summary.length).toBeLessThanOrEqual(400);
+    expect(rows.goals.find((g) => g.slug === 'house-caucus')).not.toHaveProperty('pair'); // no D1 column
+    expect(rows.actions.find((a) => a.slug === 'house-caucus-call')!.short_label).toBe('Jeffries vote');
+    expect(rows.actions.find((a) => a.slug === 'senate-leader-call')!.short_label).toBe('Schumer vote');
+    const lead = { category: 'leadership' as const };
+    expect(checkPair('x.yaml', lead, undefined)).toBeNull();
+    expect(() => checkPair('x.yaml', { category: 'federal_vote' }, { title: 'T', summary: 'S' })).toThrow(/goals\/x\.yaml: pair is allowed only on a House leadership goal/);
+    expect(() => checkPair('x.yaml', lead, { title: 'T' })).toThrow(/goals\/x\.yaml: pair\.summary is required/);
+    expect(() => checkPair('x.yaml', lead, { title: 'T'.repeat(41), summary: 'S' })).toThrow(/pair\.title is 41 characters, max 40/);
+    expect(() => checkPair('x.yaml', lead, { title: 'T', summary: 'S'.repeat(401) })).toThrow(/pair\.summary is 401 characters, max 400/);
+    expect(() => checkPair('x.yaml', lead, { title: 'T', summary: 'S', extra: 1 })).toThrow(/pair\.extra is not a field/);
+    const copy = mkdtempSync(join(tmpdir(), 'cut-ties-data-'));
+    cpSync(join(__dirname, '..', '..', 'data'), copy, { recursive: true });
+    const senate = join(copy, 'goals', 'senate-leader.yaml');
+    appendFileSync(senate, '\npair:\n  title: Kick out Jeffries and Schumer\n  summary: Both.\n');
+    expect(() => loadRows(copy, '2026-11-04T00:00:00Z')).toThrow(/goals\/senate-leader\.yaml: pair is allowed only on a House leadership goal/);
+    writeFileSync(senate, readFileSync(senate, 'utf8').replace(/\npair:[\s\S]*$/, '\n'));
+    const house = join(copy, 'goals', 'house-caucus.yaml');
+    writeFileSync(house, readFileSync(house, 'utf8').replace(/^pair:\n  title: [^\n]*\n  summary: [^\n]*\n/m, ''));
+    expect(loadRows(copy, '2026-11-04T00:00:00Z').pairs).toEqual({}); // §2.4: data never blocks the page
   });
   it('parseCsv rejects ragged rows', () => {
     expect(() => parseCsv('a,b\n1,2,3')).toThrow(/expected 2/);

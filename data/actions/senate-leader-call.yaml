@@ -8,7 +8,7 @@ target_scope: senate
 order: 1
 ask_text: Ask your senator to vote for a new leader unless Chuck Schumer promises, in public, to take the Israel integration section out of the military bill.
 email_subject: 'Constituent in {city}: vote only for a leader who drops the integration section'
-short_label: Senate leader vote
+short_label: Schumer vote
 form_schema:
   fields:
     - {name: first_name, label: First name, max: 40, required: true}
