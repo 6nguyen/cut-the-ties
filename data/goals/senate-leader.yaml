@@ -10,8 +10,16 @@ window_end: 2027-01-31
 decision_date: 2027-01-05   # placeholder: caucus leadership election date
 priority: 2
 eligibility: {"senator": {"caucus": "D"}}
-our_picks: []
+our_picks:
+  - name: Chris Van Hollen
+    bioguide_id: V000128
+    rationale: "The one possible leader with a record on the exact section this goal targets: he led this summer's Senate letter against the military bill's Israel provisions and filed the amendments to strike the integration section, and he voted to block both of this spring's arms sales to Israel. He refuses AIPAC money. He has not sought the job; senators are urging him to run, and he says the caucus needs a discussion before it crowns anyone. Ask your senator to back him, and to get the promise from him in public too, or from any other leader who makes it."
+    source_url: "https://truthout.org/articles/senators-urge-colleagues-to-block-ndaa-until-pro-israel-provisions-are-debated/"
+    signal: "Urged to run against Schumer; says the caucus needs a discussion before it crowns anyone (The Baltimore Banner); Senator-elect Abdul El-Sayed backs him for leader"
+    signal_date: "2026-11-09"
 sources:
+  - {title: "Truthout: Senators urge colleagues to block the NDAA until the pro-Israel provisions are debated, the Van Hollen-led letter (2026-07-10)", url: "https://truthout.org/articles/senators-urge-colleagues-to-block-ndaa-until-pro-israel-provisions-are-debated/"}
+  - {title: "UpriseRI: The Israel defense clause and Van Hollen's amendments to strike it (2026-07-31)", url: "https://upriseri.com/article/the-israel-defense-clause-does-it-merge-the-us-military-with-the-idf/"}
   - {title: "Democracy Now: Incoming senators call for new leadership to replace Schumer (2026-11-06)", url: "https://www.democracynow.org/2026/11/6/headlines/incoming_freshman_senators_call_for_new_leadership_to_replace_top_democrat_chuck_schumer"}
   - {title: "The Hill: Schumer says he has the votes (2026-11-04)", url: "https://thehill.com/homenews/senate/6198456-schumer-senate-majority-leader-support/"}
   - {title: "Star Tribune: Flanagan wants a new Senate Democratic leader (2026-11-04)", url: "https://www.startribune.com/peggy-flanagan-wants-new-senate-democratic-leader-to-replace-chuck-schumer/601910776"}
@@ -20,7 +28,7 @@ sources:
   - {title: "The Baltimore Banner: Van Hollen adds vying for Senate leadership to the moves he is pondering (2026-11-09)", url: "https://www.thebanner.com/politics-power/van-hollen-senate-leadership-HJ3MI3RK6FDNZJSVUBOQKAYRKI/"}
   - {title: "The Hill: Van Hollen not running for Senate leader, source says (2026-11-06)", url: "https://thehill.com/homenews/senate/6202343-van-hollen-not-challenging-schumer/"}
 decider: Senate Democrats, by secret ballot among themselves
-this_week: Senators are urging Chris Van Hollen to run against Schumer, and he says the caucus needs a discussion before it crowns anyone. Your senator's answer is still open, and now there may be someone to give it to.
+this_week: Senators are urging Chris Van Hollen, who led the Senate fight against the integration section, to run against Schumer; he says the caucus needs a discussion before it crowns anyone. Your senator's answer is still open, and now there is a name to give it to.
 this_week_date: 2026-11-09
 detail_md: |
   **Who is Chuck Schumer?** He leads the Democrats in the Senate. After
@@ -52,9 +60,12 @@ prep_md: |
   crowns anyone, and a person close to him says the door is not shut
   [VERIFY: The Baltimore Banner 2026-11-09 and The Hill 2026-11-06].
   Senator-elect Abdul El-Sayed has said he would vote for Van Hollen over
-  Schumer. Van Hollen has not made the promise we ask of every candidate,
-  so he is not our pick; a challenger changes who your senator's condition
-  goes to, not the condition. The vote date is not published:
+  Schumer. Van Hollen is our pick: he led this summer's Senate letter
+  against the military bill's Israel provisions and filed the amendments
+  to strike the integration section (sources below). He has not yet
+  promised it as a condition of leading, so the ask stays a condition: back
+  him, and get the promise from him in public too. The vote date is not
+  published:
   press says December, and our placeholder is 2027-01-05 [VERIFY: the
   caucus date]. Because the ballot is secret, what you can ask your
   senator for is a condition they will apply, said out loud before the
@@ -83,9 +94,10 @@ prep_md: |
   pick a leader. I'm asking Senator [name] to vote for a new leader unless
   Chuck Schumer promises, in public, to take the Israel integration
   section out of the military bill and to oppose a new long-term weapons
-  deal with Israel. If Chris Van Hollen or anyone else runs, I'm asking
-  the Senator to put the same condition to them. Will the Senator tell me
-  whether that is a condition for their vote?"
+  deal with Israel. Chris Van Hollen led the fight against that section in
+  the Senate, and I'm asking the Senator to back him, and to ask him for
+  that promise in public too. Will the Senator tell me whether that is a
+  condition for their vote?"
 
   ## Likely pushback and answers
   - **"The ballot is secret."** You are asking for the condition, not the
@@ -93,11 +105,15 @@ prep_md: |
     saying how they voted.
   - **"Nobody is running against him yet."** Chris Van Hollen is being
     urged to, and says the caucus should talk before it crowns anyone.
-    That is why now: the condition goes to whoever runs, Van Hollen and
-    Schumer included. Ask the Senator to put it to every candidate.
+    That is why now: a senator who says out loud they want him in the race
+    is what makes the race. Ask the Senator to say it.
   - **"The Senator is backing Van Hollen."** Good, then ask the Senator to
-    get the promise from him in public before the vote. A new leader
-    without the promise is the same problem with a new face.
+    get the promise from him in public before the vote. He led the fight
+    against the section, but a new leader without the promise is the same
+    problem with a new face.
+  - **"The Senator prefers someone else."** Fine; the condition goes to
+    whoever they back. Ask the Senator to put it to that candidate in
+    public.
   - **"Leadership is about much more than one issue."** Agreed. This is
     one promise asked of every candidate, not a test on everything else.
   - **"Why only Democrats?"** Only Democratic senators vote on their

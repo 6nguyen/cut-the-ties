@@ -1,5 +1,5 @@
 # Senate leader pick: Van Hollen — PRD
-Status: READY 2026-11-09 (auto) · Owner: George Nguyen · Last updated: 2026-11-09
+Status: SHIPPED 2026-11-09 (PR #92) · Owner: George Nguyen · Last updated: 2026-11-09
 
 ## Problem
 The "Kick out Chuck Schumer" goal (`data/goals/senate-leader.yaml`) asks
@@ -88,12 +88,12 @@ client state changes.
 - none — data rows only; `docs/specs/goal-pages.md` Behaviors 2 and 4 and `docs/specs/standard-scripts.md` already specify how a leadership goal's picks render.
 
 ## Acceptance criteria
-- [ ] `/goals/senate-leader` shows "Who we would back instead" with Chris Van Hollen, the rationale, the source link and the signal date.
-- [ ] `/goals/senate-leader/prep` leads with his pick card and the one-line ask ends "Our first pick: Chris Van Hollen."
-- [ ] A senate standard script for a non-incumbent target contains "Our pick for that job is Chris Van Hollen." and stays inside the action's word range (seed check).
-- [ ] The prep copy says he has not declared and that the promise is asked of him too.
-- [ ] `scripts/quiet-check.sh test`, `prd-lint`, `doc-lint` and `build` pass.
-- [ ] Performance budgets unchanged (one data row; no new asset).
+- [x] `/goals/senate-leader` shows "Who we would back instead" with Chris Van Hollen, the rationale, the source link and the signal date.
+- [x] `/goals/senate-leader/prep` leads with his pick card and the one-line ask ends "Our first pick: Chris Van Hollen."
+- [x] A senate standard script for a non-incumbent target contains "Our pick for that job is Chris Van Hollen." and stays inside the action's word range (seed check).
+- [x] The prep copy says he has not declared and that the promise is asked of him too.
+- [x] `scripts/quiet-check.sh test`, `prd-lint`, `doc-lint` and `build` pass.
+- [x] Performance budgets unchanged (one data row; no new asset).
 
 ## Rollout & metrics
 No flag. Ships with the next deploy of `main` (D1 reseed). Watch
@@ -102,18 +102,18 @@ No flag. Ships with the next deploy of `main` (D1 reseed). Watch
 
 ## State (updated 2026-11-09, PR #92)
 - Sections:
-  - [ ] 1. Pick row
-  - [ ] 2. Goal copy
-  - [ ] 3. Verify
-- Completed: —
+  - [x] 1. Pick row · PR #92
+  - [x] 2. Goal copy · PR #92
+  - [x] 3. Verify · PR #92
+- Completed: §1–3
 - Folded: none (Spec delta none)
 - Branch / open PRs: `chore/senate-leader-van-hollen` · PR #92
-- Files changed: —
-- Tests run + result: —
-- Remaining: all
+- Files changed: `data/goals/senate-leader.yaml` (our_picks, sources, this_week, prep_md); `worker/test/goals.test.ts:29` (`setPicks` fixture helper: the old one-line regex could not replace a nested `our_picks` block)
+- Tests run + result: `quiet-check.sh test` PASS, `tsc` PASS, `doc-lint` PASS, `build` PASS, `prd-lint` PASS; `/goals/senate-leader/prep` on the local web dev server leads with the pick card (portrait loaded) and the one-line ask ends "Our first pick: Chris Van Hollen."
+- Remaining: none
 - Decisions since last update: owner picked Van Hollen alone (2026-11-09)
 - Known failures / blockers: none
-- Next action: §1
+- Next action: refresh `signal`/`signal_date` when he declares or rules it out
 
 ## Open questions
 1. Should Murphy and Booker follow as picks 2 and 3 as the research
@@ -122,3 +122,4 @@ No flag. Ships with the next deploy of `main` (D1 reseed). Watch
 
 ## Changes
 - 2026-11-09 — created (READY, auto); owner decision to name Van Hollen as the pick after PR #92 added him to the copy without one.
+- 2026-11-09 — §1–3 built and verified in PR #92; SHIPPED, archived.

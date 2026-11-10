@@ -25,6 +25,9 @@ function dataWith(edits: Record<string, (yaml: string) => string>): string {
 const setStatus = (status: string, note?: string) => (y: string) =>
   y.replace(/^status: .*$/m, `status: ${status}` + (note ? `\noutcome_note: ${note}` : ''));
 
+/** Replaces the goal's whole `our_picks` block (one line or a nested list) with a JSON list. */
+const setPicks = (y: string, json: string): string => y.replace(/^our_picks:[^\n]*\n(?:[ \t]+[^\n]*\n)*/m, `our_picks: ${json}\n`);
+
 describe('§2.3 goal lifecycle', () => {
   it('an upcoming successor is hidden while its predecessor is active', async () => {
     const rows = loadRows(DATA, '2026-11-04T00:00:00Z');
@@ -68,9 +71,9 @@ describe('§2.3 goal lifecycle', () => {
   it('summary over 60 words, bad our_picks and bad sources fail the seed', () => {
     const long = (y: string) => y.replace(/^summary: .*$/m, 'summary: ' + Array(61).fill('word').join(' '));
     expect(() => loadRows(dataWith({ 'state-bonds': long }))).toThrow(/max 60/);
-    const picks = (y: string) => y.replace(/^our_picks: .*$/m, 'our_picks: [{"name": "X"}]');
+    const picks = (y: string) => setPicks(y, '[{"name": "X"}]');
     expect(() => loadRows(dataWith({ 'senate-leader': picks }))).toThrow(/our_picks\[0\] needs rationale/);
-    const four = (y: string) => y.replace(/^our_picks: .*$/m, 'our_picks: ' + JSON.stringify(Array(4).fill({ name: 'X', rationale: 'r', source_url: 'https://x' })));
+    const four = (y: string) => setPicks(y, JSON.stringify(Array(4).fill({ name: 'X', rationale: 'r', source_url: 'https://x' })));
     expect(() => loadRows(dataWith({ 'senate-leader': four }))).toThrow(/max 3/);
     const src = (y: string) => y.replace(/^sources: .*$/m, 'sources: [{"title": "T"}]');
     expect(() => loadRows(dataWith({ 'state-bonds': src }))).toThrow(/sources\[0\] needs url/);
@@ -196,7 +199,7 @@ describe('site-imagery §3: a goal\'s image', () => {
 });
 
 describe('site-imagery §4: a pick\'s bioguide_id', () => {
-  const pick = (id?: string) => (y: string) => y.replace(/^our_picks: .*$/m, 'our_picks: ' + JSON.stringify([{ name: 'X', rationale: 'r', source_url: 'https://x', ...(id ? { bioguide_id: id } : {}) }]));
+  const pick = (id?: string) => (y: string) => setPicks(y, JSON.stringify([{ name: 'X', rationale: 'r', source_url: 'https://x', ...(id ? { bioguide_id: id } : {}) }]));
   const picksOf = (dir: string) => JSON.parse(loadRows(dir).goals.find((g) => g.slug === 'senate-leader')!.our_picks) as { bioguide_id?: string }[];
 
   it('an id that is not a members.csv row fails the seed, naming the goal and the id', () => {
