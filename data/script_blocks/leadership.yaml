@@ -32,6 +32,9 @@ slots:
       - id: cx4
         when: {chamber: senate}
         text: "I am calling before Senate Democrats pick their leader, because the leader decides what reaches the floor."
+      - id: cx8
+        when: {chamber: senate, self: false}
+        text: "I am calling about who leads Senate Democrats. Senators are urging Chris Van Hollen to run, so the question is live now."
       - id: cx5
         text: "I am calling about the leadership vote, the first test of whether anything changes after this election."
       - id: cx6
