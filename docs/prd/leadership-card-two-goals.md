@@ -63,12 +63,44 @@ and the senators about Schumer. A visitor with only one Democratic
 chamber sees a one-goal card and nothing in this PRD.
 
 ## Expected behavior
-Applies only when a leadership card carries `also` (both goals eligible).
-Copy follows `plain-english-copy` rules.
+§2–5 apply only when a leadership card carries `also` (both goals
+eligible). A leadership card split by `uncalled` alone (one block plus
+"<Chamber> seat: race not called yet.", `Results.tsx:80`) and a one-goal
+card are unchanged: no pair copy, no h3, no rule, no link. Copy follows
+`plain-english-copy` rules.
 
-### 1. Pair copy and card framing
+### 1. Mock-ups, confirmed before any code
+1. Before any file under `web/`, `worker/` or `data/` changes, the
+   implementing session builds static mock-ups of every surface §2–5
+   touch, in one file `design/mockups/leadership-card.html` (the
+   `receipt-sheet*.html` pattern: one labelled screen per state, the
+   site's tokens from `web/src/styles/global.css`, placeholder photos,
+   never built). Screens, each at 390 px and the summary grid also at
+   1024 px:
+   - L1 `/results` summary grid, CA-46: the split card first with the
+     pair title, chips and two offices lines (§4), the NDAA card second.
+   - L2 `/results/house-caucus/`: ticker, pair H1, the split card with
+     both blocks, h3s, rule and "More on this vote →" links (§2–3), the
+     mini card.
+   - L3 the same card with Correa done (postmark) and the senators open,
+     so the block anatomy is judged with a done square in it.
+   - L4 the one-goal "Kick out Chuck Schumer" card and summary card, as
+     the control that must not change.
+   - L5 any alternative the session proposes (headline wording of Open
+     question 1 at least), beside L1/L2.
+2. The session sends the file and a PNG of each screen to the owner with
+   a ≤10-line note (what each screen decides, which alternative it
+   recommends) and stops. No code until the owner confirms in chat,
+   naming the screens (and alternative) to build. Changes requested are
+   made to the mock-ups only, then re-sent.
+3. The confirmation is logged in `## Changes` with the date, the screens
+   chosen and any copy change, the chosen wording replaces the proposals
+   in §2–4 and Open question 1, and §1 is marked done in State. Mock-ups
+   stay in `design/mockups/` after the build as the record.
+
+### 2. Pair copy and card framing
 1. `data/goals/house-caucus.yaml` gains a `pair` block, the only place
-   the combined copy lives:
+   the combined copy lives (wording pending §1):
    - `title`: "Kick out Jeffries and Schumer"
    - `summary`: "Democrats in Congress are about to pick their leaders.
      House Democrats vote on whether Hakeem Jeffries keeps his job, and
@@ -76,7 +108,10 @@ Copy follows `plain-english-copy` rules.
      the first and your senators in the second, so this action has a call
      for each."
 2. The House goal carries it because the House block always renders
-   first. The loader rejects a `pair` block on any other goal.
+   first. The loader allows `pair` only on a goal with
+   `category: leadership` and `chamber: house` (so a successor House
+   leadership goal via `successor_slug` can carry its own) and rejects
+   it anywhere else.
 3. On a split card, whichever goal is the card, the headline is
    `pair.title` and the summary paragraph is `pair.summary`. That applies
    to the result card (`Results.tsx` `Card`), the one-action page H1, the
@@ -86,7 +121,7 @@ Copy follows `plain-english-copy` rules.
 4. When `pair` is missing, the split card falls back to today's single
    title and summary. Data never blocks the page.
 
-### 2. Block anatomy
+### 3. Block anatomy
 Each chamber block on a split card, House first, renders top to bottom:
 1. A rule (`border-t` ink) above the Senate block, to separate the two.
 2. The block goal's title as an `h3` ("Kick out Hakeem Jeffries",
@@ -99,7 +134,7 @@ Each chamber block on a split card, House first, renders top to bottom:
 
 A one-goal card is unchanged: no `h3`, no rule, no link.
 
-### 3. Summary card on `/results`
+### 4. Summary card on `/results`
 On a split summary card:
 1. The title is `pair.title`.
 2. The chips are "Call or write" / "Call", the office count, and
@@ -113,27 +148,31 @@ On a split summary card:
    vote" and `senate-leader-call.yaml` becomes "Schumer vote". The
    one-goal summary card shows the same chip text.
 
-### 4. Either slug opens the split card
+### 5. Either slug opens the split card
 On `/results/<slug>`, the island finds the card whose own slug or whose
 `also` slug equals `<slug>`. So `/results/senate-leader/` and
 `/results/house-caucus/` both render the same split card with the same
 "Action n of N". The summary card keeps linking the card's own slug.
 
-### 5. Live check
+### 6. Live check
 After deploy, on cutthetiesmovement.org with an address in CA-46 (a
-Democratic representative and two Democratic senators), the owner sees §1–4
+Democratic representative and two Democratic senators), the owner sees §2–5
 on a phone at 390 px. Shared receipts and the share card name the block's
 own goal.
 
 ## Data & contracts
 - `data/goals/<slug>.yaml`: optional `pair: {title: string ≤40,
-  summary: string ≤400}`. Allowed only on `house-caucus`; the loader
-  (`worker/src/load.ts`) fails the seed and the web build on any other
-  goal or on a missing field. No D1 column: the web build reads it from
+  summary: string ≤400}`. Allowed only on a `leadership` goal with
+  `chamber: house` (today `house-caucus`); the goal loader
+  (`worker/src/load.ts:270-290`, beside `decision_date_confirmed`) fails
+  the seed and the web build on any other goal or on a missing field. No D1 column: the web build reads it from
   `data/` (`web/src/lib/goals.ts`, new `leadershipPair()`), and the
   `/results` and `/results/<goal>` pages pass it to the `Results` island
   as a `pair` prop. `POST /api/route` and `GoalCard` are unchanged.
-- `short_label` values change as in §3.4; no shape change.
+- `short_label` values change as in §4.4; no shape change
+  (`SummaryCard.tsx:22` is its only renderer).
+- `design/mockups/leadership-card.html`: the §1 screens; not built, not
+  served.
 - No new persisted client state.
 
 ## Spec delta
@@ -154,10 +193,16 @@ own goal.
   stamp, the `pair` title, no `short_label` chip, one offices line per
   block House first, each led by its action's `short_label`, one link".
 - MODIFIED `docs/specs/results-pages.md` §Behavior 2: "H1 the goal title"
-  → "H1 the goal title, or the `pair` title on a split card"; ADDED "the
-  island finds the card by its slug or its `also` slug".
+  → "H1 and `document.title` the goal title, or the `pair` title on a
+  split card"; "the mini card 'Your other action' (… the other goal's
+  title …)" → "… the other goal's title, or the `pair` title when the
+  other is a split card …"; ADDED "the island finds the card by its slug
+  or its `also` slug".
 
 ## Acceptance criteria
+- [ ] `design/mockups/leadership-card.html` holds L1–L5 and `## Changes`
+      records the owner's confirmation, dated before the first commit
+      that touches `web/`, `worker/` or `data/`.
 - [ ] CA-46 (D rep, two D senators): `/results` summary card title "Kick
       out Jeffries and Schumer", chips include "House + Senate" and not
       "House caucus vote" or "Jeffries vote", offices lines "Jeffries vote
@@ -172,7 +217,9 @@ own goal.
 - [ ] A visitor with a Republican representative and Democratic
       senators sees the one-goal "Kick out Chuck Schumer" card with no
       h3, rule or pair copy. Same for a Democratic representative and two
-      Republican senators.
+      Republican senators, and for a card split by `uncalled` alone (one
+      block plus "race not called"): today's title and summary, no h3,
+      rule or link.
 - [ ] Tapping a senator's square on the split card posts a receipt for
       `senate-leader` / `senate-leader-call`, and the share card names
       that goal (unchanged behaviour, regression check).
@@ -195,31 +242,48 @@ before and after, from the existing receipt rows.
 
 ## State (updated 2026-11-10, PR #94)
 - Sections:
-  - [ ] 1. Pair copy and card framing
-  - [ ] 2. Block anatomy
-  - [ ] 3. Summary card on `/results`
-  - [ ] 4. Either slug opens the split card
-  - [ ] 5. Live check
+  - [ ] 1. Mock-ups, confirmed before any code
+  - [ ] 2. Pair copy and card framing
+  - [ ] 3. Block anatomy
+  - [ ] 4. Summary card on `/results`
+  - [ ] 5. Either slug opens the split card
+  - [ ] 6. Live check
 - Completed: none
 - Folded: none
 - Branch / open PRs: `docs/leadership-card-two-goals` (this PRD), PR #94
-- Files changed (file:line map): none yet. §1–4 build as one PR:
+- Files changed (file:line map): none yet. §1 is
+  `design/mockups/leadership-card.html` alone, on this branch or its own
+  PR, and ends with the owner's confirmation. §2–5 then build as one PR:
   `data/goals/house-caucus.yaml` (`pair`), `data/actions/*-call.yaml`
-  (`short_label`), `worker/src/load.ts:330` (validate `pair`),
+  (`short_label`), `worker/src/load.ts:270-290` (validate `pair` in the
+  goal loader),
   `web/src/lib/goals.ts` (`leadershipPair()`),
   `web/src/pages/results/[goal].astro` + `results/index.astro` (prop),
   `Results.tsx:57-120` (`Block` h3/rule/link, `Card` title/summary),
   `:134` (mini card), `:178` (`also` lookup), `:269` (H1),
   `SummaryCard.tsx:9-22,54`.
 - Tests run + result: none yet
-- Remaining: §1–5
+- Remaining: §1–6
 - Decisions since last update: owner 2026-11-10: the split card must
-  say it is two goals; slot stays shared.
-- Known failures / blockers: `tap-receipts-everywhere` §1 moves
-  `Results.tsx:142-262` into `receipt-flow.tsx`; whichever lands second
-  rebases. This PRD does not touch those lines.
+  say it is two goals; slot stays shared. Owner 2026-11-10 (review):
+  mock-ups first, confirmed in chat before any code (§1); `pair` allowed
+  on any House leadership goal; the `uncalled`-only card is out of scope.
+- Known failures / blockers: overlaps `tap-receipts-everywhere` on the
+  same lines: its §1 moves `Results.tsx:142-262` into `receipt-flow.tsx`
+  (this PRD does not touch those lines); its §7.2 rewrites the summary
+  card header (`SummaryCard.tsx:50-58`: Done chip, "All <n> offices",
+  CTA) and its §8.2/§8.4 rewrite the `/results` grid, "Action n of N",
+  the mini card (`Results.tsx:121-140,269`) and the slug lookup
+  (`:178`). This PRD is the smaller change and lands first; the §5
+  `also`-slug lookup then folds into tap-receipts §8.4 (a goal is found
+  by its slug or its `also` slug among the route's four), and
+  tap-receipts §7–8 rebase onto the pair title, per-block offices lines
+  and h3 blocks. Whoever builds tap-receipts §7 reads this PRD's §2–4
+  first.
 - Next action: `/implement-prd-section docs/prd/leadership-card-two-goals.md`
-  for §1–4 in one PR.
+  for §1 (mock-ups): build `design/mockups/leadership-card.html`, send
+  it, stop for the owner's confirmation. §2–5 in one PR only after §1 is
+  logged in `## Changes`.
 
 ## Open questions
 1. Headline wording. Proposal: "Kick out Jeffries and Schumer", which
@@ -230,3 +294,9 @@ before and after, from the existing receipt rows.
 
 ## Changes
 - 2026-11-10 — created (READY, auto: no blocking questions).
+- 2026-11-10 — review: §1 mock-up gate added (owner: mock-ups confirmed
+  in chat before any code), sections renumbered; `pair` allowed on any
+  House leadership goal, not only `house-caucus`; the `uncalled`-only
+  split card stated unchanged; loader pointer corrected to the goal
+  loader; the overlap with `tap-receipts-everywhere` §7–8 named with the
+  landing order; spec delta covers `document.title` and the mini card.
