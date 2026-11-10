@@ -5,6 +5,7 @@
 import { CATEGORY, fmtDate, type Goal } from '../lib/goals';
 import { applyFilters, firstAction, members, positions, role, seat, tel, updatedAt, whipCounts, whipRows } from '../lib/members';
 import { isDelegate } from '../lib/members';
+import WhipReceipts from './WhipReceipts';
 interface Props { goal: Goal; state?: string; party?: string; all?: boolean }
 const { goal, state, party, all } = Astro.props;
 const action = firstAction(goal);
@@ -18,6 +19,8 @@ const parties = ['D', 'R', 'I'].filter((p) => rows.some((r) => r.member.party ==
 const href = (s?: string, p?: string) => (s && p ? `${base}/${s}/${p}` : s ? `${base}/${s}` : p ? `${base}/party/${p}` : base);
 const view = all ? 'every member' : state || party ? [state, party && { D: 'Democrats', R: 'Republicans', I: 'Independents' }[party]].filter(Boolean).join(' ') : action?.target_scope === 'senate' ? 'the movable set: Senate Democrats and Independents plus every conferee' : 'the movable set: House Democrats and Independents plus every conferee';
 const open = goal.status === 'active';
+// tap-receipts-everywhere §5: an open goal's DC numbers carry the row for the `WhipReceipts` island; a closed goal keeps plain links.
+const rowTarget = (m: typeof rows[number]['member']) => (open && action && m.dc_phone ? JSON.stringify({ id: m.bioguide_id, name: m.name, role: role(m), party: m.party, state: m.state, district: m.chamber === 'house' ? m.district : null, phone: m.dc_phone }) : undefined);
 const POS: Record<string, string> = { for: 'bg-acid', uncommitted: 'bg-hazard', against: 'bg-crimson text-paper', unknown: 'bg-newsprint-muted' };
 const TILE = [['for', 'For'], ['uncommitted', 'Uncommitted'], ['against', 'Against'], ['unknown', 'Unknown']] as const;
 ---
@@ -85,7 +88,7 @@ const TILE = [['for', 'For'], ['uncommitted', 'Uncommitted'], ['against', 'Again
             <td class="py-2 pr-3"><span class={`chip border-ink ${POS[r.position]}`}>{r.position}</span></td>
             <td class="py-2 pr-3 whitespace-nowrap">{r.source_url ? <a href={r.source_url} rel="noopener" class="underline">{fmtDate(r.source_date)}</a> : <span class="text-ink/50">—</span>}</td>
             <td class="py-2 pr-3">{[r.member.conferee ? 'conferee' : '', r.member.hasc ? 'HASC' : '', isDelegate(r.member) ? 'delegate, no floor vote' : ''].filter(Boolean).join(' · ') || ''}</td>
-            <td class="py-2 pr-3 whitespace-nowrap">{r.member.dc_phone ? <a href={tel(r.member.dc_phone)} class="underline">{r.member.dc_phone}</a> : ''}</td>
+            <td class="py-2 pr-3 whitespace-nowrap">{r.member.dc_phone ? <a href={tel(r.member.dc_phone)} class="underline" data-receipt-target={rowTarget(r.member)}>{r.member.dc_phone}</a> : ''}</td>
             <td class="py-2 whitespace-nowrap">{open && action && <a href={`/goals/${goal.slug}/act/${action.slug}?target=${r.member.bioguide_id}`} class="btn btn-primary !py-1 !px-3 text-xs">Call</a>}</td>
           </tr>
         ))}
@@ -93,6 +96,7 @@ const TILE = [['for', 'For'], ['uncommitted', 'Uncommitted'], ['against', 'Again
     </table>
   </div>
   <p><a href={`/goals/${goal.slug}`} class="label-code underline underline-offset-4">← About this goal</a></p>
+  {open && action && <WhipReceipts client:load goal={{ slug: goal.slug, title: goal.title, what_we_want: goal.what_we_want, category: goal.category, action: action.slug }} />}
 </div>
 <script is:inline>
   // Progressive enhancement only: a shared `?state=TX&party=R` link lands on the pre-rendered page for that filter.

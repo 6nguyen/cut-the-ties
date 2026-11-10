@@ -1,5 +1,5 @@
 # Tap receipts everywhere — PRD
-Status: READY 2026-11-10 (auto) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: IN PROGRESS (§7–8 next) · Owner: George Nguyen · Last updated: 2026-11-10
 
 ## Problem
 On `/goals/senate-leader/` the "Who to call" squares open the dialer or
@@ -576,62 +576,48 @@ week.
 
 ## State (updated 2026-11-10)
 - Sections:
-  - [ ] 1. Receipt engine
-  - [ ] 2. Goal page stack
-  - [ ] 3. Act page buttons
-  - [ ] 4. Member page
-  - [ ] 5. Whip table
-  - [ ] 6. Receipts count from every page
+  - [x] 1. Receipt engine
+  - [x] 2. Goal page stack
+  - [x] 3. Act page buttons
+  - [x] 4. Member page
+  - [x] 5. Whip table
+  - [x] 6. Receipts count from every page
   - [ ] 7. Goal done stamp
   - [ ] 8. Rollover on `/results`
-  - [ ] 9. Reason picks name the leader
+  - [x] 9. Reason picks name the leader
   - [ ] 10. Owner device test
-- Completed: none
-- Folded: none
-- Branch / open PRs: PRD merged (PRs #93, #97); cohesion pass with
-  `call-the-right-office` and `leadership-card-two-goals` in
-  `docs/one-shot-plan`
-- Files changed (file:line map): none yet (lines as of main
-  2026-11-10, before the two PRDs ahead of this one land). Build order,
-  after `call-the-right-office` §1 and `leadership-card-two-goals`
-  §2–5: §1 extracts `Results.tsx:142-262` into `receipt-flow.tsx`
-  (`Target.tsx` unchanged); §2 touches `GoalTargets.tsx` and
-  `pages/goals/[slug].astro:107`; §3 `ActForm.tsx:384,398,409`; §4
-  `pages/m/[id].astro:47-49` + `Offices.astro` → `MemberContact.tsx`; §5
-  `WhipTable.astro:88` + `WhipReceipts.tsx`; §6 `ActForm.tsx:224`
-  (`channel` on the row); §7 `commitments.ts:49-52` (7-day prune,
-  `goalDone`), `Postmark.tsx:18` (`kind`), `SummaryCard.tsx`,
-  `Results.tsx` (`/results` render, `/results/<goal>` ticker and mini
-  card, modal Next); §8 `worker/src/ranking.ts:177` (`topSlots`),
-  `route.ts:197` (`buildRoute`), `Results.tsx` open/done split,
-  `worker/test/route.test.ts`; §9 `ActForm.tsx:116,263-273,319-347`
-  (checkboxes, `picked[]`, leader fill), `web/src/lib/goals.ts:33`
-  (`leaderOf`), `act/[action].astro:27` (`leader` prop),
-  `worker/src/load.ts:82-95` (`{{leader}}`), `data/goals/house-caucus.yaml:106`,
-  `data/goals/senate-leader.yaml:141,154`.
-- Tests run + result: none yet
-- Remaining: §1–10
-- Decisions since last update: owner 2026-11-10: every phone and email
-  button kicks off the receipt and share flow (reverses the
-  `share-from-results` scope of `/results` only); the act page keeps its
-  own receipt card rather than the modal (Goals 3). Owner 2026-11-10:
-  receipts count toward the goal from any page; a finished goal wears a
-  DONE postmark and drops last on `/results` while the next ranked goal
-  rolls in (§6–8); the done window is 7 days (Open question 4's
-  proposal). Owner 2026-11-10: the act page's reasons panel takes
-  several picks and names the leader in the points (§9); checkboxes
-  rather than radios (Open question 6). Owner 2026-11-10 (cohesion
-  pass): the three open PRDs ship in one session in the order
-  `call-the-right-office` §1 → `leadership-card-two-goals` §2–5 → `tap-receipts-everywhere` §1–6 + §9 → `tap-receipts-everywhere` §7–8, one PR each, merged by the session once CI
-  is green; the district-line handler (old §1.4) is dropped because
-  `call-the-right-office` §1.4 removes the line; the act page's tap
-  receipt covers the one routed button, the switchboard button and the
-  "Email instead" button; §7.2 and §8.4 state the split-card done
-  state and the `also`-slug lookup.
+- Completed: §1–6, §9 (2026-11-10, one PR on `feat/tap-receipts-everywhere`)
+- Folded: §1–6, §9 → `docs/specs/results-pages.md` (Purpose, §4, Data &
+  contracts), `goal-pages.md` (§2, Invariants, Performance budget),
+  `member-pages.md` (§3, §8, Invariants, Performance budget),
+  `personalised-documents.md` (§1, §4, Data & contracts)
+- Branch / open PRs: `feat/tap-receipts-everywhere` (§1–6 + §9); §7–8
+  follow on their own branch
+- Files changed (file:line map): `web/src/components/receipt-flow.tsx`
+  (new: `useReceiptFlow`, `blocksOf`, `whereOf` seat fallback, `report`,
+  `ReceiptFlow`), `Results.tsx` (mounts the engine), `GoalTargets.tsx`
+  (§2 handlers + modal), `ActForm.tsx` (§3 tap receipts with `channel`,
+  §9 checkboxes `picked[]`, leader fill, 280 overflow status),
+  `MemberContact.tsx` (new, §4: hero buttons island, office-number click
+  delegation, postmark portal into `[data-postmark-slot]`),
+  `pages/m/[id].astro` (island props, H1 slot), `WhipReceipts.tsx` (new,
+  §5: `data-receipt-target` delegation, 32 px postmark portals),
+  `WhipTable.astro` (row JSON + island), `Postmark.tsx` (size 32),
+  `web/src/lib/goals.ts` (`leaderOf`), `pages/goals/[slug]/act/[action].astro`
+  (`leader` prop), `worker/src/leader.ts` (new: `leaderName`,
+  `fillLeader`), `worker/src/load.ts` (`checkLeaderPoints`),
+  `data/goals/house-caucus.yaml`, `data/goals/senate-leader.yaml`
+  (`{{leader}}` points). Tests: `web/src/components/receipt-surfaces.test.tsx`
+  (8), `reasons.test.tsx` (4), `worker/test/goals.test.ts` (+1).
+- Tests run + result: `quiet-check test` PASS, `test-web` PASS (307),
+  `build` PASS, `tsc` PASS (web tsc at its 22-error baseline), `prd-lint`
+  and `doc-lint` PASS. Chunks (gzip): receipt-flow 2.8 KB, GoalTargets
+  1.2 KB, MemberContact 1.3 KB, WhipReceipts 1.0 KB, ActForm 7.9 KB.
+- Remaining: §7–8 (next PR), §10 owner device test
+- Decisions since last update: see 2026-11-10 entries under Changes.
 - Known failures / blockers: none
 - Next action: /implement-prd-section tap-receipts-everywhere.md (next:
-  §1. Receipt engine, in one PR with §2–6 and §9, after
-  `call-the-right-office` §1 and `leadership-card-two-goals` §2–5 merge)
+  §7. Goal done stamp, in one PR with §8)
 
 ## Open questions
 1. Which goal does a member-page or whip-table call count toward when the
@@ -683,3 +669,13 @@ week.
   in place of the chamber stamp); §8.4 takes the `also`-slug lookup and
   the pair title in the mini card; rollout is two PRs in the agreed
   landing order.
+- 2026-11-10 — §1–6, §9 shipped: the leader is filled with the member
+  row's full name ("Hakeem S. Jeffries", "Charles E. Schumer"), not the
+  short forms the §9 text gave, and the two leader points were reworded
+  to stay under 130 characters once filled; the member page's office
+  numbers stay in the static `Offices.astro` and the `MemberContact`
+  island delegates their clicks (no island around the office list); the
+  member page's contact link opens in a new tab when it takes a receipt;
+  the whip-table modal has no next office (Next links to `/results`,
+  `/goals` without a place); a receipt tapped without a stored place
+  takes the tapped office's own seat.

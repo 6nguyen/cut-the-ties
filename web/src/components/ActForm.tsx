@@ -11,6 +11,7 @@ import OpenChip from './OpenChip';
 import { isOpen } from '../lib/hours';
 import { useTurnstile } from '../lib/turnstile';
 import type { Reason } from '../lib/goals';
+import { fillLeader } from '@worker/leader';
 
 interface Props {
   goal: string;
@@ -23,8 +24,10 @@ interface Props {
   /** Goal title and decision date for the reminder link (commitment-funnel §1). */
   title?: string;
   decision?: string | null;
-  /** Goal `reasons`: first-person starting points offered as one radio group beside the form, grouped by angle. */
+  /** Goal `reasons`: first-person starting points offered as checkboxes beside the form, grouped by angle (tap-receipts-everywhere §9). */
   reasons?: Reason[];
+  /** §9.3: the goal's leader name that fills `{{leader}}` in a point, computed at build; null → the points are shown as written. */
+  leader?: string | null;
   /** Goal `what_we_want`, the poster's body line (social-sharing §2.2). */
   what?: string;
   /** email-button §1.4: the action's maintainer-authored subject line; absent on letter and comment actions. */
@@ -102,7 +105,7 @@ async function readSse(body: ReadableStream<Uint8Array>, on: (event: string, dat
 }
 
 /** §4.1–4.6: the form, the streamed document, then the one-screen receipt (stamp, count, share, next office, office response, three text links). */
-export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons, what, emailSubject }: Props) {
+export default function ActForm({ goal, action, type, scope, fields, fmt, siteKey, title, decision, reasons, what, emailSubject, leader = null }: Props) {
   const [choices, setChoices] = useState<Choice[] | null>(null);
   const [target, setTarget] = useState<string>('');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -118,7 +121,8 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const [reportError, setReportError] = useState(false);
   const [copied, setCopied] = useState(false); // the script's Copy button
   const [promised, setPromised] = useState<string | null>(null);
-  const [picked, setPicked] = useState<string | null>(null); // the reasons panel's selected starting point
+  const [picked, setPicked] = useState<string[]>([]); // tap-receipts-everywhere §9.2: the reasons panel's points that are on, in panel order
+  const [pickError, setPickError] = useState<string | null>(null); // §9.2: a pick the field has no room for
   const [writing, setWriting] = useState(false); // email-button §1.4: the email step stands in for the call row
   const [channel, setChannel] = useState<'call' | 'email'>('call'); // the channel of the receipt on screen
   const ts = useTurnstile(siteKey);
@@ -226,7 +230,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
     const res = await fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, action, target, state: place?.state, district: place?.district, device: deviceId(), ...(via === 'email' ? { channel: via } : {}) }) });
     const data = (await res.json().catch(() => ({}))) as { id?: number; message?: string };
     if (!res.ok || !data.id) { setReceiptError(data.message ?? 'Could not record that. Try again.'); return; }
-    logReceipt({ goal, action, target }); // call-follow-through §3
+    logReceipt({ goal, action, target, channel: via }); // call-follow-through §3; tap-receipts-everywhere §6.2: the channel the results card reads
     if (receipt === null) setChannel(via);
     setReceipt(data.id);
     setWriting(false);
@@ -265,17 +269,36 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
   const kind = type === 'call' ? 'call script' : type === 'letter' ? 'letter' : 'comment';
   const generating = phase.kind === 'generating';
   const whyField = fields.find((f) => f.multiline);
-  /** Reasons panel: the picked starting point replaces the previous pick in the "why" field (or is appended to the caller's own words), then the cursor lands there so the caller rewrites it. */
-  function pickReason(point: string) {
+  // tap-receipts-everywhere §9.3: every point with `{{leader}}` filled, in panel order.
+  const panel = (reasons ?? []).map((r) => ({ angle: r.angle, points: r.points.map((p) => fillLeader(p, leader)) }));
+  const why = whyField ? values[whyField.name] ?? '' : '';
+  /** §9.2: a point is on while it was picked and its exact text is still in the field; an edited point clears. */
+  const isOn = (point: string) => picked.includes(point) && why.includes(point);
+  /**
+   * §9.2: checking adds the point at the end of the caller's own words; unchecking removes that point's exact text and
+   * one surrounding space, nothing else. A pick the field has no room for is refused and said. Focus lands on the field.
+   */
+  function togglePoint(point: string) {
     if (!whyField) return;
-    setValues((cur) => {
-      const v = cur[whyField.name] ?? '';
-      const base = (picked && v.includes(picked) ? v.replace(picked, '') : v).replace(/\s+/g, ' ').trim();
-      return { ...cur, [whyField.name]: base ? `${base} ${point}` : point };
-    });
-    setPicked(point);
+    const still = panel.flatMap((r) => r.points).filter((p) => p !== point && isOn(p));
+    let next: string;
+    if (isOn(point)) {
+      const i = why.indexOf(point);
+      let s = i, e = i + point.length;
+      if (why[e] === ' ') e++; else if (s > 0 && why[s - 1] === ' ') s--;
+      next = why.slice(0, s) + why.slice(e);
+      setPicked(still);
+    } else {
+      next = why ? `${why} ${point}` : point;
+      if (next.length > whyField.max) { setPickError('That is more than the field holds. Uncheck one first.'); document.getElementById(whyField.name)?.focus(); return; }
+      setPicked(panel.flatMap((r) => r.points).filter((p) => p === point || still.includes(p)));
+    }
+    setPickError(null);
+    setValues((cur) => ({ ...cur, [whyField.name]: next }));
     document.getElementById(whyField.name)?.focus();
   }
+  /** §3.1–3.2: a tap on a call button or a contact link counts like "I did it" / "I sent it"; nothing posts while a receipt exists or is in flight. */
+  const tap = (via: 'call' | 'email') => () => { if (receipt === null && !counting) void didIt(via); };
 
   const receiptAlert = receiptError && <p role="alert" class="text-sm text-crimson font-semibold" data-receipt-error>{receiptError}</p>;
   // On the form the alert sits under the submit button: below the form and the reasons panel it was off-screen,
@@ -326,18 +349,18 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
             <div class="relative border-2 border-ink bg-hazard shadow-brutal-sm p-4 pt-5 mt-2" data-reasons-how>
               <span class="label-ticker absolute -top-2.5 left-3 bg-paper border border-ink px-1.5 py-0.5">How it works</span>
               <h2 id="reasons-heading" class="font-condensed uppercase tracking-wide text-2xl leading-none">Not sure what to say?</h2>
-              <p class="mt-2 font-semibold leading-snug">Pick one reason. It drops into "{whyField.label}", then change it so it sounds like you.</p>
+              <p class="mt-2 font-semibold leading-snug">Pick any that fit. They drop into "{whyField.label}", then change them so they sound like you.</p>
             </div>
             <fieldset class="flex flex-col gap-4">
               <legend class="sr-only">Reasons people give</legend>
-              {reasons.map((r) => (
+              {panel.map((r) => (
                 <div>
                   <p class="label-code">{r.angle}</p>
                   <ul class="mt-1.5 flex flex-col gap-1">
                     {r.points.map((p) => (
                       <li>
-                        <label class={`flex items-start gap-2 cursor-pointer border-2 px-2 py-1.5 ${picked === p ? 'border-ink bg-newsprint' : 'border-transparent hover:border-rule'}`}>
-                          <input type="radio" name="reason" value={p} class="mt-0.5 shrink-0 accent-ink" checked={picked === p} onChange={() => pickReason(p)} />
+                        <label class={`flex items-start gap-2 cursor-pointer border-2 px-2 py-1.5 ${isOn(p) ? 'border-ink bg-newsprint' : 'border-transparent hover:border-rule'}`}>
+                          <input type="checkbox" name="reason" value={p} class="mt-0.5 shrink-0 accent-ink" checked={isOn(p)} onChange={() => togglePoint(p)} />
                           <span>{p}</span>
                         </label>
                       </li>
@@ -346,6 +369,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
                 </div>
               ))}
             </fieldset>
+            {pickError && <p role="status" class="text-sm text-crimson font-semibold" data-pick-error>{pickError}</p>}
             <p class="text-xs text-ink/70">Your own words carry more weight than ours.</p>
           </aside>
         )}
@@ -386,7 +410,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
               <div class="flex flex-wrap gap-2 items-center">
                 <button type="button" class="btn btn-ghost" onClick={() => { void navigator.clipboard?.writeText(`${emailSubject.replace('{city}', (values.city ?? '').trim() || 'your city')}\n\n${emailMessage(phase.doc.target, text, values)}`); setCopied(true); }}>{copied ? 'Copied' : 'Copy subject and message'}</button>
                 {phase.doc.target.contact_form_url ? (
-                  <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank" data-contact-link>{CONTACT_ACTION[phase.doc.target.contact_kind ?? 'homepage']}</a>
+                  <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank" onClick={tap('email')} data-contact-link>{CONTACT_ACTION[phase.doc.target.contact_kind ?? 'homepage']}</a>
                 ) : <p class="text-sm w-full" data-no-form>This office lists no contact form; the DC number is the only channel.</p>}
               </div>
               {phase.doc.target.contact_form_url && <p class="text-sm" data-field-hint>{fieldHint(phase.doc.target.chamber)}</p>}
@@ -400,7 +424,7 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
           <div class="flex flex-wrap gap-2 items-center">
             {phoneOrder(phase.doc.target.phones, phase.doc.target.office).map(({ phone, district, label }) => (
               <span class="flex items-center gap-2">
-                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} class={`btn ${fill}`} data-office={district ? 'district' : 'dc'}>Call {phase.doc.target.role} {phase.doc.target.name} · {label ? `${label} · ` : ''}{phone}</a>
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} class={`btn ${fill}`} onClick={tap('call')} data-office={district ? 'district' : 'dc'}>Call {phase.doc.target.role} {phase.doc.target.name} · {label ? `${label} · ` : ''}{phone}</a>
                 <OpenChip state={district ? place?.state : undefined} />
               </span>
             ))}
@@ -408,10 +432,10 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
             {allClosed(phase.doc.target.phones, place?.state, undefined, phase.doc.target.office) && closedLine(phase.doc.target.office) && <p class="text-sm w-full" data-voicemail>{closedLine(phase.doc.target.office)}</p>}
             {/* email-button §1.2: the one email affordance sits under the call button; a closed office promotes it to a primary button. */}
             {emailSubject && (allClosed(phase.doc.target.phones, place?.state, undefined, phase.doc.target.office)
-              ? <button type="button" class={`btn ${fill} w-full sm:w-auto`} onClick={() => setWriting(true)} data-email-closed>The office is closed. Email instead</button>
+              ? <button type="button" class={`btn ${fill} w-full sm:w-auto`} onClick={() => { setWriting(true); tap('email')(); }} data-email-closed>The office is closed. Email instead</button>
               : <button type="button" class="text-sm underline w-full text-left" onClick={() => setWriting(true)} data-email-link>I can't call right now</button>)}
             {type !== 'call' && phase.doc.target.contact_form_url && (
-              <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank">Open the contact form ↗</a>
+              <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank" onClick={tap('email')}>Open the contact form ↗</a>
             )}
           </div>
           )}

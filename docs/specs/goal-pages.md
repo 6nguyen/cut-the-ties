@@ -41,6 +41,10 @@ there.
    "Enter your address" linking to `/`. Targets render as the same
    cards as a result card (`target-cards.md`), with the counter line
    below the stack when the list is non-empty (`district-counters.md`).
+   A tap on a card's call or write square posts the receipt and opens the
+   receipt modal of `results-pages.md` §4–7 (`tap-receipts-everywhere`
+   §2), with the same done card and postmark; Next links to `/results`
+   once every office is done; a goal with no action keeps plain links.
    A closed goal shows its outcome
    block instead of targets and actions. Every page carries Open Graph
    and Twitter share metadata with a 1200×630 card at
@@ -205,6 +209,9 @@ there.
       most 200,000 bytes; card text passes AA over every library photo;
       `renderCard` without an id writes the bytes it wrote before photos
       (`web/src/lib/card.test.ts`).
+- [ ] A tap on any phone or email control in the sidebar posts one receipt
+      and opens the modal; the done card and its postmark are the
+      `/results` ones (`web/src/components/receipt-surfaces.test.tsx`).
 
 ## Performance budget
 `/goals`, `/goals/<slug>` and `/goals/<slug>/prep` ≤100 KB transferred on
@@ -219,4 +226,6 @@ photos the three pages are 19.2, 40.4 and 32.0 KB (`/donate` 1.4 KB gzip,
 LCP element (412 px, CPU 4x, localhost): goal and prep pages 576 to
 592 ms on Fast 4G and 1,400 to 1,424 ms on Slow 4G; `/goals`
 580 to 592 ms and 1,408 ms, its first band being the element. Every page is static, so no Worker call is on the render
-path except the "Who to call" and "Take action" islands.
+path except the "Who to call" and "Take action" islands. "Who to call" is
+1.2 KB gzip plus the shared `receipt-flow` chunk (2.8 KB, 2026-11-10); the
+modal chunk loads on the first tap.

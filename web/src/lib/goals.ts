@@ -3,6 +3,7 @@
 import { join } from 'node:path';
 import { marked } from 'marked';
 import { loadRows } from '@worker/load';
+import { leaderName } from '@worker/leader';
 import type { Action, Goal, LeadershipPair, Member } from '@worker/types';
 
 export type { Action, Goal };
@@ -36,6 +37,8 @@ export function actionsFor(goal: Goal): Action[] { return rows().actions.filter(
 export function picks(goal: Goal): Pick[] { return JSON.parse(goal.our_picks) as Pick[]; }
 export function sources(goal: Goal): Source[] { return JSON.parse(goal.sources) as Source[]; }
 export function reasons(goal: Goal): Reason[] { return JSON.parse(goal.reasons) as Reason[]; }
+/** tap-receipts-everywhere §9.3: the name the act page fills `{{leader}}` with (the first action's incumbent of its chamber), or null. */
+export function leaderOf(goal: Goal): string | null { return leaderName(goal, rows().actions, rows().members); }
 export function markdown(md: string | null): string { return md ? (marked.parse(md, { async: false }) as string) : ''; }
 
 // §3 prep pages

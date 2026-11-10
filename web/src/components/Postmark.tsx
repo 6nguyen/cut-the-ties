@@ -8,14 +8,16 @@ export const postmarkTime = (d: Date): string => d.toLocaleTimeString('en-US', {
 const SIZE = {
   96: { ring: 'border-4', inner: 'inset-1.5 border-2', word: 'text-[26px]', date: 'text-[9px]' },
   64: { ring: 'border-[3px]', inner: 'inset-1 border-[1.5px]', word: 'text-[16px]', date: 'text-[7px]' },
+  // tap-receipts-everywhere §5.2: after a whip-table row's number.
+  32: { ring: 'border-2', inner: 'inset-0.5 border', word: 'text-[8px]', date: 'text-[4px]' },
 } as const;
 
 /**
  * results-pages §5 / §7: the circular crimson CALLED / WROTE postmark, day above and time below, double ring, −12°,
  * the stamp's grain. 96 px heads the receipt modal; 64 px sits on a done card's corner. `role="img"` with the
- * sentence as its name; `id` keys the SVG grain filter, one per instance.
+ * sentence as its name; `id` keys the SVG grain filter, one per instance. 32 px sits after a whip-table row's number.
  */
-export default function Postmark({ wrote, name, at, size = 96, id, class: cls = '' }: { wrote: boolean; name: string; at: string | Date; size?: 96 | 64; id: string; class?: string }) {
+export default function Postmark({ wrote, name, at, size = 96, id, class: cls = '' }: { wrote: boolean; name: string; at: string | Date; size?: 96 | 64 | 32; id: string; class?: string }) {
   const d = typeof at === 'string' ? new Date(at) : at;
   const s = SIZE[size];
   const filter = `postmark-grain-${id}`;

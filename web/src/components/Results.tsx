@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type preact from 'preact';
-import { districtLabel, route, type GoalCard, type RouteResponse, type TargetCard } from '../lib/api';
+import { useEffect, useMemo, useState } from 'preact/hooks';
+import { districtLabel, route, type GoalCard, type RouteResponse } from '../lib/api';
 import type { Chamber, LeadershipPair } from '@worker/types';
-import { cacheRoute, clearPlace, deviceId, loadPlace, peekRoute } from '../lib/store';
-import { logReceipt, receiptsByTarget, setReceiptOutcome, type ReceiptOutcome } from '../lib/commitments';
-import { CATEGORY, TargetStack, fmtDate, type Channel, type TargetDone, type TargetHandlers } from './Target';
+import { cacheRoute, clearPlace, loadPlace, peekRoute } from '../lib/store';
+import { CATEGORY, TargetStack, fmtDate, type TargetDone, type TargetHandlers } from './Target';
 import SummaryCard from './SummaryCard';
-import type { NextStep, ReceiptModalProps } from './ReceiptModal';
 import Counts from './Counts';
+import { useReceiptFlow } from './receipt-flow';
+export { blocksOf, targetId, doneMap, nextTarget } from './receipt-flow';
+import { blocksOf } from './receipt-flow';
 import Countdown, { targetOf } from './Countdown';
 
 /** urgency-and-readability §4: the soonest upcoming countdown target among cards (a leadership card holds two goals). */
@@ -33,31 +33,12 @@ export function bandHtml(id: string | undefined, doc: Pick<Document, 'querySelec
 
 const CHAMBER: Record<Chamber, string> = { house: 'House', senate: 'Senate' };
 
-/** The blocks a card renders, House first on a split leadership card (leadership-routing §2.3); one block otherwise. */
-export function blocksOf(g: GoalCard): GoalCard[] {
-  if (g.chamber === undefined) return [g];
-  return (['house', 'senate'] as Chamber[]).map((c) => [g, g.also].find((x) => x?.chamber === c)).filter((x): x is GoalCard => !!x);
-}
-export const targetId = (t: TargetCard): string => t.bioguide_id ?? t.name;
-
 /** leadership-card-two-goals §2.3–2.4: a card holding two goals (`also`) takes the House goal's `pair` title and summary; any other card, or no pair in data, keeps its own. */
 export function cardCopy(g: GoalCard, pair?: LeadershipPair | null): { title: string; summary: string } {
   return g.also !== undefined && pair ? { title: pair.title, summary: pair.summary } : { title: g.title, summary: g.summary };
 }
 /** §5: the route's card that is this slug, or holds it as `also`; `/results/senate-leader` opens the split card too. */
 export const cardFor = (goals: readonly GoalCard[], slug: string): GoalCard | undefined => goals.find((g) => g.slug === slug || g.also?.slug === slug);
-
-/** results-pages §3.4: this device's receipts for every office of the card, from `cut-ties:receipts` (24 h). */
-export function doneMap(g: GoalCard, now: Date = new Date()): Map<string, TargetDone> {
-  const m = new Map<string, TargetDone>();
-  for (const b of blocksOf(g)) if (b.action) for (const [id, d] of receiptsByTarget(b.slug, b.action, now)) m.set(id, d);
-  return m;
-}
-/** commitment-funnel §7 / results-pages §3.2: the first office across the blocks with no receipt from this device; `skip` is the office just tapped. */
-export function nextTarget(g: GoalCard, done: ReadonlyMap<string, TargetDone>, skip?: string | null): TargetCard | null {
-  for (const b of blocksOf(g)) for (const t of b.targets) { const id = targetId(t); if (!done.has(id) && id !== skip) return t; }
-  return null;
-}
 
 interface CardState { done: ReadonlyMap<string, TargetDone>; next: string | null; handlers: (b: GoalCard) => TargetHandlers }
 
@@ -159,21 +140,6 @@ function OtherAction({ g, photo, pair }: { g: GoalCard; photo?: string; pair?: L
   );
 }
 
-const FAILED = (channel: Channel) => `Couldn't count this one. Your ${channel === 'email' ? 'message' : 'call'} still counts with the office.`;
-/** `block` is the goal the receipt and the report belong to (a leadership card's House or Senate block). */
-type Modal = Pick<ReceiptModalProps, 'g' | 'target' | 'channel' | 'at' | 'outcome' | 'answer'> & { block: GoalCard };
-/** results-pages §4: the ask's outcomes that reach `POST /api/report`; the rest live only on this device. */
-const REPORTED: ReadonlySet<ReceiptOutcome> = new Set(['will_support', 'undecided', 'opposed', 'no_answer']);
-/** The act page's report, without a note: `{goal, target, outcome, device}`. False on a non-2xx or a network failure. */
-async function report(goal: string, target: string, outcome: ReceiptOutcome): Promise<boolean> {
-  try {
-    const res = await fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal, target, outcome, device: deviceId() }) });
-    return res.ok;
-  } catch { return false; }
-}
-/** The block of the card whose target this is (a split card holds two). */
-const blockOf = (g: GoalCard, id: string): GoalCard => blocksOf(g).find((b) => b.targets.some((t) => targetId(t) === id)) ?? g;
-
 /**
  * §1.3 results: exactly two cards for the stored district; §1.5 "change address". `photos` maps a goal slug to its
  * image id (site-imagery §2.3). With `goal` (results-pages §2) the island is the one-action page: that goal's full
@@ -183,12 +149,6 @@ const blockOf = (g: GoalCard, id: string): GoalCard => blocksOf(g).find((b) => b
 export default function Results({ photos = {}, goal, pair = null }: { photos?: Record<string, string>; goal?: string; pair?: LeadershipPair | null }) {
   const [data, setData] = useState<RouteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<ReadonlyMap<string, TargetDone>>(new Map());
-  const [next, setNext] = useState<string | null>(null); // §3.2: the office whose call square wears the ring
-  const [modal, setModal] = useState<Modal | null>(null);
-  const [ModalView, setModalView] = useState<{ C: (p: ReceiptModalProps) => preact.JSX.Element } | null>(null);
-  // §4.4: an answer given while the receipt POST is still in flight; the row takes it when it is written.
-  const answers = useRef(new Map<string, ReceiptOutcome>());
 
   useEffect(() => {
     const cached = peekRoute<RouteResponse>();
@@ -199,7 +159,9 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
   }, []);
 
   const current = useMemo(() => (goal && data ? cardFor(data.goals, goal) ?? null : null), [goal, data]);
-  useEffect(() => { if (current) setDone(doneMap(current)); }, [current]);
+  const other = current && data ? data.goals.find((x) => x.slug !== current.slug) ?? null : null;
+  // tap-receipts-everywhere §1: the receipt engine (results-pages §3–4); the "Your other action" link once every office is done.
+  const flow = useReceiptFlow({ goal: current, state: data?.state ?? '', district: data?.district ?? null, other: other ? { href: `/results/${other.slug}`, label: 'Your other action →' } : { href: '/goals', label: 'See all goals →' } });
   // §2.3: the tab title follows the card (the static page carries the goal's own title).
   useEffect(() => { if (current && typeof document !== 'undefined') document.title = `${cardCopy(current, pair).title} — Cut the Ties`; }, [current]);
 
@@ -226,67 +188,8 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
         </div>
       </div>
     );
-    const other = data.goals.find((x) => x.slug !== current.slug) ?? null;
     const g = current;
-
-    const open = (m: Modal) => {
-      setModal(m);
-      if (!ModalView) import('./ReceiptModal').then((mod) => setModalView({ C: mod.default }));
-    };
-    const handlers = (b: GoalCard): TargetHandlers => ({
-      onContact: b.action ? (t, channel) => {
-        const id = targetId(t);
-        if (next === id) setNext(null);
-        answers.current.delete(id);
-        open({ g, block: b, target: t, channel, at: new Date().toISOString(), outcome: null, answer: null });
-        const body = { goal: b.slug, action: b.action, target: id, state: data.state, district: b.category === 'state' ? null : data.district, device: deviceId(), channel };
-        fetch('/api/receipt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), keepalive: true })
-          .then(async (res) => {
-            const d = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
-            if (res.ok || d.error === 'limit_repeat') { // §4: already counted is still done
-              logReceipt({ goal: b.slug, action: b.action!, target: id, channel, outcome: answers.current.get(id) });
-              setDone(doneMap(g));
-              return 'counted' as const;
-            }
-            return d.message ?? FAILED(channel);
-          }, () => FAILED(channel))
-          .then((outcome) => setModal((m) => (m && targetId(m.target) === id ? { ...m, outcome } : m)));
-      } : undefined,
-      onShare: (t) => { // §7: no new POST
-        const id = targetId(t);
-        const d = done.get(id);
-        if (d) open({ g, block: blockOf(g, id), target: t, channel: d.channel, at: d.at, outcome: 'counted', answer: d.outcome ?? null });
-      },
-    });
-    /** §4.3–4.4: post the report outcomes; keep every answer on the receipt row (when one was written). */
-    const answer = async (o: ReceiptOutcome): Promise<boolean> => {
-      if (!modal) return false;
-      const id = targetId(modal.target);
-      const b = modal.block;
-      if (REPORTED.has(o) && !(await report(b.slug, id, o))) return false;
-      answers.current.set(id, o);
-      if (b.action) setReceiptOutcome(b.slug, b.action, id, o);
-      setDone(doneMap(g));
-      return true;
-    };
-    const st: CardState = { done, next, handlers };
-
-    const step: NextStep = (() => {
-      const t = modal ? nextTarget(g, done, targetId(modal.target)) : null;
-      if (t) return { kind: 'target', target: t };
-      return other ? { kind: 'link', href: `/results/${other.slug}`, label: 'Your other action →' } : { kind: 'link', href: '/goals', label: 'See all goals →' };
-    })();
-    const closeModal = () => {
-      const id = modal ? targetId(modal.target) : null;
-      setModal(null);
-      if (id) requestAnimationFrame(() => (document.querySelector<HTMLElement>(`[data-target="${CSS.escape(id)}"] [data-share-pill]`))?.focus());
-    };
-    const toNext = (t: TargetCard) => {
-      const id = targetId(t);
-      setModal(null);
-      setNext(id);
-      requestAnimationFrame(() => document.querySelector(`[data-target="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-    };
+    const st: CardState = { done: flow.done, next: flow.next, handlers: flow.handlers };
 
     return (
       <div>
@@ -296,9 +199,7 @@ export default function Results({ photos = {}, goal, pair = null }: { photos?: R
           <Card g={g} n={n + 1} state={data.state} district={data.district} photo={photos[g.slug]} st={st} pair={pair} />
         </div>
         {other && <div class="mt-10 max-w-3xl"><OtherAction g={other} photo={photos[other.slug]} pair={pair} /></div>}
-        {modal && ModalView && (
-          <ModalView.C g={modal.g} target={modal.target} channel={modal.channel} at={modal.at} outcome={modal.outcome} answer={modal.answer} onAnswer={answer} state={data.state} district={g.category === 'state' ? null : data.district} next={step} onNext={toNext} onClose={closeModal} />
-        )}
+        {flow.modal}
       </div>
     );
   }

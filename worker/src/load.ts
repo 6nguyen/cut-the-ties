@@ -1,5 +1,6 @@
 // Node-only: read data/ into row objects. Shared by scripts/seed.ts and the tests.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { fillLeader, leaderName } from './leader';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { CAUCUSES, CONTACT_KINDS, HOLDINGS_STATUSES, type Action, type Caucus, type Chamber, type Goal, type LeadershipPair, type Member, type MemberElect, type Office, type Party, type Position, type StateRow } from './types';
@@ -78,6 +79,22 @@ function checkJsonList(slug: string, field: string, raw: string, required: strin
       if (typeof (e as Record<string, unknown>)?.[k] !== 'string' || (e as Record<string, string>)[k] === '') throw new Error(`goal ${slug}: ${field}[${i}] needs ${k}`);
     }
   });
+}
+
+/**
+ * tap-receipts-everywhere §9.5: `{{leader}}` is allowed only on a goal whose leader resolves (a leadership goal with a
+ * chamber and an incumbent of that chamber); any other `{{…}}` token or a brace left in a point fails the seed, and
+ * the 130-character limit counts the point with the name filled.
+ */
+function checkLeaderPoints(goals: readonly Goal[], actions: readonly Action[], members: readonly Member[]): void {
+  for (const g of goals) {
+    const name = leaderName(g, actions, members);
+    (JSON.parse(g.reasons) as { points: string[] }[]).forEach((r, i) => r.points.forEach((p, j) => {
+      const filled = fillLeader(p, name);
+      if (/[{}]/.test(filled)) throw new Error(`goal ${g.slug}: reasons[${i}].points[${j}] holds a placeholder or brace; only {{leader}} is allowed, on a goal with a leader`);
+      if (filled.length > 130) throw new Error(`goal ${g.slug}: reasons[${i}].points[${j}] is over 130 chars with the leader named`);
+    }));
+  }
 }
 
 /** personalised-documents §1: `reasons` is ≤6 angles, each a non-empty `angle` with 1–5 `points` of ≤130 chars, no digits (numbers come from sourced rows, never from a framing). */
@@ -393,6 +410,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
     caucus: caucusOf(r),
   }));
   checkMembers(parseCsv(readFileSync(join(dataDir, 'members.csv'), 'utf8')));
+  checkLeaderPoints(goals, actions, members);
 
   const electRows = parseCsv(readFileSync(join(dataDir, 'members_elect.csv'), 'utf8'));
   checkMembersElect(electRows, members, updatedAt.slice(0, 10));
