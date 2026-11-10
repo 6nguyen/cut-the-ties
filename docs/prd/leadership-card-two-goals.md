@@ -242,7 +242,7 @@ visitors who make at least one Senate-block call (receipts with
 `senate-leader-call` over visitors whose route returned a split card),
 before and after, from the existing receipt rows.
 
-## State (updated 2026-11-10, PR #94)
+## State (updated 2026-11-10, PR #96)
 - Sections:
   - [x] 1. Mock-ups, confirmed before any code · owner confirmed 2026-11-10 · PR #94
   - [ ] 2. Pair copy and card framing
@@ -252,7 +252,8 @@ before and after, from the existing receipt rows.
   - [ ] 6. Live check
 - Completed: §1 mock-ups (owner confirmed 2026-11-10: L1–L4, headline A)
 - Folded: none
-- Branch / open PRs: `docs/leadership-card-two-goals` (this PRD), PR #94
+- Branch / open PRs: PRD and mock-ups merged in PR #94; confirmation
+  logged in `docs/leadership-card-confirmed`, PR #96
 - Files changed (file:line map): §1 sent 2026-11-10:
   `design/mockups/leadership-card.html` (L1 390+1024, L2–L5; `?only=<id>`
   shows one screen) and `design/mockups/leadership-card/<id>.png`. §1 is
