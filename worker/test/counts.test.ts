@@ -192,6 +192,16 @@ describe('POST /api/receipt limits (§3)', () => {
     expect(repo.receipts.at(-1)!.channel).toBe('call');
     expect(repo.receipts).toHaveLength(2);
   });
+  it('limit_repeat is keyed on the target (share-from-results §3.5): two offices within 10 minutes both count; the same office twice is 429', async () => {
+    const { repo, post } = app();
+    expect((await post(body())).status).toBe(200);
+    expect((await post(body({ target: 'P000145' }))).status).toBe(200);
+    expect((await post(body({ target: 'S001150' }))).status).toBe(200);
+    const again = await post(body({ target: 'P000145' }));
+    expect(again.status).toBe(429);
+    expect((await json(again)).error).toBe('limit_repeat');
+    expect(repo.receipts.map((r) => r.target_id)).toEqual([CORREA, 'P000145', 'S001150']);
+  });
   it('limit_repeat is keyed on the channel: a call then an email within 10 minutes both count; a second email is 429', async () => {
     const { repo, post, get } = app();
     expect((await post(body())).status).toBe(200);

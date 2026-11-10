@@ -159,9 +159,9 @@ export function createApp(deps: Deps) {
     const now = deps.now();
     const [device_hash, ip_hash] = await Promise.all([sha256Hex(body.device), receiptIpHash(c.req.header('CF-Connecting-IP'), c.env.IP_SALT, now)]);
     const common = { state, district, created_at: now.toISOString(), device_hash, ip_hash, channel };
-    // district-counters §3: 10 per device per day, 1 per device+goal+action+channel per 10 minutes, 50 per IP hash per day. Extra posts are not stored.
-    const limited = async (goalId: number, actionId: number | null, kind: 'action' | 'captain-list') => {
-      const n = await repo.receiptLimitCounts(device_hash, ip_hash, goalId, actionId, kind, channel, now);
+    // district-counters §3 + share-from-results §3.5: 10 per device per day, 1 per device+goal+action+channel+target per 10 minutes, 50 per IP hash per day. Extra posts are not stored.
+    const limited = async (goalId: number, actionId: number | null, targetId: string | null, kind: 'action' | 'captain-list') => {
+      const n = await repo.receiptLimitCounts(device_hash, ip_hash, goalId, actionId, targetId, kind, channel, now);
       if (n.device_day >= RECEIPT_LIMITS.device_day) return c.json({ error: 'limit_day', message: `Ten actions a day is plenty. Come back tomorrow.` }, 429);
       if (n.repeat >= 1) return c.json({ error: 'limit_repeat', message: 'That one is already counted. Try again in ten minutes.' }, 429);
       if (n.ip_day >= RECEIPT_LIMITS.ip_day) return c.json({ error: 'limit_ip', message: 'Too many receipts from this network today.' }, 429);
@@ -173,7 +173,7 @@ export function createApp(deps: Deps) {
       if (body.channel !== undefined && body.channel !== null) return c.json({ error: 'bad_request', message: 'A captain list carries no channel.' }, 400);
       const goal = await repo.goalBySlug(body.goal);
       if (!goal || goal.status !== 'active') return c.json({ error: 'no_action', message: 'No open goal by that name.' }, 400);
-      const stop = await limited(goal.id, null, 'captain-list');
+      const stop = await limited(goal.id, null, null, 'captain-list');
       if (stop) return stop;
       return c.json({ id: await repo.insertReceipt({ goal_id: goal.id, action_id: null, target_id: null, kind: 'captain-list', ...common }) });
     }
@@ -181,7 +181,7 @@ export function createApp(deps: Deps) {
     if (!goal || !action || action.goal_id !== goal.id) return c.json({ error: 'no_action', message: 'No open action by that name.' }, 400);
     const target = await resolveTarget(repo, action, goal, body.target);
     if (!target) return c.json({ error: 'no_target', message: 'That target is not on file for this action.' }, 400);
-    const stop = await limited(goal.id, action.id, 'action');
+    const stop = await limited(goal.id, action.id, target.id, 'action');
     if (stop) return stop;
     const id = await repo.insertReceipt({ goal_id: goal.id, action_id: action.id, target_id: target.id, kind: 'action', ...common });
     return c.json({ id });

@@ -16,6 +16,9 @@ export interface TargetCard {
   position_source_url: string | null;
   prior_vote: string;
   phone: string | null;
+  // share-from-results §2.3: the write square; null = no square. contact_kind labels it (homepage when the roster gave no kind).
+  contact_form_url?: string | null;
+  contact_kind?: Member['contact_kind'];
   // roster-freshness §1: the first district office in the member's state ("District: <city> <phone>"), after the DC number.
   district_phone?: string | null;
   district_city?: string | null;
@@ -41,6 +44,10 @@ export interface GoalCard {
   this_week: string | null;
   ask_text: string;
   action_href: string;
+  // share-from-results: the action slug the receipt posts with, and the summary card's decision chip (null = none).
+  action: string | null;
+  short_label: string | null;
+  what_we_want: string; // the poster's second line (social-sharing §2)
   targets: TargetCard[];
   partner_url: string | null; // office-visits: the "Organise one" line offers the partner when there is one
   // Electoral goals only (primary-2028 §1.2): the elections.csv row the loader folded into the goal.
@@ -114,6 +121,8 @@ function memberCard(m: Member, goal: Goal, positions: Position[], offices: Offic
     position_source_url: p?.source_url ?? null,
     prior_vote: priorVote(m, goal),
     phone: m.dc_phone ?? (d.district_phone ? null : SWITCHBOARD),
+    contact_form_url: m.contact_form_url || null,
+    contact_kind: m.contact_form_url ? (m.contact_kind ?? 'homepage') : null,
     ...d,
   };
 }
@@ -215,6 +224,9 @@ export async function buildRoute(repo: Repo, state: string, district: number, to
       this_week: g.this_week,
       ask_text: fillAsk(action?.ask_text ?? g.what_we_want, g.category === 'state' ? d.state_row : null),
       action_href: action ? `/goals/${g.slug}/act/${action.slug}` : `/goals/${g.slug}`,
+      action: action?.slug ?? null,
+      short_label: action?.short_label ?? null,
+      what_we_want: g.what_we_want,
       targets: targetsFor(g, action, d, positions, offices).map((t) => (g.category === 'electoral' && record ? { ...t, record } : t)),
       election: electionDates(g),
       partner_url: g.partner_url || null,

@@ -301,18 +301,18 @@ export class D1Repo implements Repo {
     return foldBuckets(results.map((r) => ({ inDistrict: r.in_district === 1, kind: r.kind, type: r.type, n: Number(r.n) })));
   }
   // district-counters §3: the three receipt limits in one read.
-  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts> {
+  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, targetId: string | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts> {
     const dayAgo = iso(new Date(now.getTime() - DAY));
     const tenAgo = iso(new Date(now.getTime() - 10 * 60_000));
     const row = await this.db
       .prepare(
         `SELECT
            SUM(device_hash = ?1) AS device_day,
-           SUM(device_hash = ?1 AND goal_id = ?3 AND kind = ?5 AND channel = ?8 AND action_id IS ?4 AND created_at >= ?6) AS repeat,
+           SUM(device_hash = ?1 AND goal_id = ?3 AND kind = ?5 AND channel = ?8 AND action_id IS ?4 AND target_id IS ?9 AND created_at >= ?6) AS repeat,
            SUM(ip_hash = ?2) AS ip_day
          FROM receipts WHERE created_at >= ?7`,
       )
-      .bind(deviceHash, ipHash, goalId, actionId, kind, tenAgo, dayAgo, channel)
+      .bind(deviceHash, ipHash, goalId, actionId, kind, tenAgo, dayAgo, channel, targetId)
       .first<Record<keyof ReceiptLimitCounts, number | null>>();
     return { device_day: row?.device_day ?? 0, repeat: row?.repeat ?? 0, ip_day: row?.ip_day ?? 0 };
   }
@@ -475,13 +475,13 @@ export class MemoryRepo implements Repo {
         .map((r) => ({ inDistrict: district !== null && r.district === district, kind: r.kind, type: type(r.action_id), n: 1 })),
     );
   }
-  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts> {
+  async receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, targetId: string | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts> {
     const dayAgo = iso(new Date(now.getTime() - DAY));
     const tenAgo = iso(new Date(now.getTime() - 10 * 60_000));
     const day = this.receipts.filter((r) => r.created_at >= dayAgo);
     return {
       device_day: day.filter((r) => r.device_hash === deviceHash).length,
-      repeat: day.filter((r) => r.device_hash === deviceHash && r.goal_id === goalId && r.kind === kind && r.channel === channel && r.action_id === actionId && r.created_at >= tenAgo).length,
+      repeat: day.filter((r) => r.device_hash === deviceHash && r.goal_id === goalId && r.kind === kind && r.channel === channel && r.action_id === actionId && r.target_id === targetId && r.created_at >= tenAgo).length,
       ip_day: day.filter((r) => r.ip_hash === ipHash).length,
     };
   }

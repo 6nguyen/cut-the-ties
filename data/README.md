@@ -177,6 +177,10 @@ eligible goal is paired with the state goal.
   only placeholder (filled from the form's `city`). The loader refuses a
   file that breaks any of these. Example: `Constituent in {city}: vote only
   for a leader who drops the integration section`.
+- `short_label` (share-from-results §1, optional): the decision the action
+  bears on, as a chip on the `/results` summary card: `NDAA §219 / §1217`,
+  `Senate leader vote`. ≤24 characters; omit it and the card shows no
+  decision chip.
 - `standard_template` or `script_blocks` (one of the two while the goal
   is `active`): the script served when no model may run
   (`docs/specs/standard-scripts.md`). `script_blocks: <name>`

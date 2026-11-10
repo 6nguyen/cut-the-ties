@@ -6,6 +6,7 @@ import { isDelegate } from '@worker/districts';
 import { applyFilters, latestPosition, updatedAt, whipCounts, whipRows, whipTargets, POSITIONS, type WhipRow } from '@worker/whip';
 import type { Action, Goal, Member, Office, Position } from '@worker/types';
 import { actionsFor, activeGoals, publishedGoals } from './goals';
+import { CONTACT_LABEL } from './contact';
 
 export type { Member, Office, Position, WhipRow };
 export { applyFilters, isDelegate, latestPosition, updatedAt, whipCounts, whipRows, whipTargets, POSITIONS };
@@ -20,8 +21,8 @@ export function member(id: string): Member | null { return members().find((m) =>
 /** roster-freshness §1: a member's district offices in file order (data/district_offices.csv). */
 export function officesFor(m: Member): Office[] { return rows().offices.filter((o) => o.bioguide_id === m.bioguide_id); }
 
-/** roster-freshness §2: the contact link's label by kind; a link without a kind is never shown. */
-export const CONTACT_LABEL: Record<NonNullable<Member['contact_kind']>, string> = { form: 'Contact form', zip_gate: 'Contact form (asks for your ZIP)', homepage: 'Office website' };
+/** roster-freshness §2: a link without a kind is never shown. The labels live in `contact.ts` (client-safe). */
+export { CONTACT_LABEL };
 export const contactLabel = (m: Member): string | null => (m.contact_form_url && m.contact_kind ? CONTACT_LABEL[m.contact_kind] : null);
 /** roster-freshness §4: the one line under the hero for a member who is not returning; the date is the 120th Congress's first day. */
 export const LEAVES_LINE = 'Leaves office 2027-01-03. Votes on the NDAA and the funding bill until then.';

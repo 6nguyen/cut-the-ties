@@ -60,6 +60,8 @@ CREATE TABLE actions (
   standard_template TEXT,
   -- email-button §2.1: subject of the "Send it in writing" step; required on a call action while its goal is active.
   email_subject TEXT,
+  -- share-from-results §1: decision label chip on the /results summary card ("NDAA §219 / §1217"); NULL = no chip.
+  short_label TEXT,
   script_blocks TEXT
 );
 

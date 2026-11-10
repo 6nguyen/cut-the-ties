@@ -141,6 +141,8 @@ export interface Action {
   script_blocks: string | null;
   /** email-button §2.1: subject line of the email step; required while the goal is active, `{city}` is the only placeholder. */
   email_subject: string | null;
+  /** share-from-results §1: the decision label on the summary card's meta line ("NDAA §219 / §1217"); null = no chip. */
+  short_label: string | null;
 }
 
 export interface Position {
@@ -247,7 +249,7 @@ export interface Repo {
   latestReport(bioguideId: string, goalId: number): Promise<LatestReport | null>;
   // district-counters §1/§3 (worker/src/counts.ts and POST /api/receipt are the only callers).
   countReceipts(goalId: number, state: string, district: number | null, sinceIso: string): Promise<{ district: ReceiptBuckets; state: ReceiptBuckets }>;
-  receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts>;
+  receiptLimitCounts(deviceHash: string, ipHash: string, goalId: number, actionId: number | null, targetId: string | null, kind: ReceiptKind, channel: ReceiptChannel, now: Date): Promise<ReceiptLimitCounts>;
   // email-button §1.6: the digest's receipts block (worker/src/digest.ts is the only caller).
   receiptTotalsSince(since: Date): Promise<ReceiptTotal[]>;
   // primary-2028 §1.2: every goal the site tracked (active or closed, never upcoming) for the electoral record.

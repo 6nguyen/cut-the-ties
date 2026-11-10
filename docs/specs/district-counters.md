@@ -50,9 +50,10 @@ updates.
    leaves the page as it was, `echo` included.
 8. **Receipt limits.** `POST /api/receipt` refuses, with 429 and without
    storing the row: the 11th receipt from one device hash in 24 h
-   (`limit_day`), a second receipt for the same device, goal, action and
-   channel (or captain list) within 10 minutes (`limit_repeat`; a call
-   then an email for one office both count), and the 51st
+   (`limit_day`), a second receipt for the same device, goal, action,
+   channel and target (or captain list) within 10 minutes
+   (`limit_repeat`; a call then an email for one office, or two offices
+   of one goal, both count), and the 51st
    receipt from one IP hash in 24 h (`limit_ip`). Both windows are closed
    on the older edge (a row exactly 24 h or 10 min old still counts). The
    generation limits in `personalised-documents.md` are unchanged.

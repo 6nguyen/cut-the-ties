@@ -13,11 +13,12 @@ export function loadPlace(): Place | null {
 export function savePlace(p: Place): void { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* private mode */ } }
 export function clearPlace(): void { try { localStorage.removeItem(KEY); sessionStorage.removeItem(ROUTE_KEY); } catch { /* ignore */ } }
 
-// The last route response, so /results does not call the API twice after the form.
-const ROUTE_KEY = 'cut-ties:route';
+// The last route response, so /results and /results/<goal> (results-pages §2.2) do not call the API again this
+// session. `clearPlace` drops it with the address.
+export const ROUTE_KEY = 'cut-ties:route';
 export function cacheRoute(r: unknown): void { try { sessionStorage.setItem(ROUTE_KEY, JSON.stringify(r)); } catch { /* ignore */ } }
-export function takeRoute<T>(): T | null {
-  try { const raw = sessionStorage.getItem(ROUTE_KEY); sessionStorage.removeItem(ROUTE_KEY); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
+export function peekRoute<T>(): T | null {
+  try { const raw = sessionStorage.getItem(ROUTE_KEY); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
 }
 
 export const STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];

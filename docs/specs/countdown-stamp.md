@@ -26,10 +26,12 @@ goal detail or prep pages (`urgency-and-readability` open question 2).
    date in the label is that New York calendar day. A past, empty or
    malformed target renders nothing, and a running stamp disappears the
    second its target passes.
-3. **Result cards (`/results`).** Each card wears its own soonest
-   upcoming target's stamp at its top-right, replacing the
-   "Decision: <date>" line (which stays only for past dates); a split
-   leadership card names the chamber ("House"/"Senate") in the label.
+3. **Result cards (`/results`, `/results/<goal>`).** Each summary card
+   on `/results`, the result card on `/results/<goal>` and its "Your
+   other action" mini card wear their own soonest upcoming target's
+   stamp at the top-right, replacing the "Decision: <date>" line (which
+   stays only for past dates); a split leadership card names the chamber
+   ("House"/"Senate") in the label (`results-pages.md` §1–2).
    The page header carries one `lg` stamp naming the goal for the
    soonest target across both slots, to the right of the H1 from 768 px
    (the H1 reserves 400 px) and above it below that.

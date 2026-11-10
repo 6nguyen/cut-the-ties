@@ -327,6 +327,7 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
         standard_template: str(y.standard_template),
         script_blocks: null,
         email_subject: str(y.email_subject),
+        short_label: str(y.short_label),
       };
       if (y.script_blocks !== undefined) {
         // leader-call-scripts §1: the blocks file is inlined as JSON so D1 and MemoryRepo carry it with the action.

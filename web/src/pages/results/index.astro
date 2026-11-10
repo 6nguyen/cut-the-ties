@@ -1,9 +1,9 @@
 ---
-import Base from '../layouts/Base.astro';
-import Photo from '../components/Photo.astro';
-import Results from '../components/Results';
-import { publishedGoals } from '../lib/goals';
-import { BAND, imageIdFor } from '../lib/images';
+import Base from '../../layouts/Base.astro';
+import Photo from '../../components/Photo.astro';
+import Results from '../../components/Results';
+import { publishedGoals } from '../../lib/goals';
+import { BAND, imageIdFor } from '../../lib/images';
 // site-imagery §2.3: `Photo` cannot render inside the island, and the cards only exist after `/api/route` answers.
 // So the build writes one inert `<template>` per image a goal can show, and each card copies the markup of its own.
 // Nothing inside a template is fetched until a card uses it.
