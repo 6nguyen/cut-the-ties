@@ -193,7 +193,7 @@ visitors who make at least one Senate-block call (receipts with
 `senate-leader-call` over visitors whose route returned a split card),
 before and after, from the existing receipt rows.
 
-## State (updated 2026-11-10)
+## State (updated 2026-11-10, PR #94)
 - Sections:
   - [ ] 1. Pair copy and card framing
   - [ ] 2. Block anatomy
@@ -202,7 +202,7 @@ before and after, from the existing receipt rows.
   - [ ] 5. Live check
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/leadership-card-two-goals` (this PRD)
+- Branch / open PRs: `docs/leadership-card-two-goals` (this PRD), PR #94
 - Files changed (file:line map): none yet. §1–4 build as one PR:
   `data/goals/house-caucus.yaml` (`pair`), `data/actions/*-call.yaml`
   (`short_label`), `worker/src/load.ts:330` (validate `pair`),
