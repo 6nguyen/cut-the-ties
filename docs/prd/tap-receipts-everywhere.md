@@ -17,7 +17,7 @@ control on the site. The audit of 2026-11-10:
 | Surface | Control | Today |
 |---|---|---|
 | `/results/<goal>` | call square, write square, elect Contact square | receipt + modal (`Results.tsx:211-247`) |
-| `/results/<goal>`, `/goals/<slug>` | "District: <city> <phone>" `tel:` link under a card (`Target.tsx:143`) | plain link |
+| `/results/<goal>`, `/goals/<slug>` | "District: <city> <phone>" `tel:` link under a card (`Target.tsx:143`) | plain link; `call-the-right-office` §1.4 removes the line for every current action, so there is nothing to wire |
 | `/goals/<slug>` "Who to call" | call square, write square, elect Contact square (`GoalTargets.tsx`) | plain links |
 | `/goals/<slug>/act/<action>` | "Call <Role Name> · <phone>" buttons, "Open the contact form ↗" / contact-form link (`ActForm.tsx:384,398,409`) | plain links; the receipt waits for the separate "I did it" / "I sent it" button |
 | `/m/<id>` hero | "Call DC office", "District office" `tel:` buttons, contact link (`pages/m/[id].astro:47-49`) | plain links, static |
@@ -55,9 +55,10 @@ integration sections first.
      every surface mounts; `Results.tsx` becomes its first consumer with
      no behaviour change.
   2. Every `tel:` link and every contact-form or email link on the site
-     goes through it: the goal page's stack, the district-office lines,
-     the act page's buttons, the member page's hero and office cards, the
-     whip table's numbers.
+     goes through it: the goal page's stack, the act page's buttons, the
+     member page's hero and office cards, the whip table's numbers. (The
+     cards' district-office line is gone once `call-the-right-office`
+     §1.4 lands; a card has one number, the routed office's.)
   3. The act page keeps its own one-screen receipt card
      (`personalised-documents.md` §4): a tap there posts the same receipt
      the "I did it" / "I sent it" button posts and renders that card; it
@@ -137,11 +138,13 @@ new.
 3. `Results.tsx` mounts the hook for the one-action page and its
    behaviour is unchanged: `results-pages.md` §3–8 and every test in
    `results-page.test.tsx` pass as they are.
-4. `Target` gains the handler on the district-office line: the `tel:` link
-   in "District: <city> <phone>" calls `onContact(t, 'call')` when the
-   card has one, so a tap on it is a call receipt for that office (the
-   receipt carries no office field; the count is per target). A done
-   card keeps the line as a plain link.
+4. `Target` is unchanged. `call-the-right-office` §1.4 lands first and
+   removes the "District: <city> <phone>" line for every current action,
+   so the call square is the card's only `tel:` link and it already
+   carries `onContact(t, 'call')`. Should a `district` action ever
+   render a second number under a card, that link takes the same
+   handler (the receipt carries no office field; the count is per
+   target).
 5. A receipt that `limit_repeat` answers is done, as today (§4 of
    `results-pages.md`); a tap on a done card's square after "Form didn't
    work" posts its own call receipt, as today.
@@ -154,7 +157,7 @@ new.
    `/api/goals/<slug>/targets` as today; `targets` come from that
    response. The island passes `handlers(goal)` to every `Target` and
    renders `modal` after the stack, so a tap on the call square, the
-   write square, an elect's Contact square or the district line on
+   write square or an elect's Contact square on
    `/goals/<slug>` posts `POST /api/receipt {goal, action, target, state,
    district, device, channel}` (`district: null` for a state goal) and
    opens the modal at once, exactly as on `/results/<goal>`.
@@ -171,10 +174,13 @@ new.
    from this page is counted like one from `/results`.
 
 ### 3. Act page buttons
-1. On `/goals/<slug>/act/<action>` a tap on any "Call <Role Name> · <phone>"
-   button calls `didIt('call')` in the click handler (the `tel:` link still
-   proceeds); a tap on the contact-form link in the writing view or the
-   "Open the contact form ↗" link calls `didIt('email')`. The receipt
+1. On `/goals/<slug>/act/<action>` a tap on the "Call <Role Name> ·
+   <phone>" button (one per office after `call-the-right-office` §1.2:
+   the routed office's number, or the Capitol switchboard button) calls
+   `didIt('call')` in the click handler (the `tel:` link still proceeds);
+   a tap on the contact-form link in the writing view, the "Open the
+   contact form ↗" link or the closed-office "The office is closed. Email
+   instead" button calls `didIt('email')`. The receipt
    card then renders as `personalised-documents.md` §4 describes (stamp,
    count, share row, office response, next office): no results modal here.
 2. A tap while a receipt exists or one is in flight posts nothing
@@ -256,7 +262,12 @@ new.
    band is newsprint-muted like a done target card, the "Action n" chip
    reads "Done", the meta line's first chip reads "All <n> offices", the
    offices line is unchanged and the CTA reads "See your receipts →"
-   (bordered). The card still links to `/results/<goal>`.
+   (bordered). The card still links to `/results/<goal>`. On a split
+   leadership card (`leadership-card-two-goals` §4) the title stays the
+   `pair` title, the postmark is named "Done: <pair title>", the chips
+   read "Done" / "All <n> offices" / "House + Senate" and both offices
+   lines stay; the DONE postmark replaces the chamber-named countdown
+   stamp, as on any done card.
 3. On `/results/<goal>` a done goal's card wears the same DONE postmark
    on its band, its target cards are the done cards of
    `results-pages.md` §7 (postmarks, pills, answer chips), and the
@@ -286,13 +297,16 @@ new.
    `/goals` link.
 3. The H1 stays "Your two actions this week"; the delegation line and
    "change address" are unchanged. The page-wide stamp follows §7.4.
-4. `/results/<goal>` for a goal in `open`: "Action n of N" counts the
-   open goals; "Your other action" is the other open goal in the pair
-   (the next in `open` when the goal is beyond the pair). For a done
-   goal: "Done · <day>" in the ticker, the §7.3 card, and the mini card
-   is "Your next action" for the first open goal. A goal in the route's
-   four is never "not one of your two actions"; one outside them still
-   gets that message.
+4. `/results/<goal>` finds its card among the route's slots by the
+   card's own slug or its `also` slug (`leadership-card-two-goals` §5),
+   so either leadership slug opens the split card. For a goal in `open`:
+   "Action n of N" counts the open goals; "Your other action" is the
+   other open goal in the pair (the next in `open` when the goal is
+   beyond the pair), titled by its `pair` title when it is a split card.
+   For a done goal: "Done · <day>" in the ticker, the §7.3 card, and the
+   mini card is "Your next action" for the first open goal. A goal in
+   the route's four, by either slug, is never "not one of your two
+   actions"; one outside them still gets that message.
 5. The first band of the grid keeps `eager` + `fetchpriority="high"`; the
    third and fourth bands load lazily. A done goal falling out of the
    7-day window moves back into `open` at its rank on the next render.
@@ -347,7 +361,7 @@ new.
 ### 10. Owner device test
 1. Owner runs on iPhone Safari and Android Chrome against production:
    `/goals/senate-leader/` call and write square → modal → postmark;
-   district line → modal; `/m/<id>` DC button → modal; whip table number
+   `/m/<id>` DC button → modal; whip table number
    → modal; act page "Call" button → receipt card; `/results/<goal>`
    unchanged; finish every office of one goal from the goal page →
    `/results` shows it last with DONE and a new "Action 2"; the Senate
@@ -365,8 +379,7 @@ new.
   {kind: 'link'}}) → {done, next, handlers, modal}`. `ReceiptGoal =
   Pick<GoalCard, 'slug' | 'title' | 'what_we_want' | 'category' | 'action'
   | 'targets'> & Partial<Pick<GoalCard, 'chamber' | 'also'>>`.
-- `Target` `TargetHandlers` unchanged; the district line now calls
-  `onContact(t, 'call')`.
+- `Target` and `TargetHandlers` unchanged.
 - `GoalTargets` props gain `title`, `what`, `category`, `action`.
 - New islands: `MemberContact.tsx` (member page hero + offices),
   `WhipReceipts.tsx` (one per whip table, click delegation on
@@ -397,13 +410,11 @@ new.
 - MODIFIED `docs/specs/results-pages.md` §Purpose: "The goal detail
   page's squares are unchanged (no tap receipt there)." → "The same flow
   runs on every phone and email control on the site
-  (`tap-receipts-everywhere`): the goal page's stack, the district lines,
-  the member page, the whip table; the act page posts its own receipt
+  (`tap-receipts-everywhere`): the goal page's stack, the member page,
+  the whip table; the act page posts its own receipt
   card on a tap."
-- MODIFIED `docs/specs/results-pages.md` §4: "a tap on either square" →
-  "a tap on either square or on the district-office line's number"; the
-  flow lives in `receipt-flow.tsx` `useReceiptFlow`, which `Results`
-  mounts.
+- MODIFIED `docs/specs/results-pages.md` §4: the flow lives in
+  `receipt-flow.tsx` `useReceiptFlow`, which `Results` mounts.
 - MODIFIED `docs/specs/results-pages.md` §Data & contracts: add
   `receipt-flow.tsx` and `ReceiptGoal`; `cut-ties:receipts` rows kept 7
   days, `goalDone`; `Postmark` `kind`; `SummaryCard` `done`; route
@@ -447,7 +458,7 @@ new.
   leader, no other placeholder; the 130-character limit counts the
   filled name".
 - MODIFIED `docs/specs/goal-pages.md` §Behavior 2: the "Who to call"
-  island's squares and district lines post the receipt and open the
+  island's squares post the receipt and open the
   receipt modal of `results-pages.md` §4–7 (§2 above); Next links to
   `/results` when every office is done; a goal with no action keeps plain
   links.
@@ -457,9 +468,6 @@ new.
 - MODIFIED `docs/specs/goal-pages.md` §Performance budget: the "Who to
   call" island may grow by ≤2 KB gzip for the flow; the modal chunk is
   requested only on the first tap.
-- MODIFIED `docs/specs/target-cards.md` §Behavior 1: the district office
-  line's `tel:` link carries the card's `onContact` when the card has
-  one.
 - MODIFIED `docs/specs/personalised-documents.md` §4: "and 'I did it' →
   `POST /api/receipt`" → "a tap on a call button, the contact-form link or
   'I did it' / 'I sent it' → `POST /api/receipt`, once per office"; the
@@ -484,8 +492,7 @@ new.
       count echo, ask, share card and Next; close → the card wears the
       postmark and the ✓ Share pill; reload keeps it; `/results/<goal>`
       shows the same done card.
-- [ ] Same for the write square (`channel: 'email'`, WROTE) and for the
-      district-office line's number (`channel: 'call'`).
+- [ ] Same for the write square (`channel: 'email'`, WROTE).
 - [ ] When every office in the stack is done the filled control reads
       "Your two actions →" and links to `/results`.
 - [ ] A goal page with no stored place still shows "Enter your address";
@@ -494,7 +501,8 @@ new.
       <phone>" → dialer opens and the receipt card renders (stamp, count,
       share row, office response) with no further press; a second tap
       posts nothing; "I did it" is gone. Tap the contact-form link in
-      the writing view → the WROTE receipt card.
+      the writing view or the closed-office "Email instead" button → the
+      WROTE receipt card.
 - [ ] `/m/<id>` for a member with an open goal: tap "Call DC office" →
       receipt against that goal (state and district from the stored
       place, else the member's seat), the modal, then the postmark beside
@@ -524,6 +532,10 @@ new.
 - [ ] `/results/<goal>` for a done goal: DONE postmark on the band, done
       target cards, "Your next action" mini card; the modal's filled link
       reads "Your next action →" once every target is done.
+- [ ] CA-46 with Correa, Padilla and Schiff all done: the split card on
+      `/results` keeps "Kick out Jeffries and Schumer" and both offices
+      lines under the DONE postmark; `/results/senate-leader/` opens the
+      same done card.
 - [ ] `POST /api/route` returns the same first two goals as before for
       every fixture district in `worker/test/route.test.ts`, then up to
       two more in rank order; nothing about "done" is in the request.
@@ -549,8 +561,11 @@ new.
       four-slot route's p95.
 
 ## Rollout & metrics
-No flag; ships with the next deploy, one PR per section in build order
-(§1 first, since every other section mounts it). Measure in the weekly
+No flag; ships with the next deploy in two PRs after
+`call-the-right-office` §1 and `leadership-card-two-goals` §2–5 have
+landed: §1–6 and §9 together (§1 first inside it, since §2–5 mount it),
+then §7–8 (they build on the pair title, the per-block offices lines and
+the `also`-slug lookup of the leadership card). Measure in the weekly
 digest: receipts by page (`/goals`, `/m`, whip, act, `/results`) for two
 weeks after each section ships, and the share of devices with a receipt
 on a third or fourth slot (a rollover happened). Success: receipts per
@@ -573,10 +588,14 @@ week.
   - [ ] 10. Owner device test
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/tap-receipts-everywhere` (this PRD)
-- Files changed (file:line map): none yet. Build order: §1 extracts
-  `Results.tsx:142-262` into `receipt-flow.tsx` and adds the district-line
-  handler at `Target.tsx:143`; §2 touches `GoalTargets.tsx` and
+- Branch / open PRs: PRD merged (PRs #93, #97); cohesion pass with
+  `call-the-right-office` and `leadership-card-two-goals` in
+  `docs/one-shot-plan`
+- Files changed (file:line map): none yet (lines as of main
+  2026-11-10, before the two PRDs ahead of this one land). Build order,
+  after `call-the-right-office` §1 and `leadership-card-two-goals`
+  §2–5: §1 extracts `Results.tsx:142-262` into `receipt-flow.tsx`
+  (`Target.tsx` unchanged); §2 touches `GoalTargets.tsx` and
   `pages/goals/[slug].astro:107`; §3 `ActForm.tsx:384,398,409`; §4
   `pages/m/[id].astro:47-49` + `Offices.astro` → `MemberContact.tsx`; §5
   `WhipTable.astro:88` + `WhipReceipts.tsx`; §6 `ActForm.tsx:224`
@@ -601,9 +620,18 @@ week.
   rolls in (§6–8); the done window is 7 days (Open question 4's
   proposal). Owner 2026-11-10: the act page's reasons panel takes
   several picks and names the leader in the points (§9); checkboxes
-  rather than radios (Open question 6).
+  rather than radios (Open question 6). Owner 2026-11-10 (cohesion
+  pass): the three open PRDs ship in one session in the order
+  `call-the-right-office` §1 → `leadership-card-two-goals` §2–5 → `tap-receipts-everywhere` §1–6 + §9 → `tap-receipts-everywhere` §7–8, one PR each, merged by the session once CI
+  is green; the district-line handler (old §1.4) is dropped because
+  `call-the-right-office` §1.4 removes the line; the act page's tap
+  receipt covers the one routed button, the switchboard button and the
+  "Email instead" button; §7.2 and §8.4 state the split-card done
+  state and the `also`-slug lookup.
 - Known failures / blockers: none
-- Next action: /implement-prd-section tap-receipts-everywhere.md (next: §1. Receipt engine)
+- Next action: /implement-prd-section tap-receipts-everywhere.md (next:
+  §1. Receipt engine, in one PR with §2–6 and §9, after
+  `call-the-right-office` §1 and `leadership-card-two-goals` §2–5 merge)
 
 ## Open questions
 1. Which goal does a member-page or whip-table call count toward when the
@@ -647,3 +675,11 @@ week.
   for several picks, `{{leader}}` in the points filled with the goal
   leader's name from `data/` ("led by Chuck Schumer" / "led by Hakeem
   Jeffries"); owner device test becomes §10.
+- 2026-11-10 — cohesion pass with `call-the-right-office` and
+  `leadership-card-two-goals`: the district-line handler is dropped
+  (that line is removed by `call-the-right-office` §1.4); §3.1 names the
+  routed button, the switchboard button and the "Email instead" button;
+  §7.2 states the done split card (pair title, both offices lines, DONE
+  in place of the chamber stamp); §8.4 takes the `also`-slug lookup and
+  the pair title in the mini card; rollout is two PRs in the agreed
+  landing order.

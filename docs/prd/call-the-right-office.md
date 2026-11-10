@@ -61,7 +61,9 @@ whatever number is shown first.
    primary "The office is closed. Email instead" button (today's
    one-number rule). A member with no DC phone on file shows the Capitol
    switchboard, 202-224-3121, labelled "Capitol switchboard", which
-   connects to the DC office.
+   connects to the DC office. (`tap-receipts-everywhere` §3 later
+   attaches its tap receipt to this one button, the switchboard button
+   and the "Email instead" button; nothing here waits for it.)
 3. **Act page, `district` action.** The call row shows the district
    office number only, with its state-hours chip; the closed copy reads
    "The district office is closed." with the same email promotion. (No
@@ -144,19 +146,24 @@ match the Acceptance criteria; the owner notes the result in State.
 ## Rollout & metrics
 No flag. One D1 migration (column with default), applied by the deploy
 seed. Shares `Target.tsx` and `ActForm.tsx` with
-`tap-receipts-everywhere` (PR #93, not merged): build this first, it is
-small and the House caucus vote is about 2026-11-18. Measure: share of
+`tap-receipts-everywhere` (merged, PR #93): this PRD lands first of the
+three open PRDs (then `leadership-card-two-goals` §2–5, then
+tap-receipts), it is small and the House caucus vote is about
+2026-11-18; §1.4 removes the cards' district line, so tap-receipts wires
+no handler to it. Measure: share of
 call receipts reported `no_answer` or `other` on leadership goals in the
 week before and after (from `POST /api/report`); expect fewer "wrong
 office" reports in `other`.
 
-## State (updated 2026-11-10, PR pending)
+## State (updated 2026-11-10)
 - Sections:
   - [ ] 1. Route each call to the action's office
   - [ ] 2. Owner check on a phone
 - Completed: PRD and research.
 - Folded: none.
-- Branch / open PRs: docs/call-the-right-office.
+- Branch / open PRs: PRD merged in PR #95; cohesion pass with
+  `leadership-card-two-goals` and `tap-receipts-everywhere` in
+  `docs/one-shot-plan`.
 - Files changed (file:line map): none yet. Build touches
   `data/actions/*.yaml`, `worker/schema.sql`, `worker/scripts/seed.ts`,
   `worker/src/generate.ts:168-179`, `worker/src/route.ts:18-23,103-123`,
@@ -164,7 +171,9 @@ office" reports in `other`.
   `web/src/components/Target.tsx:106,142-144` and their tests.
 - Tests run + result: none (docs only).
 - Remaining: both sections.
-- Decisions since last update: none.
+- Decisions since last update: owner 2026-11-10 (cohesion pass): lands
+  first in the order `call-the-right-office` §1 → `leadership-card-two-goals` §2–5 → `tap-receipts-everywhere` §1–6 + §9 → `tap-receipts-everywhere` §7–8; the act page's single button is
+  where tap-receipts §3 attaches its tap receipt.
 - Known failures / blockers: none.
 - Next action: `/implement-prd-section call-the-right-office`.
 
@@ -179,3 +188,7 @@ office" reports in `other`.
 
 ## Changes
 - 2026-11-10 — created (READY, auto: no blocking questions).
+- 2026-11-10 — cohesion pass with `leadership-card-two-goals` and
+  `tap-receipts-everywhere`: landing order fixed (this PRD first);
+  §1.2 notes where the tap receipt attaches later; rollout note updated
+  (tap-receipts PRD is merged). No behaviour change.
