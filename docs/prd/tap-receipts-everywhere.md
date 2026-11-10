@@ -37,7 +37,12 @@ with its stamp while the next ranked goal takes its slot. Today
 `POST /api/route` returns at most two goals (`ranking.ts` `topTwo`), so
 there is nothing to roll in, and `cut-ties:receipts` rows are pruned at
 24 h on every read (`commitments.ts:52`), so a goal could stay "done"
-for a day at most. The vote this serves is whichever goals
+for a day at most. The same day the owner added the act page's "Not sure
+what to say?" panel: it is one radio group (`ActForm.tsx:335`, one pick
+replaces the last), and its points say "my party's leader" and "that
+person" where a caller on `/goals/senate-leader/act/senate-leader-call/`
+should read "Chuck Schumer" and on `/goals/house-caucus/act/
+house-caucus-call/` "Hakeem Jeffries". The vote this serves is whichever goals
 the site routes today, the Senate leader goal and the NDAA §219/§1217
 integration sections first.
 
@@ -65,7 +70,10 @@ integration sections first.
      one-action card, the card last on `/results`, and the next ranked
      goal in its slot, so the page always offers two open actions while
      the district has them.
-  6. No new endpoint, table, outcome or settings key; every page's
+  6. The act page's reasons panel takes any number of picks and names
+     the goal's leader in the points, deterministically from `data/`,
+     never from a model.
+  7. No new endpoint, table, outcome or settings key; every page's
      performance budget holds; the modal chunk stays lazy on every page.
 - Non-goals:
   - Changing what the modal, the ask, the share card or the postmark look
@@ -289,14 +297,62 @@ new.
    third and fourth bands load lazily. A done goal falling out of the
    7-day window moves back into `open` at its rank on the next render.
 
-### 9. Owner device test
+### 9. Reason picks name the leader
+1. The "Not sure what to say?" panel (`ActForm.tsx:319-347`) lists its
+   points as checkboxes in the rows the radios have today (same border
+   and newsprint fill when on, `accent-ink`), so any number can be on.
+   The boxed instruction reads: "Pick any that fit. They drop into
+   "<why label>", then change them so they sound like you."
+2. The "why" field is the caller's own words, then every picked point in
+   panel order, joined by a space. Checking adds that point at the end;
+   unchecking removes that point's exact text (and one surrounding
+   space) and nothing else; a point the caller has already edited is no
+   longer matched, so its checkbox clears on the next change and the
+   edited words stay. A pick that would pass the field's 280 characters
+   is refused: the box stays off and the panel shows "That is more than
+   the field holds. Uncheck one first." (`role="status"`). Focus lands
+   on the field after each change, as today.
+3. A point may carry the placeholder `{{leader}}`. The act page fills it
+   before render, in the browser and on every pick, with the goal's
+   leader name from a `leader` prop (`string | null`) the page computes
+   at build time: `web/src/lib/goals.ts` `leaderOf(goal)` = the
+   `incumbents` of the goal's first action's `script_blocks`
+   (`leadership.yaml`: `J000294`, `S000148`) filtered to the goal's
+   `chamber`, named from the members rows ("Hakeem Jeffries", "Chuck
+   Schumer"). No model, no request: the same goal always fills the same
+   name, and it is the same name `leaderLine` (`generate.ts:105-125`)
+   uses in the script.
+4. Data: `house-caucus.yaml` "… a Democratic leader defending it. I
+   cannot support a caucus led by that person." → "… led by
+   {{leader}}."; `senate-leader.yaml` "… my party's leader defending it.
+   I cannot support a caucus led by that person." → "… led by
+   {{leader}}." and "I do not want my party's leader negotiating another
+   decade-long weapons commitment …" → "I do not want {{leader}}
+   negotiating …". A point names the leader once, where "that person" or
+   "my party's leader" would leave the office asking who; a first
+   mention that sets up the sentence ("my party's leader defending it")
+   stays. So the owner's example reads "I watched Gaza unfold with
+   American weapons and my party's leader defending it. I cannot support
+   a caucus led by Chuck Schumer." on the Senate page and "… led by
+   Hakeem Jeffries." on the House page.
+5. The loader (`load.ts:82-95`) allows `{{leader}}` only on a goal whose
+   `leaderOf` resolves (a leadership goal with a chamber and an incumbent
+   of that chamber), rejects any other `{{…}}` token or a brace left in a
+   point, and counts the 130-character limit on the point with the name
+   filled. The NDAA and state goals' panels change only in §9.1–2.
+6. Nothing else about the act page changes: the same `why` text reaches
+   `POST /api/generate`, so the generated and standard scripts carry the
+   name only through the caller's words, as they would if typed.
+
+### 10. Owner device test
 1. Owner runs on iPhone Safari and Android Chrome against production:
    `/goals/senate-leader/` call and write square → modal → postmark;
    district line → modal; `/m/<id>` DC button → modal; whip table number
    → modal; act page "Call" button → receipt card; `/results/<goal>`
    unchanged; finish every office of one goal from the goal page →
-   `/results` shows it last with DONE and a new "Action 2". One
-   screenshot per surface.
+   `/results` shows it last with DONE and a new "Action 2"; the Senate
+   act page's Gaza point reads "led by Chuck Schumer" and two picks sit
+   in the field together. One screenshot per surface.
 
 ## Data & contracts
 - `POST /api/receipt`, `POST /api/report`, `GET /api/goals/:slug/targets`
@@ -330,6 +386,12 @@ new.
   `done`; `data-postmark="done"`.
 - `SummaryCard` gains `done?: {at: string}`; `Results` computes it per
   card from `goalDone` over `officesOf(g)`.
+- Goal YAML `reasons[].points[]` may hold `{{leader}}`, the only
+  placeholder; the loader fills it to check the 130-character limit and
+  rejects it on a goal without a leader. `web/src/lib/goals.ts`
+  `leaderOf(goal) → string | null`; `ActForm` gains `leader: string |
+  null` and `picked` becomes `string[]`. No D1 change: `reasons` is
+  stored as written and filled in the web build and the browser.
 
 ## Spec delta
 - MODIFIED `docs/specs/results-pages.md` §Purpose: "The goal detail
@@ -369,6 +431,21 @@ new.
   the same two as before; up to two more follow in rank order".
 - MODIFIED `docs/specs/personalised-documents.md` §4 (second entry): the
   act page's `logReceipt` row carries `channel`.
+- MODIFIED `docs/specs/personalised-documents.md` §1: "pick one reason,
+  it drops into the "why" field, then rewrite it) and lists the goal's
+  `reasons` as one radio group … Picking one puts it in the "why" field
+  in place of the previous pick (after the caller's own words, if any)
+  and focuses the field." → "pick any that fit, they drop into the "why"
+  field, then rewrite them) and lists the goal's `reasons` as
+  checkboxes … Each pick is appended after the caller's own words in
+  panel order, an uncheck removes that point's exact text, an edited
+  point clears its box, a pick past 280 characters is refused with a
+  status line; `{{leader}}` in a point is the goal leader's name, filled
+  from `leaderOf` before render" (§9 above).
+- MODIFIED `docs/specs/personalised-documents.md` §Data & contracts
+  (`reasons[]`): add "`{{leader}}` allowed on a goal with a chamber
+  leader, no other placeholder; the 130-character limit counts the
+  filled name".
 - MODIFIED `docs/specs/goal-pages.md` §Behavior 2: the "Who to call"
   island's squares and district lines post the receipt and open the
   receipt modal of `results-pages.md` §4–7 (§2 above); Next links to
@@ -450,6 +527,17 @@ new.
 - [ ] `POST /api/route` returns the same first two goals as before for
       every fixture district in `worker/test/route.test.ts`, then up to
       two more in rank order; nothing about "done" is in the request.
+- [ ] `/goals/senate-leader/act/senate-leader-call/`: the Gaza point
+      reads "… I cannot support a caucus led by Chuck Schumer."; on
+      `/goals/house-caucus/act/house-caucus-call/` the same point reads
+      "… led by Hakeem Jeffries."; no point on any page shows a brace.
+- [ ] Checking two points puts both in the "why" field in panel order
+      after the caller's words; unchecking the first removes only its
+      text; editing a dropped point clears its box and keeps the edit;
+      a pick past 280 characters leaves the box off with the status
+      line. Tests in `web/src/components/` (`reasons.test.tsx`) and
+      `worker/test/goals.test.ts` (`{{leader}}` on the NDAA goal and an
+      unknown `{{x}}` both fail the seed naming the goal and point).
 - [ ] No share control renders before a receipt on any surface.
 - [ ] Budgets: `/goals/<slug>` ≤100 KB transferred before any tap, LCP
       ≤1.5 s on a mid-range phone over 4G; `/m/<id>` and the whip page
@@ -481,7 +569,8 @@ week.
   - [ ] 6. Receipts count from every page
   - [ ] 7. Goal done stamp
   - [ ] 8. Rollover on `/results`
-  - [ ] 9. Owner device test
+  - [ ] 9. Reason picks name the leader
+  - [ ] 10. Owner device test
 - Completed: none
 - Folded: none
 - Branch / open PRs: `docs/tap-receipts-everywhere` (this PRD)
@@ -496,9 +585,13 @@ week.
   `Results.tsx` (`/results` render, `/results/<goal>` ticker and mini
   card, modal Next); §8 `worker/src/ranking.ts:177` (`topSlots`),
   `route.ts:197` (`buildRoute`), `Results.tsx` open/done split,
-  `worker/test/route.test.ts`.
+  `worker/test/route.test.ts`; §9 `ActForm.tsx:116,263-273,319-347`
+  (checkboxes, `picked[]`, leader fill), `web/src/lib/goals.ts:33`
+  (`leaderOf`), `act/[action].astro:27` (`leader` prop),
+  `worker/src/load.ts:82-95` (`{{leader}}`), `data/goals/house-caucus.yaml:106`,
+  `data/goals/senate-leader.yaml:141,154`.
 - Tests run + result: none yet
-- Remaining: §1–9
+- Remaining: §1–10
 - Decisions since last update: owner 2026-11-10: every phone and email
   button kicks off the receipt and share flow (reverses the
   `share-from-results` scope of `/results` only); the act page keeps its
@@ -506,7 +599,9 @@ week.
   receipts count toward the goal from any page; a finished goal wears a
   DONE postmark and drops last on `/results` while the next ranked goal
   rolls in (§6–8); the done window is 7 days (Open question 4's
-  proposal).
+  proposal). Owner 2026-11-10: the act page's reasons panel takes
+  several picks and names the leader in the points (§9); checkboxes
+  rather than radios (Open question 6).
 - Known failures / blockers: none
 - Next action: /implement-prd-section tap-receipts-everywhere.md (next: §1. Receipt engine)
 
@@ -531,6 +626,13 @@ week.
    that finishes four goals in a week sees the both-done message and the
    `/goals` link rather than a longer list, and the response stays
    small (two more cards of targets the district already has).
+6. The owner asked for a "multi select radio button". Proposal:
+   checkboxes in the radio rows' exact look; a radio group can hold one
+   pick by definition, and a screen reader then announces "checkbox,
+   checked" for each pick, which is what the caller did.
+7. Should the name be the leader's full name or surname? Proposal: full
+   name, as the owner's example reads and as `leaderLine` writes it; a
+   caller reading the script aloud says the whole name once.
 
 ## Changes
 - 2026-11-10 — created (READY, auto) from the owner's report that the
@@ -541,3 +643,7 @@ week.
   goal from any page (§6), a DONE postmark on a finished goal (§7), the
   finished goal last and the next ranked goal rolled in (§8); the route
   returns four slots, done is computed in the browser for 7 days.
+- 2026-11-10 — owner adds the act page's reasons panel (§9): checkboxes
+  for several picks, `{{leader}}` in the points filled with the goal
+  leader's name from `data/` ("led by Chuck Schumer" / "led by Hakeem
+  Jeffries"); owner device test becomes §10.
