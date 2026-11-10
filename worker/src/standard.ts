@@ -32,7 +32,7 @@ const POSITION_LINE: Record<Position['position'], string> = {
 
 /** The placeholder values, from the same D1 rows as `factBlock`. */
 export function standardFacts(goal: Goal, action: Action, fmt: DocFormat, t: Target): StandardFacts {
-  const contact = targetContact(t);
+  const contact = targetContact(t, action.office);
   const pick = firstPick(goal);
   return {
     target_name: targetName(t),

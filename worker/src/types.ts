@@ -56,6 +56,8 @@ export interface UncalledSeat { chamber: Chamber; caucus: Caucus; replaces_name:
 /** The delegation as it votes in January: leadership goals are ranked and targeted on this view (§2.2). */
 export interface Incoming { house: IncomingSeat | null; senators: IncomingSeat[]; uncalled: UncalledSeat[] }
 export const TAKES_OFFICE = '2027-01-03';
+/** action-router §7, call-the-right-office §1.2: the Capitol switchboard, dialled when the routed DC office has no number on file. */
+export const SWITCHBOARD = '202-224-3121';
 
 export const CONTACT_KINDS = ['form', 'zip_gate', 'homepage'] as const;
 export type ContactKind = (typeof CONTACT_KINDS)[number];
@@ -143,6 +145,8 @@ export interface Action {
   email_subject: string | null;
   /** share-from-results §1: the decision label on the summary card's meta line ("NDAA §219 / §1217"); null = no chip. */
   short_label: string | null;
+  /** call-the-right-office §1.1: the office that handles the ask; the act page and target cards show only its number. */
+  office: 'dc' | 'district';
 }
 
 export interface Position {

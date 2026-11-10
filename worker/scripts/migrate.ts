@@ -15,6 +15,8 @@ export const MIGRATIONS: ColumnMigration[] = [
   // share-from-results §1
   { table: 'actions', column: 'short_label', ddl: 'ALTER TABLE actions ADD COLUMN short_label TEXT;' },
   { table: 'receipts', column: 'channel', ddl: "ALTER TABLE receipts ADD COLUMN channel TEXT NOT NULL DEFAULT 'call' CHECK (channel = 'call' OR channel = 'email');" },
+  // call-the-right-office §1.1
+  { table: 'actions', column: 'office', ddl: "ALTER TABLE actions ADD COLUMN office TEXT NOT NULL DEFAULT 'dc' CHECK (office = 'dc' OR office = 'district');" },
 ];
 
 /** The column names a `PRAGMA table_info(<table>)` --json result lists; [] when the table is missing or the output is not JSON. */

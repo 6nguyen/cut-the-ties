@@ -62,6 +62,8 @@ CREATE TABLE actions (
   email_subject TEXT,
   -- share-from-results §1: decision label chip on the /results summary card ("NDAA §219 / §1217"); NULL = no chip.
   short_label TEXT,
+  -- call-the-right-office §1.1: the office that handles the ask; every surface shows only that office's number.
+  office TEXT NOT NULL DEFAULT 'dc' CHECK (office = 'dc' OR office = 'district'),
   script_blocks TEXT
 );
 

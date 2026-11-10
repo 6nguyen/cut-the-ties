@@ -57,6 +57,16 @@ describe('data/ files', () => {
     writeFileSync(join(copy, 'actions', 'ndaa-1217-call.yaml'), readFileSync(join(copy, 'actions', 'ndaa-1217-call.yaml'), 'utf8').replace(/^email_subject: .*\n/m, ''));
     expect(() => loadRows(copy, '2026-11-04T00:00:00Z')).toThrow(/ndaa-1217-call: email_subject is required/);
   });
+  it('office: every action resolves to dc today; a missing value means dc; any other value fails naming the file (call-the-right-office §1.1)', () => {
+    for (const a of rows.actions) expect(a.office, a.slug).toBe('dc');
+    const copy = mkdtempSync(join(tmpdir(), 'cut-ties-data-'));
+    cpSync(join(__dirname, '..', '..', 'data'), copy, { recursive: true });
+    const file = join(copy, 'actions', 'house-caucus-call.yaml');
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/^office: dc\n/m, 'office: capitol\n'));
+    expect(() => loadRows(copy, '2026-11-04T00:00:00Z')).toThrow(/actions\/house-caucus-call\.yaml: office must be dc or district, got capitol/);
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/^office: capitol\n/m, ''));
+    expect(loadRows(copy, '2026-11-04T00:00:00Z').actions.find((a) => a.slug === 'house-caucus-call')!.office).toBe('dc');
+  });
   it('parseCsv rejects ragged rows', () => {
     expect(() => parseCsv('a,b\n1,2,3')).toThrow(/expected 2/);
   });

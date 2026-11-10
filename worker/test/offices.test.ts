@@ -206,20 +206,32 @@ describe('departing members (§4)', () => {
   });
 });
 
-describe('target card district line and switchboard fallback (§1, action-router §7)', () => {
+describe('target card routed office, district line and switchboard fallback (§1, action-router §7, call-the-right-office §1.4)', () => {
   const correa = rows.members.find((m) => m.bioguide_id === 'C001110')!;
   const goal = rows.goals.find((g) => g.slug === 'ndaa-1217')!;
-  it('shows the first office in the member\'s state after the DC number', () => {
+  const dc = rows.actions.find((a) => a.slug === 'ndaa-1217-call')!;
+  const district = { ...dc, office: 'district' as const };
+  it('districtLine finds the first office in the member\'s state; a dc action dials DC and renders no district line', () => {
     expect(districtLine(correa, rows.offices)).toEqual({ district_phone: '714-559-6190', district_city: 'Santa Ana' });
-    const t = targetsFor(goal, undefined, assembleDelegation('CA', 46, [correa], null), [], rows.offices)[0];
-    expect(t.phone).toBe(correa.dc_phone);
+    expect(dc.office).toBe('dc');
+    for (const a of [dc, undefined]) {
+      const t = targetsFor(goal, a, assembleDelegation('CA', 46, [correa], null), [], rows.offices)[0];
+      expect(t.phone).toBe(correa.dc_phone);
+      expect(t).toMatchObject({ district_phone: null, district_city: null });
+    }
+  });
+  it('a district action dials the district office and keeps the district line', () => {
+    const t = targetsFor(goal, district, assembleDelegation('CA', 46, [correa], null), [], rows.offices)[0];
+    expect(t.phone).toBe('714-559-6190');
     expect(t).toMatchObject({ district_phone: '714-559-6190', district_city: 'Santa Ana' });
   });
-  it('a hand-filled district_phone stands in without a city; the switchboard only when neither number exists', () => {
+  it('a hand-filled district_phone stands in without a city; a dc action with no DC phone dials the switchboard', () => {
     expect(districtLine({ ...correa, district_phone: '999-999-9999' }, [])).toEqual({ district_phone: '999-999-9999', district_city: null });
     const noDc = { ...correa, dc_phone: null, district_phone: null };
-    expect(targetsFor(goal, undefined, assembleDelegation('CA', 46, [noDc], null), [], [])[0].phone).toBe(SWITCHBOARD);
-    expect(targetsFor(goal, undefined, assembleDelegation('CA', 46, [{ ...noDc, district_phone: '714-559-6190' }], null), [], [])[0].phone).toBeNull();
+    expect(targetsFor(goal, dc, assembleDelegation('CA', 46, [noDc], null), [], [])[0].phone).toBe(SWITCHBOARD);
+    expect(targetsFor(goal, dc, assembleDelegation('CA', 46, [{ ...noDc, district_phone: '714-559-6190' }], null), [], [])[0].phone).toBe(SWITCHBOARD);
+    expect(targetsFor(goal, district, assembleDelegation('CA', 46, [{ ...noDc, district_phone: '714-559-6190' }], null), [], [])[0].phone).toBe('714-559-6190');
+    expect(targetsFor(goal, district, assembleDelegation('CA', 46, [noDc], null), [], [])[0].phone).toBe(SWITCHBOARD);
   });
   it('the in-memory repo answers offices(bioguide_id) in file order', async () => {
     const repo = new MemoryRepo(rows);

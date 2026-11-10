@@ -328,7 +328,10 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
         script_blocks: null,
         email_subject: str(y.email_subject),
         short_label: str(y.short_label),
+        office: y.office === undefined ? 'dc' : (y.office as Action['office']),
       };
+      // call-the-right-office §1.1: missing means dc; anything but dc | district fails the seed naming the file.
+      if (!['dc', 'district'].includes(a.office)) throw new Error(`actions/${f}: office must be dc or district, got ${String(y.office)}`);
       if (y.script_blocks !== undefined) {
         // leader-call-scripts §1: the blocks file is inlined as JSON so D1 and MemoryRepo carry it with the action.
         const name = String(y.script_blocks);

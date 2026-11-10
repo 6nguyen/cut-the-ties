@@ -20,7 +20,7 @@ const fields = [
 ];
 const doc: GenerateDone = {
   subject: '', body: 'Line one.', facts_used: [], words: 2, standard: false,
-  target: { id: 'C001110', name: 'Lou Correa', role: 'Rep.', phones: ['202-225-2965', '714-559-6190'], contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', chamber: 'house' },
+  target: { id: 'C001110', name: 'Lou Correa', role: 'Rep.', phones: ['202-225-2965'], office: 'dc', contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', chamber: 'house' },
 };
 const THREE = [{ bioguide_id: 'C001110', role: 'Rep.', name: 'Lou Correa' }, { bioguide_id: 'P000145', role: 'Sen.', name: 'Alex Padilla' }, { bioguide_id: 'S001150', role: 'Sen.', name: 'Adam Schiff' }];
 const buckets = (calls = 0) => ({ calls, letters: 0, comments: 0, captain_lists: 0 });

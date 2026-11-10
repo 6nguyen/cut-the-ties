@@ -97,7 +97,7 @@ async function events(res: Response): Promise<Ev[]> {
   for await (const e of sseEvents(res.body!)) out.push({ event: e.event, data: JSON.parse(e.data) as Record<string, unknown> });
   return out;
 }
-const doneOf = (evs: Ev[]) => evs.find((e) => e.event === 'done')?.data as { body: string; subject: string; words: number; target: { name: string; phones: string[] }; standard: boolean; reason?: string; variant?: string } | undefined;
+const doneOf = (evs: Ev[]) => evs.find((e) => e.event === 'done')?.data as { body: string; subject: string; words: number; target: { name: string; phones: string[]; office: string | null }; standard: boolean; reason?: string; variant?: string } | undefined;
 
 function genRow(over: Partial<GenerationRow>): GenerationRow {
   return { action_id: 2, target_id: CORREA, shingles: new Uint32Array(0), created_at: new Date(TODAY.getTime() - 60_000).toISOString(), device_hash: 'x', ip_hash: 'y', input_tokens: 0, output_tokens: 0, model: DOC_MODEL, attempt: 1, check_fail: null, ...over };
@@ -122,7 +122,8 @@ describe('POST /api/generate — happy path', () => {
     expect(done.body).toContain('Correa');
     expect(done.words).toBe(wordCount(done.body));
     expect(done.target.name).toBe('Lou Correa');
-    expect(done.target.phones).toEqual(['202-225-2965', '714-559-6190']); // DC, then the district_phone the loader derives from district_offices.csv (roster-freshness §1)
+    expect(done.target.phones).toEqual(['202-225-2965']); // call-the-right-office §1: the dc action's number only, never the district office
+    expect(done.target.office).toBe('dc');
     expect(calls.haiku).toBe(1);
     expect(calls.opus).toBe(1);
     expect(repo.generations).toHaveLength(1);
