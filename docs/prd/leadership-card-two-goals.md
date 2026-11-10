@@ -41,7 +41,9 @@ The votes this serves: the House Democratic caucus leadership vote
   - Changing the receipt modal, share card, postmark or counts. They are
     already per block (each block posts its own goal and action).
   - The card's photo band and countdown stamp. The stamp already names
-    the chamber on a split card.
+    the chamber on a split card. (Once every office of both blocks is
+    done, `tap-receipts-everywhere` §7.2 puts the DONE postmark in the
+    stamp's place and keeps the pair title and both offices lines.)
   - The single-goal card and the "race not called" line.
   - `/goals/house-caucus` and `/goals/senate-leader`, which are separate
     pages already.
@@ -253,7 +255,8 @@ before and after, from the existing receipt rows.
 - Completed: §1 mock-ups (owner confirmed 2026-11-10: L1–L4, headline A)
 - Folded: none
 - Branch / open PRs: PRD and mock-ups merged in PR #94; confirmation
-  logged in `docs/leadership-card-confirmed`, PR #96
+  logged in PR #96; cohesion pass with `call-the-right-office` and
+  `tap-receipts-everywhere` in `docs/one-shot-plan`
 - Files changed (file:line map): §1 sent 2026-11-10:
   `design/mockups/leadership-card.html` (L1 390+1024, L2–L5; `?only=<id>`
   shows one screen) and `design/mockups/leadership-card/<id>.png`. §1 is
@@ -273,18 +276,19 @@ before and after, from the existing receipt rows.
   say it is two goals; slot stays shared. Owner 2026-11-10 (review):
   mock-ups first, confirmed in chat before any code (§1); `pair` allowed
   on any House leadership goal; the `uncalled`-only card is out of scope.
-- Known failures / blockers: overlaps `tap-receipts-everywhere` on the
-  same lines: its §1 moves `Results.tsx:142-262` into `receipt-flow.tsx`
-  (this PRD does not touch those lines); its §7.2 rewrites the summary
-  card header (`SummaryCard.tsx:50-58`: Done chip, "All <n> offices",
-  CTA) and its §8.2/§8.4 rewrite the `/results` grid, "Action n of N",
-  the mini card (`Results.tsx:121-140,269`) and the slug lookup
-  (`:178`). This PRD is the smaller change and lands first; the §5
-  `also`-slug lookup then folds into tap-receipts §8.4 (a goal is found
-  by its slug or its `also` slug among the route's four), and
-  tap-receipts §7–8 rebase onto the pair title, per-block offices lines
-  and h3 blocks. Whoever builds tap-receipts §7 reads this PRD's §2–4
-  first.
+- Known failures / blockers: none. Landing order agreed 2026-11-10
+  (cohesion pass): `call-the-right-office` §1 → `leadership-card-two-goals` §2–5 → `tap-receipts-everywhere` §1–6 + §9 → `tap-receipts-everywhere` §7–8. `call-the-right-office` touches
+  `Target.tsx` and `ActForm.tsx`, none of this PRD's lines.
+  `tap-receipts-everywhere` §1 moves `Results.tsx:142-262` into
+  `receipt-flow.tsx` (this PRD does not touch those lines); its §7.2
+  rewrites the summary card header (`SummaryCard.tsx:50-58`: Done chip,
+  "All <n> offices", CTA) and its §8.2/§8.4 rewrite the `/results`
+  grid, "Action n of N", the mini card (`Results.tsx:121-140,269`) and
+  the slug lookup (`:178`), all after this PRD; its §8.4 keeps the §5
+  `also`-slug lookup (a goal is found by its slug or its `also` slug
+  among the route's four) and its §7.2 keeps the pair title and both
+  offices lines on a done split card. Whoever builds tap-receipts §7
+  reads this PRD's §2–4 first.
 - Next action: `/implement-prd-section docs/prd/leadership-card-two-goals.md`
   builds §2–5 in one PR, matching `design/mockups/leadership-card.html`;
   then §6 owner live check.
@@ -310,3 +314,8 @@ before and after, from the existing receipt rows.
   Schumer", replaces the proposal in §2 and Open question 1. Copy and
   layout as proposed in §2–4. The mock-ups pin two details: the §3 rule
   is 2 px and full width, and `headline-sm` is a new 22px utility.
+- 2026-11-10 — cohesion pass with `call-the-right-office` and
+  `tap-receipts-everywhere`: landing order fixed (this PRD second, after
+  `call-the-right-office` §1); the done state of a split card is
+  tap-receipts §7.2 (DONE postmark in the stamp's place, pair title and
+  offices lines kept); no behaviour of §2–5 changes.
