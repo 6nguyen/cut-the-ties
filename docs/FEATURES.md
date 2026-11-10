@@ -18,7 +18,7 @@
 | results-pages | BUILDING | `/results` summary cards, one-action page `/results/<goal>`… | [spec](specs/results-pages.md) | [leadership-card-two-goals](prd/leadership-card-two-goals.md) 1/6 +3 | 2026-11-10 |
 | social-sharing | BUILDING | On-device 1080×1920 poster after a receipt, file-only to th… | [spec](specs/social-sharing.md) | [share-from-results](prd/share-from-results.md) 0/4 +1 | 2026-11-09 |
 | target-cards | BUILDING | One spec 06 card per target (badge, name, role line, call s… | [spec](specs/target-cards.md) | [share-from-results](prd/share-from-results.md) 0/4 +2 | 2026-11-09 |
-| goal-pages | PINNED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | [tap-receipts-everywhere](prd/tap-receipts-everywhere.md) 0/9 | 2026-11-10 |
+| goal-pages | PINNED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | [tap-receipts-everywhere](prd/tap-receipts-everywhere.md) 0/10 | 2026-11-10 |
 | decision-feed | SHIPPED | Public `.ics` feed of decision dates, subscribe line on `/g… | [spec](specs/decision-feed.md) | - | 2026-11-05 |
 | office-visits | SHIPPED | List a district-office visit, maintainer approval from the… | [spec](specs/office-visits.md) | - | 2026-11-08 |
 | research-routines | SHIPPED | Scheduled research routines (federal positions, Senate-lead… | [spec](specs/research-routines.md) | - | 2026-11-08 |
