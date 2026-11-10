@@ -1,5 +1,6 @@
 # What converts a visitor into a completed call, and a caller into a repeat caller
 Researched: 2026-11-05 · Informs: [call-follow-through](../prd/call-follow-through.md)
+Superseded by: call-office-routing.md on 2026-11-10 (only the "district number first when DC is closed" verdict)
 
 ## Summary
 Evidence base is thin: no tool publishes completion, repeat or next-office rates. What exists is (a) 5 Calls office-level "unavailable"/voicemail figures from 2018 press, (b) turnout field experiments on plans and reminders, (c) vendor push/calendar facts. Ranked shortlist of levers not yet shipped:
