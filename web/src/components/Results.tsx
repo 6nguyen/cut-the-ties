@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type preact from 'preact';
 import { districtLabel, route, type GoalCard, type RouteResponse, type TargetCard } from '../lib/api';
-import type { Chamber } from '@worker/types';
+import type { Chamber, LeadershipPair } from '@worker/types';
 import { cacheRoute, clearPlace, deviceId, loadPlace, peekRoute } from '../lib/store';
 import { logReceipt, receiptsByTarget, setReceiptOutcome, type ReceiptOutcome } from '../lib/commitments';
 import { CATEGORY, TargetStack, fmtDate, type Channel, type TargetDone, type TargetHandlers } from './Target';
@@ -40,6 +40,13 @@ export function blocksOf(g: GoalCard): GoalCard[] {
 }
 export const targetId = (t: TargetCard): string => t.bioguide_id ?? t.name;
 
+/** leadership-card-two-goals §2.3–2.4: a card holding two goals (`also`) takes the House goal's `pair` title and summary; any other card, or no pair in data, keeps its own. */
+export function cardCopy(g: GoalCard, pair?: LeadershipPair | null): { title: string; summary: string } {
+  return g.also !== undefined && pair ? { title: pair.title, summary: pair.summary } : { title: g.title, summary: g.summary };
+}
+/** §5: the route's card that is this slug, or holds it as `also`; `/results/senate-leader` opens the split card too. */
+export const cardFor = (goals: readonly GoalCard[], slug: string): GoalCard | undefined => goals.find((g) => g.slug === slug || g.also?.slug === slug);
+
 /** results-pages §3.4: this device's receipts for every office of the card, from `cut-ties:receipts` (24 h). */
 export function doneMap(g: GoalCard, now: Date = new Date()): Map<string, TargetDone> {
   const m = new Map<string, TargetDone>();
@@ -54,17 +61,23 @@ export function nextTarget(g: GoalCard, done: ReadonlyMap<string, TargetDone>, s
 
 interface CardState { done: ReadonlyMap<string, TargetDone>; next: string | null; handlers: (b: GoalCard) => TargetHandlers }
 
-/** The ask, the "Get my script" CTA, then the targets box and counter line of one goal; a leadership card renders one per chamber block. */
-function Block({ g, state, district, label, st }: { g: GoalCard; state: string; district: number; label?: string; st?: CardState }) {
+/**
+ * The ask, the "Get my script" CTA, then the targets box and counter line of one goal; a leadership card renders one
+ * per chamber block. `two` (leadership-card-two-goals §3): on a card holding two goals the block opens with its goal's
+ * title as an h3 and ends with "More on this vote →" to its goal page.
+ */
+function Block({ g, state, district, label, st, two }: { g: GoalCard; state: string; district: number; label?: string; st?: CardState; two?: boolean }) {
   const date = fmtDate(g.decision_date);
   return (
     <div class="flex flex-col gap-4" data-block={g.chamber ?? g.slug}>
+      {two && <h3 class="headline-sm">{g.title}</h3>}
       {label && <p class="label-code">{label}{date ? ` · Decision: ${date}` : ''}</p>}
       <p class="font-semibold">{g.ask_text}</p>
       <a href={g.action_href} class="btn btn-primary self-start">Get my script →</a>
       <TargetStack label={`Who to call (${g.targets.length})`} targets={g.targets} partner={g.partner_url} done={st?.done} next={st?.next} {...(st ? st.handlers(g) : {})}>
         <Counts goal={g.slug} state={state} district={g.category === 'state' ? null : district} />
       </TargetStack>
+      {two && <a href={`/goals/${g.slug}`} class="label-code underline underline-offset-[3px] self-start" data-more={g.slug}>More on this vote →</a>}
     </div>
   );
 }
@@ -73,11 +86,15 @@ function Block({ g, state, district, label, st }: { g: GoalCard; state: string; 
  * leadership-routing §2.3–2.5: a leadership card holds the House block, then the Senate block (`also` carries the
  * second goal); a seat whose race is not called shows one line in place of a block. Other cards are one block.
  * `st` (results-pages §3) wires the squares to the receipt modal on `/results/<goal>`; without it the card is static.
+ * `pair` (leadership-card-two-goals §2–3): a card holding two goals takes its title and summary, gives each block an
+ * h3 and a "More on this vote" link, and puts a 2 px rule above the Senate block.
  */
-export function Card({ g, n, state, district, photo, st }: { g: GoalCard; n: number; state: string; district: number; photo?: string; st?: CardState }) {
+export function Card({ g, n, state, district, photo, st, pair }: { g: GoalCard; n: number; state: string; district: number; photo?: string; st?: CardState; pair?: LeadershipPair | null }) {
   const band = bandHtml(photo);
   const date = fmtDate(g.decision_date);
   const split = g.chamber !== undefined && (g.also !== undefined || (g.uncalled?.length ?? 0) > 0);
+  const two = g.also !== undefined;
+  const copy = cardCopy(g, pair);
   const chambers: Chamber[] = ['house', 'senate'];
   // §4.4: the stamp counts to this card's target (on a split card, the sooner chamber block) and replaces the
   // "Decision:" line for an upcoming date; a past or empty date keeps the line and shows no stamp.
@@ -95,7 +112,7 @@ export function Card({ g, n, state, district, photo, st }: { g: GoalCard; n: num
           <span class="chip bg-hazard text-ink border-ink">{CATEGORY[g.category]}</span>
           <span class="chip bg-ink text-newsprint border-newsprint">Action {n}</span>
         </div>
-        <h2 class="relative headline-lg">{g.title}</h2>
+        <h2 class="relative headline-lg">{copy.title}</h2>
         {date && !split && (!stamp || g.election) && <p class="relative label-code mt-2 text-hazard">{g.election ? 'Primary' : 'Decision'}: {date}</p>}
         {g.election && (
           <p class="relative label-code mt-1 text-hazard">Filing deadline: {fmtDate(g.election.filing_deadline) ?? 'not yet sourced'}
@@ -104,11 +121,16 @@ export function Card({ g, n, state, district, photo, st }: { g: GoalCard; n: num
         )}
       </div>
       <div class="p-5 flex flex-col gap-4 flex-1">
-        <p class="text-base">{g.summary}</p>
+        <p class="text-base">{copy.summary}</p>
         {split
           ? chambers.map((c) => {
               const block = [g, g.also].find((x) => x?.chamber === c);
-              if (block) return <Block g={block} state={state} district={district} label={CHAMBER[c]} st={st} />;
+              if (block) return (
+                <>
+                  {two && c === 'senate' && <hr class="border-0 border-t-2 border-ink -mx-5 mt-2" data-split-rule />}
+                  <Block g={block} state={state} district={district} label={CHAMBER[c]} st={st} two={two} />
+                </>
+              );
               if (g.uncalled?.includes(c)) return <p class="label-code" data-uncalled={c}>{CHAMBER[c]} seat: race not called yet.</p>;
               return null;
             })
@@ -119,7 +141,7 @@ export function Card({ g, n, state, district, photo, st }: { g: GoalCard; n: num
 }
 
 /** results-pages §2.1: the "Your other action" mini card under the one-action page's card. */
-function OtherAction({ g, photo }: { g: GoalCard; photo?: string }) {
+function OtherAction({ g, photo, pair }: { g: GoalCard; photo?: string; pair?: LeadershipPair | null }) {
   const band = bandHtml(photo);
   const stamp = soonest([g]);
   return (
@@ -131,7 +153,7 @@ function OtherAction({ g, photo }: { g: GoalCard; photo?: string }) {
       </div>
       <div class="p-4 flex flex-col gap-1 min-w-0">
         <p class="label-code">Your other action</p>
-        <p class="font-condensed uppercase tracking-wide text-2xl leading-none">{g.title}</p>
+        <p class="font-condensed uppercase tracking-wide text-2xl leading-none">{cardCopy(g, pair).title}</p>
       </div>
     </a>
   );
@@ -155,9 +177,10 @@ const blockOf = (g: GoalCard, id: string): GoalCard => blocksOf(g).find((b) => b
 /**
  * §1.3 results: exactly two cards for the stored district; §1.5 "change address". `photos` maps a goal slug to its
  * image id (site-imagery §2.3). With `goal` (results-pages §2) the island is the one-action page: that goal's full
- * card, the receipt modal on a square tap (§3) and the "Your other action" mini card.
+ * card, the receipt modal on a square tap (§3) and the "Your other action" mini card. `pair` is the split leadership
+ * card's copy from data/ (leadership-card-two-goals §2), read at build.
  */
-export default function Results({ photos = {}, goal }: { photos?: Record<string, string>; goal?: string }) {
+export default function Results({ photos = {}, goal, pair = null }: { photos?: Record<string, string>; goal?: string; pair?: LeadershipPair | null }) {
   const [data, setData] = useState<RouteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<ReadonlyMap<string, TargetDone>>(new Map());
@@ -175,8 +198,10 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
     route(place).then((r) => { cacheRoute(r); setData(r); }).catch((e: Error) => setError(e.message));
   }, []);
 
-  const current = useMemo(() => (goal && data ? data.goals.find((g) => g.slug === goal) ?? null : null), [goal, data]);
+  const current = useMemo(() => (goal && data ? cardFor(data.goals, goal) ?? null : null), [goal, data]);
   useEffect(() => { if (current) setDone(doneMap(current)); }, [current]);
+  // §2.3: the tab title follows the card (the static page carries the goal's own title).
+  useEffect(() => { if (current && typeof document !== 'undefined') document.title = `${cardCopy(current, pair).title} — Cut the Ties`; }, [current]);
 
   function change() { clearPlace(); location.assign('/'); }
 
@@ -191,7 +216,7 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
   const where = districtLabel(data.state, data.district);
 
   if (goal) {
-    const n = data.goals.findIndex((g) => g.slug === goal);
+    const n = current ? data.goals.indexOf(current) : -1;
     if (n < 0 || !current) return (
       <div>
         <p class="label-ticker mb-2"><a href="/results" class="underline">← Your two actions</a></p>
@@ -201,7 +226,7 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
         </div>
       </div>
     );
-    const other = data.goals.find((g) => g.slug !== goal) ?? null;
+    const other = data.goals.find((x) => x.slug !== current.slug) ?? null;
     const g = current;
 
     const open = (m: Modal) => {
@@ -266,11 +291,11 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
     return (
       <div>
         <p class="label-ticker mb-2"><a href="/results" class="underline">← Your two actions</a> · Action {n + 1} of {data.goals.length}</p>
-        <h1 class="display-lg">{g.title}</h1>
+        <h1 class="display-lg">{cardCopy(g, pair).title}</h1>
         <div class="mt-8 max-w-3xl">
-          <Card g={g} n={n + 1} state={data.state} district={data.district} photo={photos[g.slug]} st={st} />
+          <Card g={g} n={n + 1} state={data.state} district={data.district} photo={photos[g.slug]} st={st} pair={pair} />
         </div>
-        {other && <div class="mt-10 max-w-3xl"><OtherAction g={other} photo={photos[other.slug]} /></div>}
+        {other && <div class="mt-10 max-w-3xl"><OtherAction g={other} photo={photos[other.slug]} pair={pair} /></div>}
         {modal && ModalView && (
           <ModalView.C g={modal.g} target={modal.target} channel={modal.channel} at={modal.at} outcome={modal.outcome} answer={modal.answer} onAnswer={answer} state={data.state} district={g.category === 'state' ? null : data.district} next={step} onNext={toNext} onClose={closeModal} />
         )}
@@ -297,7 +322,7 @@ export default function Results({ photos = {}, goal }: { photos?: Record<string,
         </div>
       ) : (
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-8">
-          {data.goals.map((g, i) => <SummaryCard g={g} n={i + 1} photo={photos[g.slug]} />)}
+          {data.goals.map((g, i) => <SummaryCard g={g} n={i + 1} photo={photos[g.slug]} pair={pair} />)}
         </div>
       )}
       <p class="mt-8"><a href="/goals" class="label-code underline underline-offset-4">See all goals →</a></p>

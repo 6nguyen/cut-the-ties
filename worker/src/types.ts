@@ -126,6 +126,9 @@ export interface Goal {
   updated_at: string;
 }
 
+/** leadership-card-two-goals §2: the split card's combined title and summary, from the House leadership goal's YAML `pair`; read at build time, never a D1 column. */
+export interface LeadershipPair { title: string; summary: string }
+
 export interface Action {
   id: number;
   goal_id: number;

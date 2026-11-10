@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Photo from '../../components/Photo.astro';
 import Results from '../../components/Results';
-import { publishedGoals } from '../../lib/goals';
+import { leadershipPair, publishedGoals } from '../../lib/goals';
 import { BAND, imageIdFor } from '../../lib/images';
 // results-pages §2.1: one static page per published goal; the island decides at runtime whether this goal is one of
 // the visitor's two actions. Photo templates as on /results (site-imagery §2.3), for this card and the other-action card.
@@ -12,11 +12,12 @@ export function getStaticPaths() {
 const { goal } = Astro.props;
 const photos = Object.fromEntries(publishedGoals().map((g) => [g.slug, imageIdFor(g)]));
 const bandIds = [...new Set(Object.values(photos))];
+const pair = leadershipPair();
 const bandSizes = '(min-width: 768px) 768px, 92vw';
 ---
 <Base title={`${goal.title} — Cut the Ties`}>
   <section class="mx-auto max-w-[1360px] px-4 lg:px-10 py-10 lg:py-14">
-    <Results client:load photos={photos} goal={goal.slug} />
+    <Results client:load photos={photos} goal={goal.slug} pair={pair} />
   </section>
   {bandIds.map((id) => <template data-photo-band={id}><Photo id={id} widths={[...BAND.widths]} sizes={bandSizes} quality={BAND.quality} /></template>)}
 </Base>

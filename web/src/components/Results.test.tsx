@@ -5,7 +5,7 @@ import { h } from 'preact';
 import { render } from 'preact-render-to-string';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { GoalCard, TargetCard } from '../lib/api';
-import { Card, bandHtml, soonest } from './Results';
+import { Card, bandHtml, cardCopy, cardFor, soonest } from './Results';
 import { Target, showsPortrait } from './Target';
 
 const wiener: TargetCard = {
@@ -19,6 +19,8 @@ const goal = (o: Partial<GoalCard>): GoalCard => ({
 } as GoalCard);
 const senate = goal({ slug: 'senate-leader', title: 'Senate', chamber: 'senate', decision_date: '2027-01-05', ask_text: 'Ask S', action_href: '/goals/senate-leader/act/senate-leader-call', targets: [padilla] });
 const html = (g: GoalCard) => render(h(Card, { g, n: 2, state: 'CA', district: 11 }));
+const PAIR = { title: 'Kick out Jeffries and Schumer', summary: 'Democrats in Congress are about to pick their leaders.' };
+const withPair = (g: GoalCard) => render(h(Card, { g, n: 1, state: 'CA', district: 11, pair: PAIR }));
 // urgency-and-readability §4: the stamp depends on the clock; pin it so the fixture dates stay upcoming.
 beforeAll(() => vi.useFakeTimers({ now: Date.parse('2026-11-06T12:00:00Z'), toFake: ['Date'] }));
 afterAll(() => vi.useRealTimers());
@@ -64,6 +66,58 @@ describe('leadership card blocks', () => {
     expect(sitting).toContain('tel:2022243553');
     expect(sitting).not.toContain('Contact');
     expect(sitting).not.toContain('data-elect-line');
+  });
+});
+
+// leadership-card-two-goals §2–3, §5: a card holding two goals takes the pair copy, an h3 per block, a rule above the
+// Senate block and a "More on this vote" link per block; every other card is unchanged.
+describe('leadership card names both goals', () => {
+  const two = goal({ chamber: 'house', targets: [wiener], also: senate });
+  it('headline and summary are the pair copy; each block opens with its goal title and ends with its goal link; a rule precedes the Senate block', () => {
+    const out = withPair(two);
+    expect(out).toContain('<h2 class="relative headline-lg">Kick out Jeffries and Schumer</h2>');
+    expect(out).toContain('<p class="text-base">Democrats in Congress are about to pick their leaders.</p>');
+    expect(out).not.toContain('<p class="text-base">S</p>');
+    const h3s = out.match(/<h3 class="headline-sm">([^<]*)<\/h3>/g);
+    expect(h3s).toEqual(['<h3 class="headline-sm">Kick out Hakeem Jeffries</h3>', '<h3 class="headline-sm">Senate</h3>']);
+    const h3House = out.indexOf('<h3 class="headline-sm">Kick out Hakeem Jeffries</h3>'), label = out.indexOf('House · Decision: Nov 18, 2026');
+    expect(h3House).toBeGreaterThan(-1);
+    expect(label).toBeGreaterThan(h3House);
+    const rule = out.indexOf('data-split-rule'), sen = out.indexOf('data-block="senate"'), house = out.indexOf('data-block="house"');
+    expect(rule).toBeGreaterThan(house);
+    expect(sen).toBeGreaterThan(rule);
+    expect(out.match(/data-split-rule/g)).toHaveLength(1);
+    expect(out).toContain('href="/goals/house-caucus" class="label-code underline underline-offset-[3px] self-start" data-more="house-caucus">More on this vote →</a>');
+    expect(out).toContain('href="/goals/senate-leader" class="label-code underline underline-offset-[3px] self-start" data-more="senate-leader">More on this vote →</a>');
+    // §3.5: the link closes its block, after the counter line
+    expect(out.indexOf('data-more="house-caucus"')).toBeGreaterThan(out.indexOf('Who to call (1)'));
+    expect(out.indexOf('data-more="house-caucus"')).toBeLessThan(sen);
+  });
+  it('§2.4: without pair copy in data the card keeps its own title and summary, h3s, rule and links stay', () => {
+    const out = html(two);
+    expect(out).toContain('<h2 class="relative headline-lg">Kick out Hakeem Jeffries</h2>');
+    expect(out).toContain('<p class="text-base">S</p>');
+    expect(out).toContain('data-split-rule');
+    expect(out).toContain('<h3 class="headline-sm">');
+    expect(cardCopy(two, null)).toEqual({ title: 'Kick out Hakeem Jeffries', summary: 'S' });
+    expect(cardCopy(two, PAIR)).toEqual(PAIR);
+  });
+  it('a one-goal card and an uncalled-only card never take the pair copy, an h3, the rule or the link', () => {
+    for (const g of [goal({ chamber: 'house', targets: [wiener] }), { ...senate, uncalled: ['house' as const] }, goal({ category: 'federal_vote' })]) {
+      const out = withPair(g);
+      expect(out).not.toContain('Kick out Jeffries and Schumer');
+      expect(out).not.toContain('headline-sm');
+      expect(out).not.toContain('data-split-rule');
+      expect(out).not.toContain('More on this vote');
+      expect(cardCopy(g, PAIR).title).toBe(g.title);
+    }
+  });
+  it('§5: a card is found by its own slug or its also slug', () => {
+    const goals = [two, goal({ slug: 'state-bonds', category: 'state' })];
+    expect(cardFor(goals, 'house-caucus')).toBe(two);
+    expect(cardFor(goals, 'senate-leader')).toBe(two);
+    expect(cardFor(goals, 'state-bonds')?.slug).toBe('state-bonds');
+    expect(cardFor(goals, 'primary-2028')).toBeUndefined();
   });
 });
 

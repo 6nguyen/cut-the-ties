@@ -4,7 +4,7 @@ import { h } from 'preact';
 import { render } from 'preact-render-to-string';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { GoalCard, TargetCard } from '../lib/api';
-import SummaryCard, { eagerBand, metaChips, officesLine, officesOf } from './SummaryCard';
+import SummaryCard, { eagerBand, metaChips, officesLine, officesLines, officesOf } from './SummaryCard';
 import { Target } from './Target';
 
 const correa = { bioguide_id: 'C001110', name: 'Lou Correa', party: 'D', role: 'Rep.', state: 'CA', district: 46, phone: '202-225-2965', contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', position: 'unknown', position_source_url: null, prior_vote: 'No recorded vote yet' } as TargetCard;
@@ -52,6 +52,35 @@ describe('summary card (results-pages §1)', () => {
     const out = render(h(SummaryCard, { g, n: 1 }));
     expect(out.match(/data-summary-card=/g)).toHaveLength(1);
     expect(out.match(/<img [^>]*\/portraits\//g)).toHaveLength(2); // a member-elect has no portrait
+  });
+  it('leadership-card-two-goals §4: a card holding two goals takes the pair title, drops the short_label chip and shows one labelled offices line per block, House first', () => {
+    const senate = goal({ slug: 'senate-leader', chamber: 'senate', targets: [padilla, schiff], short_label: 'Schumer vote' });
+    const g = goal({ slug: 'house-caucus', chamber: 'house', targets: [correa], also: senate, short_label: 'Jeffries vote' });
+    const pair = { title: 'Kick out Jeffries and Schumer', summary: 'Both.' };
+    expect(metaChips(g)).toEqual(['Call or write', '3 offices', 'House + Senate']);
+    expect(officesLines(g)).toEqual([{ label: 'Jeffries vote', targets: [correa] }, { label: 'Schumer vote', targets: [padilla, schiff] }]);
+    const out = render(h(SummaryCard, { g, n: 1, pair }));
+    expect(out).toContain('<h2 class="relative headline-lg">Kick out Jeffries and Schumer</h2>');
+    expect(out).toContain('aria-label="Action 1: Kick out Jeffries and Schumer. Open this action"');
+    expect(out).toMatch(/^<a href="\/results\/house-caucus"/); // §4: the link keeps the card's own slug
+    expect(out).not.toContain('>Jeffries vote<');
+    expect(out).not.toContain('>House caucus vote<');
+    const lines = out.match(/<p class="flex items-center gap-2 text-sm" data-offices="[^"]*">[\s\S]*?<\/p>/g)!;
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain('data-offices="Jeffries vote"');
+    expect(lines[0]).toContain('>Jeffries vote · Correa<');
+    expect(lines[0].match(/<img /g)).toHaveLength(1);
+    expect(lines[1]).toContain('>Schumer vote · Padilla · Schiff<');
+    expect(lines[1].match(/<img /g)).toHaveLength(2);
+    // a block with no targets is left out; no pair in data keeps the card's own title
+    const senateOnly = goal({ slug: 'house-caucus', chamber: 'house', targets: [], also: senate, short_label: 'Jeffries vote' });
+    expect(officesLines(senateOnly)).toEqual([{ label: 'Schumer vote', targets: [padilla, schiff] }]);
+    expect(render(h(SummaryCard, { g, n: 1 }))).toContain('<h2 class="relative headline-lg">Strip §1217</h2>');
+    // a one-goal card keeps the short_label chip and one unlabelled line
+    const one = goal({ slug: 'senate-leader', targets: [padilla], short_label: 'Schumer vote' });
+    expect(metaChips(one)).toEqual(['Call', '1 office', 'Schumer vote']);
+    expect(officesLines(one)).toEqual([{ label: null, targets: [padilla] }]);
+    expect(render(h(SummaryCard, { g: one, n: 2, pair }))).toContain('<p class="flex items-center gap-2 text-sm"><span'); // no label, no data-offices
   });
   it('§1.3: the first band loads eagerly with high priority; the template markup is otherwise untouched', () => {
     expect(eagerBand('<img loading="lazy" src="/x.webp">')).toBe('<img loading="eager" fetchpriority="high" src="/x.webp">');
