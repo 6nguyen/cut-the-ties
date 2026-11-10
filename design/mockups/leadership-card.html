@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leadership card — one split card for Jeffries and Schumer</title>
+<!-- docs/prd/leadership-card-two-goals.md §1. Static mock-ups, never built. Tokens from web/src/styles/global.css;
+     photos from design/stitch/images (placeholders). Screens: L1 /results grid (390 + 1024), L2 /results/house-caucus/,
+     L3 the L2 card with Correa done, L4 the one-goal Schumer control, L5 headline alternative. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#090A0F;--news:#FAF7F0;--news-m:#EDE8DC;--rule:#D8D2C4;--acid:#00E876;--crimson:#E11148;--hazard:#FACC15;--cobalt:#2563EB;--paper:#fff;
+--cond:"Bebas Neue","Arial Narrow",sans-serif;--sans:"Inter",system-ui,sans-serif;--mono:"Space Mono",ui-monospace,monospace;
+--sh-sm:2px 2px 0 var(--ink);--sh:4px 4px 0 var(--ink);--sh-lg:6px 6px 0 var(--ink)}
+*{box-sizing:border-box}
+body{margin:0;background:#cfc9bb;color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+p,h1,h2,h3,ul{margin:0;padding:0}ul{list-style:none}a{color:inherit}
+.sheet{display:flex;flex-wrap:wrap;gap:32px;padding:32px;align-items:flex-start;justify-content:center}
+.screen{width:390px;position:relative;background:var(--news);padding:52px 16px 32px;box-shadow:0 0 0 1px var(--rule)}
+.screen.wide{width:1024px;padding:52px 32px 32px}
+.screen.crop{padding-top:52px}
+.tag{position:absolute;top:10px;left:10px;right:10px;z-index:30;display:flex;gap:8px;align-items:baseline}
+.tag b{background:var(--ink);color:var(--hazard);font:700 10px/1 var(--mono);letter-spacing:.14em;padding:5px 7px;text-transform:uppercase;white-space:nowrap}
+.tag span{min-width:0;font:400 10px/1.3 var(--mono);letter-spacing:.04em;color:rgba(9,10,15,.7)}
+.note{position:relative;margin-top:16px;border:2px dashed var(--crimson);padding:8px 10px;font:400 11px/1.4 var(--mono);color:var(--crimson);background:var(--paper)}
+/* site utilities (global.css) */
+.display-lg{font-family:var(--cond);text-transform:uppercase;letter-spacing:.02em;font-size:40px;line-height:38px;font-weight:400}
+.wide .display-lg{font-size:64px;line-height:60px}
+.headline-lg{font-family:var(--cond);font-weight:400;text-transform:uppercase;letter-spacing:.02em;font-size:30px;line-height:30px}
+.wide .headline-lg{font-size:36px;line-height:36px}
+.headline-sm{font-family:var(--cond);font-weight:400;text-transform:uppercase;letter-spacing:.02em;font-size:22px;line-height:22px} /* new in §3 */
+.label-code{font-family:var(--mono);font-weight:700;font-size:13px;line-height:16px;letter-spacing:.05em;text-transform:uppercase}
+.label-ticker{font-family:var(--mono);font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase}
+.card{background:var(--paper);border:2px solid var(--ink);box-shadow:var(--sh)}
+.card-lg{background:var(--paper);border:3px solid var(--ink);box-shadow:var(--sh-lg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:.875rem 1.25rem;border:2px solid var(--ink);box-shadow:var(--sh);text-decoration:none;color:var(--ink);align-self:flex-start}
+.btn-primary{background:var(--acid)}.btn-ghost{background:transparent;box-shadow:var(--sh-sm)}
+.chip{display:inline-block;border:1px solid var(--ink);padding:.25rem .5rem;font-family:var(--mono);font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase}
+.hero-gradient{background:linear-gradient(160deg,#1E2028 0%,#090A0F 55%,#2a1a1f 100%)}
+.halftone{position:absolute;inset:0;background-image:radial-gradient(#FAF7F0 .75px,transparent .75px);background-size:8px 8px;opacity:.12;pointer-events:none}
+/* components */
+.band{position:relative;color:var(--news);padding:20px;aspect-ratio:16/9;overflow:clip;display:flex;flex-direction:column;justify-content:flex-end}
+.band.stamped{padding-top:64px}
+.band img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45;mix-blend-mode:luminosity}
+.band>*:not(img):not(.halftone){position:relative}
+.chips{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.c-hazard{background:var(--hazard);color:var(--ink);border-color:var(--ink)}.c-ink{background:var(--ink);color:var(--news);border-color:var(--news)}
+.stamp{position:absolute;top:-24px;right:14px;z-index:10;transform:rotate(4deg)}
+.stamp>div{border:5px dashed var(--crimson);background:var(--paper);color:var(--crimson);display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 18px 8px}
+.stamp small{font:700 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.stamp strong{font:400 44px/1 var(--cond);letter-spacing:.02em}
+.stamp.lg strong{font-size:52px}
+.body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.sbody{padding:20px;display:flex;flex-direction:column;gap:12px}
+.ask{font-weight:600}
+.portrait{width:48px;height:48px;flex:none;border:2px solid var(--cobalt);overflow:clip;background:var(--cobalt)}
+.portrait img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.tcard{position:relative;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--sh-sm);padding:14px}
+.tcard.done{background:rgba(250,247,240,.6)}
+.trow{display:flex;align-items:flex-start;gap:12px}
+.tname{font:400 24px/1 var(--cond);text-transform:uppercase;letter-spacing:.025em}
+.trole{font:400 12px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.tsub{margin-top:4px;color:rgba(9,10,15,.7)}
+.sq{width:44px;height:44px;flex:none;border:2px solid var(--ink);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:center;background:var(--paper)}
+.sq.acid{background:var(--acid)}
+.ring{outline:3px solid var(--crimson);outline-offset:2px}
+.tline{margin-top:8px;font-size:14px}
+.pos{margin-top:8px;background:var(--news)}
+.counts{font-family:var(--mono);font-weight:700;font-size:14px;line-height:16px;letter-spacing:.05em;text-transform:uppercase;padding:8px 12px;border:2px solid var(--ink);background:var(--news)}
+.more{font:700 13px/16px var(--mono);letter-spacing:.05em;text-transform:uppercase;text-decoration:underline;text-underline-offset:3px;align-self:flex-start}
+.split-rule{border-top:2px solid var(--ink);margin:8px -20px 0;padding:0}
+.blk{display:flex;flex-direction:column;gap:16px}
+.faces{display:flex;flex:none}
+.faces img{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--cobalt);background:var(--news)}
+.faces img+img{margin-left:-10px}
+.offices{display:flex;align-items:center;gap:8px;font-size:14px}
+.offices span.t{font:400 12px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.08em}
+.offices span.t b{font-weight:700}
+.grid{display:grid;grid-template-columns:1fr;gap:24px;margin-top:32px}
+.wide .grid{grid-template-columns:1fr 1fr;gap:32px}
+.sumcard{position:relative;display:flex;flex-direction:column}
+.sumcard.stamped{margin-top:24px}
+.mini{position:relative;display:flex;text-decoration:none}
+.mini .mband{position:relative;width:112px;flex:none;overflow:clip}
+.mini .mband img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5;mix-blend-mode:luminosity}
+.mini .mbody{padding:14px;display:flex;flex-direction:column;gap:6px}
+.postmark{position:absolute;top:-8px;right:10px;z-index:10;width:64px;height:64px;transform:rotate(-8deg)}
+.donerow{margin-top:8px;margin-right:-56px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:8px 12px;border:2px solid var(--ink);box-shadow:var(--sh-sm);background:transparent}
+.muted{opacity:.55}
+.vs{display:grid;grid-template-columns:1fr;gap:20px}
+.vs h4{margin:0 0 8px;font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.rec{background:var(--acid);padding:2px 5px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="phone" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></symbol>
+  <symbol id="env" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M3 5h18v14H3z"/><path d="M3 6l9 7 9-7"/></g></symbol>
+  <symbol id="pm" viewBox="0 0 64 64"><g fill="none" stroke="#E11148" stroke-opacity=".85"><circle cx="32" cy="32" r="29" stroke-width="2.5"/><circle cx="32" cy="32" r="23" stroke-width="1.5"/></g>
+    <text x="32" y="29" text-anchor="middle" font-family="Space Mono" font-weight="700" font-size="9" fill="#E11148" letter-spacing="1">CALLED</text>
+    <text x="32" y="40" text-anchor="middle" font-family="Space Mono" font-size="7" fill="#E11148">NOV 10 · 2:14P</text></symbol>
+</svg>
+
+<template id="t-correa">
+  <div class="trow">
+    <span class="portrait"><img src="../stitch/images/portrait-senator-a.jpg" alt=""></span>
+    <div style="min-width:0;flex:1">
+      <p class="tname">Lou Correa</p>
+      <p class="trole">Representative · CA-46</p>
+      <p class="label-ticker tsub">No recorded vote yet</p>
+    </div>
+    <a class="sq" title="Write"><svg width="20" height="20"><use href="#env"/></svg></a>
+    <a class="sq acid" title="Call 202-225-2965"><svg width="20" height="20"><use href="#phone"/></svg></a>
+  </div>
+  <span class="chip pos">No stated position</span>
+</template>
+
+<div class="sheet">
+
+<!-- ============ L1 · 390 ============ -->
+<section class="screen" id="L1">
+  <div class="tag"><b>L1 · /results · 390</b><span>split card first, NDAA card second</span></div>
+  <div class="stamp lg" style="position:relative;top:0;right:0;display:inline-block;transform:rotate(-2deg);margin-bottom:24px"><div><small>Countdown · Kick out Hakeem Jeffries</small><strong>07D 17H 31M</strong></div></div>
+  <p class="label-ticker" style="margin-bottom:8px">CA-46 · <u>change address</u></p>
+  <h1 class="display-lg">Your two actions this week</h1>
+  <p style="margin-top:12px">Your people in Congress for CA-46: Lou Correa, Alex Padilla, Adam Schiff.</p>
+  <div class="grid">
+    <a class="card-lg sumcard stamped">
+      <div class="stamp"><div><small>Countdown · House · Expected Nov 18</small><strong>07D 17H 31M 27S</strong></div></div>
+      <div class="band hero-gradient stamped"><img src="../stitch/images/house-floor.jpg" alt=""><div class="halftone"></div>
+        <div class="chips"><span class="chip c-hazard">Who leads the Democrats</span><span class="chip c-ink">Action 1</span></div>
+        <h2 class="headline-lg">Kick out Jeffries and Schumer</h2>
+      </div>
+      <div class="sbody">
+        <p class="chips" style="margin:0"><span class="chip">Call or write</span><span class="chip">3 offices</span><span class="chip">House + Senate</span></p>
+        <p class="offices"><span class="faces"><img src="../stitch/images/portrait-senator-a.jpg" alt=""></span><span class="t"><b>Jeffries vote</b> · Correa</span></p>
+        <p class="offices"><span class="faces"><img src="../stitch/images/portrait-senator-b.jpg" alt=""><img src="../stitch/images/portrait-senator-c.jpg" alt=""></span><span class="t"><b>Schumer vote</b> · Padilla · Schiff</span></p>
+        <span class="btn btn-primary">Open this action →</span>
+      </div>
+    </a>
+    <a class="card-lg sumcard stamped">
+      <div class="stamp"><div><small>Countdown · Expected Dec 10</small><strong>29D 17H 31M 27S</strong></div></div>
+      <div class="band hero-gradient stamped"><img src="../stitch/images/house-armed-services-hearing.jpg" alt=""><div class="halftone"></div>
+        <div class="chips"><span class="chip c-hazard">Vote in Congress</span><span class="chip c-ink">Action 2</span></div>
+        <h2 class="headline-lg">Stop Israel's integration into the US military</h2>
+      </div>
+      <div class="sbody">
+        <p class="chips" style="margin:0"><span class="chip">Call or write</span><span class="chip">3 offices</span><span class="chip">NDAA §219 / §1217</span></p>
+        <p class="offices"><span class="faces"><img src="../stitch/images/portrait-senator-a.jpg" alt=""><img src="../stitch/images/portrait-senator-b.jpg" alt=""><img src="../stitch/images/portrait-senator-c.jpg" alt=""></span><span class="t">Correa · Padilla · Schiff</span></p>
+        <span class="btn btn-ghost">Open this action →</span>
+      </div>
+    </a>
+  </div>
+  <p class="note">Split card: title = pair.title; chips drop the short_label chip and add "House + Senate"; offices become two lines, House first, each led by the block's short_label. NDAA card unchanged.</p>
+</section>
+
+<!-- ============ L2 · 390 ============ -->
+<section class="screen" id="L2">
+  <div class="tag"><b>L2 · /results/house-caucus/ · 390</b><span>pair H1, two blocks</span></div>
+  <p class="label-ticker" style="margin-bottom:8px"><u>← Your two actions</u> · Action 1 of 2</p>
+  <h1 class="display-lg">Kick out Jeffries and Schumer</h1>
+  <div class="card-lg" style="position:relative;margin-top:56px">
+    <div class="stamp"><div><small>Countdown · House · Expected Nov 18</small><strong>07D 17H 31M 27S</strong></div></div>
+    <div class="band hero-gradient stamped"><img src="../stitch/images/house-floor.jpg" alt=""><div class="halftone"></div>
+      <div class="chips"><span class="chip c-hazard">Who leads the Democrats</span><span class="chip c-ink">Action 1</span></div>
+      <h2 class="headline-lg">Kick out Jeffries and Schumer</h2>
+    </div>
+    <div class="body">
+      <p>Democrats in Congress are about to pick their leaders. House Democrats vote on whether Hakeem Jeffries keeps his job, and Senate Democrats vote on Chuck Schumer. Your representative votes in the first and your senators in the second, so this action has a call for each.</p>
+
+      <div class="blk">
+        <h3 class="headline-sm">Kick out Hakeem Jeffries</h3>
+        <p class="label-code">House · Decision: Nov 18, 2026</p>
+        <p class="ask">Ask your representative to vote for a new leader unless Hakeem Jeffries promises, in public, to take the Israel integration section out of the military bill.</p>
+        <a class="btn btn-primary">Get my script →</a>
+        <p class="label-code">Who to call (1)</p>
+        <ul><li class="tcard" data-slot="correa"></li></ul>
+        <p class="counts">14 constituents in CA-46 called this week</p>
+        <a class="more">More on this vote →</a>
+      </div>
+
+      <hr class="split-rule">
+
+      <div class="blk">
+        <h3 class="headline-sm">Kick out Chuck Schumer</h3>
+        <p class="label-code">Senate · Decision: Jan 5, 2027</p>
+        <p class="ask">Ask your senator to vote for a new leader unless Chuck Schumer promises, in public, to take the Israel integration section out of the military bill.</p>
+        <a class="btn btn-primary">Get my script →</a>
+        <p class="label-code">Who to call (2)</p>
+        <ul style="display:flex;flex-direction:column;gap:12px">
+          <li class="tcard"><div class="trow"><span class="portrait"><img src="../stitch/images/portrait-senator-b.jpg" alt=""></span><div style="flex:1"><p class="tname">Alex Padilla</p><p class="trole">Senator · CA</p><p class="label-ticker tsub">No recorded vote yet</p></div><a class="sq"><svg width="20" height="20"><use href="#env"/></svg></a><a class="sq acid"><svg width="20" height="20"><use href="#phone"/></svg></a></div><span class="chip pos">No stated position</span></li>
+          <li class="tcard"><div class="trow"><span class="portrait"><img src="../stitch/images/portrait-senator-c.jpg" alt=""></span><div style="flex:1"><p class="tname">Adam Schiff</p><p class="trole">Senator · CA</p><p class="label-ticker tsub">No recorded vote yet</p></div><a class="sq"><svg width="20" height="20"><use href="#env"/></svg></a><a class="sq acid"><svg width="20" height="20"><use href="#phone"/></svg></a></div><span class="chip pos">No stated position</span></li>
+        </ul>
+        <p class="counts">9 constituents in California called this week</p>
+        <a class="more">More on this vote →</a>
+      </div>
+    </div>
+  </div>
+  <a class="card mini" style="margin-top:40px">
+    <div class="mband hero-gradient"><img src="../stitch/images/house-armed-services-hearing.jpg" alt=""></div>
+    <div class="mbody"><p class="label-code">Your other action</p><p class="headline-md" style="font:400 26px/26px var(--cond);text-transform:uppercase;letter-spacing:.02em">Stop Israel's integration into the US military</p></div>
+  </a>
+  <p class="note">H1, band and summary carry the pair copy. Each block: h3 goal title → label → ask → script → offices → counter → "More on this vote →". One 2 px ink rule between blocks, edge to edge.</p>
+</section>
+
+<!-- ============ L3 · 390 ============ -->
+<section class="screen crop" id="L3">
+  <div class="tag"><b>L3 · same card, Correa done · 390</b><span>crop from the summary down</span></div>
+  <div class="card-lg">
+    <div class="body">
+      <div class="blk">
+        <h3 class="headline-sm">Kick out Hakeem Jeffries</h3>
+        <p class="label-code">House · Decision: Nov 18, 2026</p>
+        <p class="ask">Ask your representative to vote for a new leader unless Hakeem Jeffries promises, in public, to take the Israel integration section out of the military bill.</p>
+        <a class="btn btn-primary">Get my script →</a>
+        <p class="label-code">Who to call (1)</p>
+        <ul><li class="tcard done">
+          <svg class="postmark"><use href="#pm"/></svg>
+          <div class="trow"><span class="portrait muted"><img src="../stitch/images/portrait-senator-a.jpg" alt=""></span>
+            <div style="min-width:0;flex:1;padding-right:56px"><p class="tname">Lou Correa</p><p class="trole">Representative · CA-46</p><p class="label-ticker tsub">No recorded vote yet</p>
+              <div class="donerow"><span class="pill">✓ Share</span><span class="chip" style="background:var(--paper)">Said: undecided</span></div></div>
+          </div>
+        </li></ul>
+        <p class="counts">15 constituents in CA-46 called this week</p>
+        <a class="more">More on this vote →</a>
+      </div>
+      <hr class="split-rule">
+      <div class="blk">
+        <h3 class="headline-sm">Kick out Chuck Schumer</h3>
+        <p class="label-code">Senate · Decision: Jan 5, 2027</p>
+        <p class="ask">Ask your senator to vote for a new leader unless Chuck Schumer promises, in public, to take the Israel integration section out of the military bill.</p>
+        <a class="btn btn-primary">Get my script →</a>
+        <p class="label-code">Who to call (2)</p>
+        <ul style="display:flex;flex-direction:column;gap:12px">
+          <li class="tcard"><div class="trow"><span class="portrait"><img src="../stitch/images/portrait-senator-b.jpg" alt=""></span><div style="flex:1"><p class="tname">Alex Padilla</p><p class="trole">Senator · CA</p><p class="label-ticker tsub">No recorded vote yet</p></div><a class="sq"><svg width="20" height="20"><use href="#env"/></svg></a><a class="sq acid ring"><svg width="20" height="20"><use href="#phone"/></svg></a></div><span class="chip pos">No stated position</span></li>
+          <li class="tcard"><div class="trow"><span class="portrait"><img src="../stitch/images/portrait-senator-c.jpg" alt=""></span><div style="flex:1"><p class="tname">Adam Schiff</p><p class="trole">Senator · CA</p><p class="label-ticker tsub">No recorded vote yet</p></div><a class="sq"><svg width="20" height="20"><use href="#env"/></svg></a><a class="sq acid"><svg width="20" height="20"><use href="#phone"/></svg></a></div><span class="chip pos">No stated position</span></li>
+        </ul>
+        <p class="counts">9 constituents in California called this week</p>
+        <a class="more">More on this vote →</a>
+      </div>
+    </div>
+  </div>
+  <p class="note">The rule and h3 still read clearly with a done office above them; the "Next" crimson ring moves to Padilla in the Senate block.</p>
+</section>
+
+<!-- ============ L4 · 390 ============ -->
+<section class="screen" id="L4">
+  <div class="tag"><b>L4 · one-goal control · 390</b><span>Republican rep → Senate goal alone</span></div>
+  <a class="card-lg sumcard stamped">
+    <div class="stamp"><div><small>Countdown · Expected Jan 5</small><strong>55D 17H 31M 27S</strong></div></div>
+    <div class="band hero-gradient stamped"><img src="../stitch/images/senate-chamber.jpg" alt=""><div class="halftone"></div>
+      <div class="chips"><span class="chip c-hazard">Who leads the Democrats</span><span class="chip c-ink">Action 1</span></div>
+      <h2 class="headline-lg">Kick out Chuck Schumer</h2>
+    </div>
+    <div class="sbody">
+      <p class="chips" style="margin:0"><span class="chip">Call or write</span><span class="chip">2 offices</span><span class="chip">Schumer vote</span></p>
+      <p class="offices"><span class="faces"><img src="../stitch/images/portrait-senator-b.jpg" alt=""><img src="../stitch/images/portrait-senator-c.jpg" alt=""></span><span class="t">Padilla · Schiff</span></p>
+      <span class="btn btn-primary">Open this action →</span>
+    </div>
+  </a>
+  <div class="card-lg" style="position:relative;margin-top:56px">
+    <div class="stamp"><div><small>Countdown · Senate · Expected Jan 5</small><strong>55D 17H 31M 27S</strong></div></div>
+    <div class="band hero-gradient stamped"><img src="../stitch/images/senate-chamber.jpg" alt=""><div class="halftone"></div>
+      <div class="chips"><span class="chip c-hazard">Who leads the Democrats</span><span class="chip c-ink">Action 1</span></div>
+      <h2 class="headline-lg">Kick out Chuck Schumer</h2>
+    </div>
+    <div class="body">
+      <p>Chuck Schumer runs the Democrats in the Senate. This winter, Senate Democrats vote in secret on whether he keeps the job, and several incoming senators have already said no.</p>
+      <p class="label-code">Senate · Decision: Jan 5, 2027</p>
+      <p class="ask">Ask your senator to vote for a new leader unless Chuck Schumer promises, in public, to take the Israel integration section out of the military bill.</p>
+      <a class="btn btn-primary">Get my script →</a>
+      <p class="label-code">Who to call (2)</p>
+      <p class="label-ticker" style="color:rgba(9,10,15,.5)">[ Padilla and Schiff target cards, as L2 ]</p>
+    </div>
+  </div>
+  <p class="note">Unchanged: no h3, no rule, no "More on this vote →". Only the short_label chip text changes, "Senate leader vote" → "Schumer vote" (§4.4).</p>
+</section>
+
+<!-- ============ L5 · 390 ============ -->
+<section class="screen" id="L5">
+  <div class="tag"><b>L5 · headline wording · 390</b><span>Open question 1, A vs B</span></div>
+  <div class="vs">
+    <div>
+      <h4><span class="rec">A · recommended</span></h4>
+      <div class="card-lg"><div class="band hero-gradient"><img src="../stitch/images/house-floor.jpg" alt=""><div class="halftone"></div>
+        <div class="chips"><span class="chip c-hazard">Who leads the Democrats</span><span class="chip c-ink">Action 1</span></div>
+        <h2 class="headline-lg">Kick out Jeffries and Schumer</h2></div></div>
+      <p class="label-ticker" style="margin:14px 0 6px"><u>← Your two actions</u> · Action 1 of 2</p>
+      <h1 class="display-lg">Kick out Jeffries and Schumer</h1>
+    </div>
+    <div>
+      <h4>B · alternative</h4>
+      <div class="card-lg"><div class="band hero-gradient"><img src="../stitch/images/house-floor.jpg" alt=""><div class="halftone"></div>
+        <div class="chips"><span class="chip c-hazard">Who leads the Democrats</span><span class="chip c-ink">Action 1</span></div>
+        <h2 class="headline-lg">New Democratic leaders in Congress</h2></div></div>
+      <p class="label-ticker" style="margin:14px 0 6px"><u>← Your two actions</u> · Action 1 of 2</p>
+      <h1 class="display-lg">New Democratic leaders in Congress</h1>
+    </div>
+  </div>
+  <p class="note">A names both people and matches the two h3s under it. B is softer and hides who is on the ballot; it repeats the category chip.</p>
+</section>
+
+<!-- ============ L1 · 1024 ============ -->
+<section class="screen wide" id="L1-wide">
+  <div class="tag"><b>L1 · /results · 1024</b><span>two-column grid</span></div>
+  <div style="position:relative;padding-right:400px">
+    <div class="stamp lg" style="top:-4px;right:8px;transform:rotate(-2deg)"><div><small>Countdown · Kick out Hakeem Jeffries</small><strong>07D 17H 31M</strong></div></div>
+    <p class="label-ticker" style="margin-bottom:8px">CA-46 · <u>change address</u></p>
+    <h1 class="display-lg">Your two actions this week</h1>
+  </div>
+  <p style="margin-top:12px">Your people in Congress for CA-46: Lou Correa, Alex Padilla, Adam Schiff.</p>
+  <div class="grid" data-clone="L1"></div>
+</section>
+
+</div>
+<script>
+// Fill the Correa slot and clone the L1 grid into the 1024 screen, so both widths show the same cards.
+document.querySelectorAll('[data-slot="correa"]').forEach((li) => li.append(document.getElementById('t-correa').content.cloneNode(true)));
+document.querySelector('[data-clone="L1"]').innerHTML = document.querySelector('#L1 .grid').innerHTML;
+// ?only=L2 shows one screen edge to edge (used to export one PNG per screen).
+const only = new URLSearchParams(location.search).get('only');
+if (only) {
+  document.querySelectorAll('.screen').forEach((el) => { if (el.id !== only) el.remove(); });
+  document.querySelector('.sheet').style.padding = '0';
+}
+document.body.dataset.heights = [...document.querySelectorAll('.screen')].map((el) => el.id + ':' + Math.ceil(el.getBoundingClientRect().height)).join(',');
+</script>
+</body>
+</html>
