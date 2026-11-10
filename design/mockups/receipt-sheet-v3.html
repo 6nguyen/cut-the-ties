@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt sheet v3 — one data point on the existing share card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#090A0F;--news:#FAF7F0;--news-m:#EDE8DC;--rule:#D8D2C4;--acid:#00E876;--crimson:#E11148;--hazard:#FACC15;--cobalt:#2563EB;--paper:#fff;
+--cond:"Bebas Neue","Arial Narrow",sans-serif;--sans:"Inter",system-ui,sans-serif;--mono:"Space Mono",ui-monospace,monospace;
+--sh-sm:2px 2px 0 var(--ink);--sh:4px 4px 0 var(--ink);--sh-lg:6px 6px 0 var(--ink)}
+*{box-sizing:border-box}body{margin:0;background:var(--news);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.4}
+.screen{width:375px;min-height:812px;margin:0 auto;position:relative;overflow:hidden;background:var(--news);border-bottom:6px dashed var(--rule)}
+.tag{position:absolute;top:8px;left:8px;z-index:9;background:var(--ink);color:var(--hazard);font:700 10px/1 var(--mono);letter-spacing:.14em;padding:5px 7px;text-transform:uppercase}
+.page{padding:56px 16px 24px}
+.ticker{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(9,10,15,.7)}
+h1{font:400 44px/0.92 var(--cond);margin:10px 0 14px;letter-spacing:.01em}
+.label{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px}
+.card{background:var(--paper);border:2px solid var(--ink);box-shadow:var(--sh-sm);padding:14px;position:relative}
+.card.done{background:rgba(237,232,220,.6)}
+.row{display:flex;gap:12px;align-items:flex-start}
+.ava{width:40px;height:40px;flex:none;border:2px solid var(--ink);box-shadow:var(--sh-sm);background:var(--cobalt);color:#fff;font:400 20px/1 var(--cond);display:flex;align-items:center;justify-content:center}
+.name{font:400 24px/1 var(--cond);text-transform:uppercase;letter-spacing:.02em}
+.role{font:400 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.sub{font:400 11px/1.3 var(--mono);color:rgba(9,10,15,.7);margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+.sq{width:44px;height:44px;flex:none;border:2px solid var(--ink);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:center}
+.sq.acid{background:var(--acid)}.sq.paper{background:var(--paper)}
+.chip{display:inline-block;border:2px solid var(--ink);padding:3px 8px;font:700 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--news)}
+.btn{display:block;width:100%;text-align:center;padding:14px 20px;border:2px solid var(--ink);box-shadow:var(--sh);font:700 15px/1 var(--sans);background:var(--paper);text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--acid)}.btn.ghost{background:transparent;box-shadow:var(--sh-sm);font-weight:600}
+.pill{border:2px solid var(--ink);box-shadow:var(--sh-sm);background:transparent;font:600 13px/1 var(--sans);padding:8px 12px;flex:none}
+.link{font:600 14px/1 var(--sans);text-decoration:underline;text-align:center;display:block;margin:14px 0 0}
+/* dialog / sheet */
+.backdrop{position:absolute;inset:0;background:rgba(9,10,15,.7)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-top:3px solid var(--ink);padding:14px 16px 24px}
+.grab{width:44px;height:4px;background:var(--ink);margin:0 auto 12px}
+.modal{position:absolute;left:16px;right:16px;top:64px;background:var(--paper);border:2px solid var(--ink);box-shadow:var(--sh-lg);padding:16px}
+.x{position:absolute;top:8px;right:10px;font:400 26px/1 var(--cond)}
+.q{font:400 30px/0.95 var(--cond);margin:0 0 10px;letter-spacing:.01em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips .chip{padding:10px 12px;font-size:12px;background:var(--paper);cursor:pointer}
+.chips .chip.on{background:var(--ink);color:var(--acid)}
+.chips .chip.quiet{border-style:dashed;color:rgba(9,10,15,.65)}
+.echo{font:400 13px/1.35 var(--sans);margin:12px 0 0}
+.echo b{font:400 22px/1 var(--cond)}
+.saved{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--crimson);margin-left:8px}
+.hr{border:0;border-top:2px solid var(--rule);margin:14px 0}
+/* big receipt stamp (shipped) */
+.rstamp{display:inline-flex;flex-direction:column;align-items:center;gap:4px;border:5px dashed var(--crimson);background:var(--paper);color:var(--crimson);padding:8px 16px;transform:rotate(-4deg);margin:6px 0 8px 4px;
+-webkit-mask-image:radial-gradient(ellipse at center,#000 45%,rgba(0,0,0,.78) 72%,rgba(0,0,0,.38) 100%);mask-image:radial-gradient(ellipse at center,#000 45%,rgba(0,0,0,.78) 72%,rgba(0,0,0,.38) 100%)}
+.rstamp .big{font:400 48px/1 var(--cond);letter-spacing:.06em;white-space:nowrap}
+.rstamp .small{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+/* ---- done-card stamp variants ---- */
+.grain{filter:url(#grain)}
+/* V1 rubber stamp over the corner */
+.st1{position:absolute;top:-12px;right:6px;transform:rotate(-7deg);border:4px dashed var(--crimson);color:var(--crimson);background:rgba(255,255,255,.85);padding:4px 10px 3px;display:flex;flex-direction:column;align-items:center;line-height:1;
+-webkit-mask-image:radial-gradient(ellipse at center,#000 50%,rgba(0,0,0,.8) 75%,rgba(0,0,0,.4) 100%);mask-image:radial-gradient(ellipse at center,#000 50%,rgba(0,0,0,.8) 75%,rgba(0,0,0,.4) 100%)}
+.st1 .w{font:400 28px/1 var(--cond);letter-spacing:.08em}.st1 .d{font:700 9px/1 var(--mono);letter-spacing:.14em;margin-top:2px}
+/* V2 ink block tag, flush top-left */
+.st2{position:absolute;top:-2px;left:-2px;background:var(--ink);color:var(--acid);padding:6px 10px 5px;display:flex;align-items:baseline;gap:8px;box-shadow:var(--sh-sm)}
+.st2 .w{font:400 22px/1 var(--cond);letter-spacing:.1em}.st2 .d{font:700 9px/1 var(--mono);letter-spacing:.12em;color:var(--paper)}
+.st2.wrote{color:var(--hazard)}
+/* V3 perforated receipt strip across the top */
+.st3{margin:-14px -14px 12px;border-bottom:2px dashed var(--ink);background:var(--news-m);padding:7px 14px;display:flex;justify-content:space-between;align-items:center;font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.st3 .w{font:400 18px/1 var(--cond);letter-spacing:.1em;color:var(--crimson)}
+.st3::before,.st3::after{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:var(--news);border:2px solid var(--ink);top:24px}
+.st3::before{left:-8px}.st3::after{right:-8px}
+/* V4 postmark circle */
+.st4{position:absolute;top:-14px;right:8px;width:84px;height:84px;border-radius:50%;border:3px solid var(--crimson);color:var(--crimson);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-12deg);background:rgba(255,255,255,.8);
+-webkit-mask-image:radial-gradient(circle at 40% 45%,#000 55%,rgba(0,0,0,.75) 80%,rgba(0,0,0,.35) 100%);mask-image:radial-gradient(circle at 40% 45%,#000 55%,rgba(0,0,0,.75) 80%,rgba(0,0,0,.35) 100%)}
+.st4::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1.5px solid var(--crimson)}
+.st4 .w{font:400 24px/1 var(--cond);letter-spacing:.08em}.st4 .d{font:700 8px/1 var(--mono);letter-spacing:.16em}
+.st4 .waves{position:absolute;right:86px;top:30px;width:70px;height:26px;border-top:2px solid var(--crimson);border-bottom:2px solid var(--crimson);opacity:.85}
+.st4 .waves::before{content:"";position:absolute;left:0;right:0;top:11px;border-top:2px solid var(--crimson)}
+.caption{font:400 12px/1.4 var(--mono);color:rgba(9,10,15,.7);margin:6px 0 18px;padding-left:2px}
+.caption b{color:var(--ink)}
+.vh{font:400 15px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px;color:var(--crimson)}
+</style>
+<style>
+/* existing modal, reproduced */
+.modal{top:52px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.xb{flex:none;width:44px;height:44px;border:2px solid var(--ink);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:center;font:400 24px/1 var(--cond)}
+.rstamp{margin:0;transform:rotate(-4deg) scale(.9);transform-origin:left top}
+.share-row{display:flex;gap:12px;align-items:flex-start}
+.thumb{width:96px;height:171px;flex:none;border:2px solid var(--ink);background:var(--ink);color:var(--acid);padding:8px 7px;display:flex;flex-direction:column;justify-content:space-between}
+.thumb .t1{font:400 20px/0.95 var(--cond);letter-spacing:.04em}
+.thumb .t2{font:400 11px/1.1 var(--cond);color:var(--paper);letter-spacing:.04em;margin-top:4px}
+.thumb .t3{font:700 6px/1.3 var(--mono);letter-spacing:.1em;color:var(--paper);text-transform:uppercase}
+.thumb .t4{font:400 9px/1 var(--cond);letter-spacing:.12em;border-top:1px solid var(--acid);padding-top:4px}
+.sbtns{display:flex;flex-direction:column;gap:8px;width:192px;max-width:100%}
+.sbtns .btn{text-align:left;display:flex;align-items:center;gap:8px;padding:11px 14px;font-size:14px;font-weight:600;box-shadow:var(--sh-sm)}
+.sbtns .btn i{display:inline-block;width:18px;height:18px;border:2px solid var(--ink);border-radius:4px}
+.sbtns .btn i.l{border-radius:50%;border-style:dashed}.sbtns .btn i.m{border-radius:9px 9px 9px 2px}
+.hint{font:400 13px/1.4 var(--sans);color:rgba(9,10,15,.7);margin:0}
+.foot{display:flex;flex-wrap:wrap;gap:8px 20px;font:400 14px/1.3 var(--sans);margin:0}
+.foot span{text-decoration:underline;text-underline-offset:4px}
+.q{font-size:24px;margin:0 0 8px}
+.chips .chip{padding:9px 11px}
+/* S8 hazard strip */
+.strip{background:var(--hazard);border:2px solid var(--ink);box-shadow:var(--sh-sm);padding:12px;margin:0}
+.strip .q{font-size:22px;margin-bottom:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid .chip{text-align:center;padding:11px 8px;font-size:12px;background:var(--paper)}
+.strip .skip{font:600 12px/1 var(--sans);text-decoration:underline;text-underline-offset:3px;display:block;margin-top:10px;text-align:right}
+/* S9 segmented line */
+.seg{display:flex;flex-direction:column;gap:6px}
+.seg .lbl{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;display:flex;justify-content:space-between}
+.seg .lbl span{font-weight:400;text-decoration:underline;text-transform:none;letter-spacing:0;font-family:var(--sans);font-size:12px}
+.segc{display:flex;border:2px solid var(--ink);box-shadow:var(--sh-sm)}
+.segc div{flex:1;text-align:center;padding:11px 2px;font:700 11px/1 var(--mono);letter-spacing:.02em;text-transform:uppercase;border-right:2px solid var(--ink);background:var(--paper)}
+.segc div:last-child{border-right:0}
+.segc div.on{background:var(--ink);color:var(--acid)}
+</style>
+<body>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute"><filter id="grain" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+
+<!-- S7: ask first, then the existing receipt card untouched -->
+<section class="screen" id="s7" style="min-height:860px">
+  <span class="tag">S7 · ask on top of today's card</span>
+  <div class="page"><p class="ticker">← Your two actions · Action 1 of 2</p><h1>Strip §1217 from the NDAA</h1></div>
+  <div class="backdrop"></div>
+  <div class="modal" style="top:32px">
+    <div class="hdr"><div><p class="q">How did the call go?</p>
+      <div class="chips"><span class="chip">With us</span><span class="chip">Undecided</span><span class="chip">Opposed</span><span class="chip">No answer</span><span class="chip quiet">Skip</span></div></div>
+      <div class="xb">✕</div></div>
+    <hr class="hr" style="margin:0">
+    <div class="rstamp grain"><span class="big">I CALLED</span><span class="small">Rep. Correa · Nov 9</span></div>
+    <p class="echo" style="margin:0">You're one of <b>212</b> in CA-46 who called this week.</p>
+    <div class="share-row"><div class="thumb"><div><div class="t1">I CALLED</div><div class="t2">REP. CORREA, CA</div><div class="t3" style="margin-top:6px">Strip §1217 from the NDAA</div></div><div class="t4">CUT THE TIES</div></div>
+      <div class="sbtns"><a class="btn"><i></i>Share</a><a class="btn"><i class="l"></i>Copy link</a><a class="btn"><i class="m"></i>Message</a></div></div>
+    <p class="hint">Pick Instagram, then Story, Post, Reel or Message.</p>
+    <a class="btn primary">Next: call Sen. Padilla →</a>
+    <p class="foot"><span>Not now</span><span>No answer? Remind me tomorrow</span></p>
+  </div>
+</section>
+
+<!-- S8: today's header untouched; the ask is a hazard strip between the echo and the share card -->
+<section class="screen" id="s8" style="min-height:900px">
+  <span class="tag">S8 · ask as a strip under the stamp</span>
+  <div class="page"><p class="ticker">← Your two actions · Action 1 of 2</p><h1>Strip §1217 from the NDAA</h1></div>
+  <div class="backdrop"></div>
+  <div class="modal" style="top:28px">
+    <div class="hdr"><div class="rstamp grain"><span class="big">I CALLED</span><span class="small">Rep. Correa · Nov 9</span></div><div class="xb">✕</div></div>
+    <p class="echo" style="margin:0">You're one of <b>212</b> in CA-46 who called this week.</p>
+    <div class="strip"><p class="q">What did the office say?</p>
+      <div class="grid"><span class="chip">With us</span><span class="chip">Undecided</span><span class="chip">Opposed</span><span class="chip">No answer</span></div>
+      <span class="skip">Skip</span></div>
+    <div class="share-row"><div class="thumb"><div><div class="t1">I CALLED</div><div class="t2">REP. CORREA, CA</div><div class="t3" style="margin-top:6px">Strip §1217 from the NDAA</div></div><div class="t4">CUT THE TIES</div></div>
+      <div class="sbtns"><a class="btn"><i></i>Share</a><a class="btn"><i class="l"></i>Copy link</a><a class="btn"><i class="m"></i>Message</a></div></div>
+    <p class="hint">Pick Instagram, then Story, Post, Reel or Message.</p>
+    <a class="btn primary">Next: call Sen. Padilla →</a>
+    <p class="foot"><span>Not now</span><span>No answer? Remind me tomorrow</span></p>
+  </div>
+</section>
+
+<!-- S9: one segmented line, no heading, under the echo -->
+<section class="screen" id="s9" style="min-height:860px">
+  <span class="tag">S9 · one segmented line, no heading</span>
+  <div class="page"><p class="ticker">← Your two actions · Action 1 of 2</p><h1>Strip §1217 from the NDAA</h1></div>
+  <div class="backdrop"></div>
+  <div class="modal" style="top:40px">
+    <div class="hdr"><div class="rstamp grain"><span class="big">I CALLED</span><span class="small">Rep. Correa · Nov 9</span></div><div class="xb">✕</div></div>
+    <p class="echo" style="margin:0">You're one of <b>212</b> in CA-46 who called this week.</p>
+    <div class="seg"><p class="lbl">The office said <span>Skip</span></p>
+      <div class="segc"><div>With us</div><div>Undecided</div><div>Opposed</div><div class="on">No answer</div></div></div>
+    <div class="share-row"><div class="thumb"><div><div class="t1">I CALLED</div><div class="t2">REP. CORREA, CA</div><div class="t3" style="margin-top:6px">Strip §1217 from the NDAA</div></div><div class="t4">CUT THE TIES</div></div>
+      <div class="sbtns"><a class="btn"><i></i>Share</a><a class="btn"><i class="l"></i>Copy link</a><a class="btn"><i class="m"></i>Message</a></div></div>
+    <p class="hint">Pick Instagram, then Story, Post, Reel or Message.</p>
+    <a class="btn primary">Next: call Sen. Padilla →</a>
+    <p class="foot"><span>Not now</span><span>No answer? Remind me tomorrow</span></p>
+  </div>
+</section>
+</body>
+</html>
