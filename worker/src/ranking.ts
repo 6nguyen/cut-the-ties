@@ -175,9 +175,20 @@ export function slots(ranked: Ranked[]): Slot[] {
  * state goal (even when its own rule failed); if none, an empty list.
  */
 export function topTwo(goals: Goal[], d: Delegation, today: Date): Slot[] {
+  return topSlots(goals, d, today, 2);
+}
+
+/**
+ * tap-receipts-everywhere §8.1: the top `n` slots. The first two are exactly `topTwo` (state padding included); the
+ * rest are the next ranked eligible slots, fewer when the district has fewer. `/results` holds the extra ones
+ * back for rollover, so a done pair still has something to show.
+ */
+export function topSlots(goals: Goal[], d: Delegation, today: Date, n: number): Slot[] {
   const top = slots(rank(goals, d, today));
-  if (top.length >= 2) return top.slice(0, 2);
   if (top.length === 0) return [];
-  const state = goals.find((g) => g.category === 'state' && g.status === 'active' && g.slug !== top[0].goal.slug);
-  return state ? [top[0], { goal: state, also: null }] : top;
+  if (top.length === 1) {
+    const state = goals.find((g) => g.category === 'state' && g.status === 'active' && g.slug !== top[0].goal.slug);
+    return state ? [top[0], { goal: state, also: null }] : top;
+  }
+  return top.slice(0, n);
 }

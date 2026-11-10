@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addCommitment, CAPTAIN_KEY, ceilingFor, clearFunnel, COMMIT_KEY, commitmentFor, defaultDue, dropCaptain, hasOpenItems, loadCommitments, logReceipt, receiptedTargets, recentReceipts, retryDue, retryFor } from './commitments';
+import { addCommitment, CAPTAIN_KEY, ceilingFor, clearFunnel, COMMIT_KEY, commitmentFor, defaultDue, dropCaptain, hasOpenItems, loadCommitments, logReceipt, receiptedTargets, recentReceipts, retryDue, retryFor, DAY_MS, goalDone, receiptsByTarget, setReceiptOutcome } from './commitments';
 
 /** A list as the retired captain step stored it (one-screen-receipt §4). */
 const LIST = JSON.stringify({ v: 1, goal: 'g', due: '2026-11-05T17:00:00.000Z', people: ['Ana', 'Ben', 'Cy'].map((name) => ({ name, channel: 'text', done: false })) });
@@ -79,5 +79,28 @@ describe('local receipt log (call-follow-through §3)', () => {
     clearFunnel();
     expect(recentReceipts(t0)).toEqual([]);
     expect(localStorage.getItem('cut-ties:receipts')).toBeNull();
+  });
+});
+
+describe('goal done stamp (tap-receipts-everywhere §7.1)', () => {
+  it('rows live 7 days while the office window stays 24 h; goalDone needs every target this week and takes the newest time', () => {
+    const t0 = new Date('2026-11-02T15:00:00Z');
+    logReceipt({ goal: 'g', action: 'a', target: 'X' }, t0);
+    const t1 = new Date(t0.getTime() + 2 * DAY_MS);
+    logReceipt({ goal: 'g', action: 'a', target: 'Y' }, t1);
+    expect(receiptsByTarget('g', 'a', t1).has('X')).toBe(false); // two days old: the square is back
+    expect(receiptedTargets('g', 'a', t1)).toEqual(new Set(['Y']));
+    expect(goalDone('g', 'a', ['X', 'Y'], t1)).toEqual({ at: t1.toISOString() });
+    expect(goalDone('g', 'a', ['X', 'Y', 'Z'], t1)).toBeNull();
+    expect(goalDone('g', 'a', [], t1)).toBeNull();
+    expect(goalDone('g', 'other', ['X'], t1)).toBeNull();
+    const week = new Date(t0.getTime() + 7 * DAY_MS);
+    expect(goalDone('g', 'a', ['X', 'Y'], week)).toBeNull(); // X is a week old
+    expect(goalDone('g', 'a', ['Y'], week)).toEqual({ at: t1.toISOString() });
+    // an answer lands only on a row inside the 24 h window, and writing it keeps the older rows
+    expect(setReceiptOutcome('g', 'a', 'X', 'opposed', t1)).toBe(false);
+    expect(setReceiptOutcome('g', 'a', 'Y', 'opposed', t1)).toBe(true);
+    expect(goalDone('g', 'a', ['X', 'Y'], t1)).toEqual({ at: t1.toISOString() });
+    expect(receiptsByTarget('g', 'a', t1).get('Y')?.outcome).toBe('opposed');
   });
 });

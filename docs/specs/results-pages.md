@@ -9,17 +9,18 @@ modal with the stamp, the count echo, one ask about the office's answer, the
 share card and the next office is on screen when the visitor comes back. The same flow runs on every phone
 and email control on the site (`tap-receipts-everywhere`): the goal page's
 stack, the member page, the whip table; the act page posts its own receipt
-card on a tap. Shipped from
-`docs/prd/share-from-results.md` (§1–3) and
-`docs/prd/receipt-sheet-and-done-stamps.md` (§1–3, the ask and the
-postmarks); the owner device tests (§4 of each) are open.
+card on a tap. Shipped from `docs/prd/share-from-results.md` (§1–3) and
+`docs/prd/receipt-sheet-and-done-stamps.md` (§1–3); their owner device
+tests (§4) are open.
 
 ## Behavior
 1. **Summary cards (`/results`).** Header, delegation line and the page's
    `lg` stamp are unchanged (`action-router.md` §5, `countdown-stamp.md`
-   §3). The two slots are `web/src/components/SummaryCard.tsx`, in the
-   `/goals` card anatomy: the goal's 16:9 photo band with the category chip
-   and an "Action 1" / "Action 2" chip over it, the title at its foot, the
+   §3). The cards are `web/src/components/SummaryCard.tsx`, in the
+   `/goals` card anatomy: the route's open goals (not done, below) give
+   the first two as "Action 1" / "Action 2", then every done goal follows,
+   newest first (`Results.tsx` `splitGoals`). An open card: the goal's
+   16:9 photo band with the category chip and the "Action n" chip over it, the title at its foot, the
    card's own countdown stamp at the top-right (or "Decision: <date>" for a
    past date), then a body with one meta line of bordered Space Mono chips
    ("Call or write" when any office has a contact form or is a member-elect,
@@ -33,13 +34,26 @@ postmarks); the owner device tests (§4 of each) are open.
    summary card: its photo and stamp, the `pair` title, no `short_label`
    chip, one offices line per block House first, each led by its action's
    `short_label` ("Jeffries vote · Correa"; `data-offices=<label>`, a
-   block with no targets is left out), one link. The first band loads `eager` with `fetchpriority="high"`
-   (the LCP element), the second lazily. Zero eligible goals, "Change
-   address" and the `/goals` link behave as before.
+   block with no targets is left out), one link. A done goal (every office
+   of every block has a receipt from this device in 7 days, §7) wears the
+   96 px DONE postmark (`kind="done"`, the last receipt's day and time)
+   in place of its countdown, hanging over the band's top-right
+   (`data-done="goal"`, `data-postmark="done"`), a muted band, a "Done"
+   chip, one "All <n> offices" chip in place of the "Call or write" and
+   count chips, the offices lines, and a ghost CTA "See your receipts →".
+   The page stamp covers the open cards only. With goals but none open
+   the cards are followed by "You have done every action open for your
+   district this week." (`data-all-done`) and a "See all goals →" link.
+   The first band loads `eager` with `fetchpriority="high"` (the LCP
+   element), the others lazily. Zero eligible goals, "Change address"
+   and the `/goals` link behave as before.
 2. **One-action page (`/results/<goal>`).** One static page per published
    goal (`web/src/pages/results/[goal].astro`, `getStaticPaths` over
    `publishedGoals()`) mounting the `Results` island with `goal=<slug>`.
-   Ticker "← Your two actions" (link to `/results`) · "Action n of N"; H1
+   Ticker "← Your two actions" (link to `/results`) · "Action n of N" over
+   the open goals (a third or fourth route slot opens as "Action 3 of 4"),
+   or "Done · <day>" for a done goal, whose card wears the DONE postmark
+   on its band over the done target cards of §7; H1
    and `document.title` the goal title, or the `pair` title on a split
    card; the result card as `action-router.md` §5 describes it
    (band and stamp, ask, "Get my script →", target stack with the `Counts`
@@ -47,19 +61,22 @@ postmarks); the owner device tests (§4 of each) are open.
    goal's `pair` copy (fallback: the card goal's own), then a "House"
    block, then a "Senate" block under a 2 px full-width rule
    (`data-split-rule`); each block opens with its goal's title as an h3
-   (`headline-sm`) and the "<Chamber> · Decision: <date>" label, then the
-   ask, CTA, targets and counter line, and ends with "More on this vote →"
-   to `/goals/<slug>` (`data-more`); below it the mini card
+   (`headline-sm`) and the "<Chamber> · Decision: <date>" label, the ask,
+   CTA, targets and counter line, and "More on this vote →" to
+   `/goals/<slug>` (`data-more`); below it the mini card
    "Your other action" (`data-other-action`, the other goal's title, or
    the `pair` title when the other is a split card, photo and stamp,
-   linking `/results/<other>`), omitted with one eligible goal. The island
-   finds the card by its slug or its `also` slug (`Results.tsx`
-   `cardFor`), so `/results/senate-leader` opens the split card.
+   linking `/results/<other>`): the pair's other for Action 1 or 2, the
+   next open goal beyond the pair, and, titled "Your next action", the
+   first open goal for a done goal; omitted with no other open goal.
+   The island finds the card by its slug or its `also` slug
+   (`Results.tsx` `cardFor`), so `/results/senate-leader` opens the
+   split card.
    The route comes from `sessionStorage` `cut-ties:route` (`store.ts`
    `peekRoute`, which no longer clears the key) or a fresh `POST /api/route`
    with the stored place, cached on arrival; no stored place → `/`. A goal
-   that is not one of the visitor's two shows "This isn't one of your two
-   actions this week." with links to `/results` and `/goals/<slug>`.
+   outside the route's slots shows "This isn't one of your two actions
+   this week." with `/results` and `/goals/<slug>` links.
 3. **Write square.** Every target with a `contact_form_url` gains a 44 px
    paper square with an envelope glyph left of the call square
    (`data-write-square`, `aria-label="Write to <name>"`, `title` from
@@ -111,18 +128,17 @@ postmarks); the owner device tests (§4 of each) are open.
    `social-sharing.md` §3–5 unchanged, the poster drawn from
    `receiptSpec(channel === 'email' ? 'letter' : 'call', …)` while the
    dialer is open; one filled button "Next: call <Role Name> →" for the
-   first target of this goal with no receipt from this device in 24 h
-   (`commitment-funnel.md` §7 rule), which closes the modal, rings that
+   goal's first target with no receipt from this device in 24 h
+   (`commitment-funnel.md` §7), which closes the modal, rings that
    target's call square in crimson (`data-next`) and scrolls it into view,
    the ring clearing on its tap; when every target has a receipt the filled
-   control is a link "Your other action →" to `/results/<other>` ("See all
-   goals →" to `/goals` with one eligible goal); then "Not now" and, for a
-   call only, "No answer? Remind me tomorrow", which stores the `retry`
-   commitment of `commitment-funnel.md` §6 and closes. No share control is
-   filled.
+   control is a link "Your next action →" to the first open goal
+   ("Your other action →" while this goal is open, "See all goals →"
+   with none); then "Not now" and, for a call only, "No answer? Remind me
+   tomorrow" (the `retry` commitment of `commitment-funnel.md` §6). No
+   share control is filled.
 6. **Chunks.** `ReceiptModal` (with `ShareRow` and the poster module) is a
-   dynamic `import()` on the first tap; the initial requests of
-   `/results/<goal>` never include it.
+   dynamic `import()` on the first tap, absent from the initial requests.
 7. **After closing.** The tapped target's card is newsprint-muted
    (`data-done="call|email"`) and wears the 64 px `Postmark` on its top-right
    corner, hanging 8 px over the border (`data-postmark-size="64"`); the
@@ -136,39 +152,46 @@ postmarks); the owner device tests (§4 of each) are open.
    work" the call square stands in that row too, ringed as the Next office.
    Focus returns to the pill on close. The state is
    `commitments.ts` `receiptsByTarget` over `cut-ties:receipts` (24 h), so
-   a reload keeps it and the squares return after 24 h. A second office's
+   a reload keeps it and the squares return after 24 h. A goal whose every
+   office has a receipt in 7 days is done (`goalDone`, §1–2): done is
+   computed in the browser from the rows, never sent, and the goal reopens
+   at its rank on day 8. A second office's
    tap posts its own receipt and opens the modal again.
 8. **Repeat limit per office.** `limit_repeat` keys on device, goal,
-   action, channel and target (`district-counters.md` §8), so two offices
-   tapped within 10 minutes both count.
+   action, channel and target (`district-counters.md` §8): two offices
+   within 10 minutes both count.
 
 ## Data & contracts
 - Routes: `/results` (`web/src/pages/results/index.astro`) and
-  `/results/<goal>` (`[goal].astro`), both static.
+  `/results/<goal>` (`[goal].astro`), static.
 - `receipt-flow.tsx`: `useReceiptFlow({goal: ReceiptGoal | null, state,
   district, other: {href, label}}) → {done, next, handlers(block), modal}`.
   `ReceiptGoal` is the `GoalCard` slice the flow reads (`slug`, `title`,
   `what_we_want`, `category`, `action`, `targets`, optional `chamber` and
   `also`); `action: null` → no handlers, plain links. `state` '' means no
-  stored place and the receipt takes the tapped office's own seat.
+  stored place: the receipt takes the tapped office's own seat.
 - `POST /api/route` goal cards carry `action` (slug), `short_label`
-  (nullable, `data/actions/*.yaml` `short_label`, D1 `actions.short_label`)
-  and `what_we_want`; targets carry `contact_form_url` and `contact_kind`
-  (`worker/src/route.ts` `GoalCard`, `TargetCard`).
+  (nullable, from `data/actions/*.yaml`) and `what_we_want`; targets carry
+  `contact_form_url` and `contact_kind` (`worker/src/route.ts`).
 - `data/goals/<slug>.yaml` optional `pair: {title ≤40, summary ≤400}`,
   allowed only on a `leadership` goal whose actions all target the House
-  (`worker/src/load.ts` `checkPair`, `Rows.pairs`; no D1 column). The
-  build reads it with `web/src/lib/goals.ts` `leadershipPair()` and both
-  results pages pass it to the `Results` island as `pair`; `Results.tsx`
-  `cardCopy(g, pair)` picks the pair copy only for a card with `also`.
-- `POST /api/receipt`: body unchanged; the `repeat` SUM in
-  `worker/src/repo.ts` `receiptLimitCounts` also matches `target_id`.
+  (`worker/src/load.ts` `checkPair`; no D1 column). The build reads it
+  with `web/src/lib/goals.ts` `leadershipPair()`, both results pages pass
+  it to the island as `pair`, and `Results.tsx` `cardCopy(g, pair)` uses
+  it only for a card with `also`.
+- `POST /api/receipt`: body unchanged; `receiptLimitCounts`' `repeat`
+  SUM (`worker/src/repo.ts`) also matches `target_id`.
+- `cut-ties:receipts` rows are kept 7 days (`KEEP_MS`); `receiptsByTarget`
+  reads 24 h (`DAY_MS`), `goalDone(goal, action, targetIds, now)` 7 days;
+  `Results.tsx` `goalDoneAt(g)`, `splitGoals(goals) → {open, done}`;
+  `SummaryCard` and `Card` take `done: {at} | null`. Route `goals` holds
+  up to four cards (`action-router.md`), the first two as before.
 - `cut-ties:receipts` rows (`LoggedReceipt`) gain `channel?: 'call' |
   'email'` (missing = call) and `outcome?: 'will_support' | 'undecided' |
   'opposed' | 'no_answer' | 'skip' | 'sent' | 'form_failed'` (the last
   three client-only, never posted; `setReceiptOutcome` writes it,
-  `receiptsByTarget` returns it); `cut-ties:commitments` `retry` rows come
-  from the modal's reminder.
+  `receiptsByTarget` returns it); the modal's reminder writes the
+  `cut-ties:commitments` `retry` row.
 - `POST /api/report` unchanged (`worker/src/index.ts` `OUTCOMES`); the modal
   posts the four office answers only, with the device id and no `note`. `cut-ties:route` is read without being cleared.
 - `Target` props: `done?: {channel, at, outcome?}`, `ring?: boolean`,
@@ -180,7 +203,8 @@ postmarks); the owner device tests (§4 of each) are open.
 - `ReceiptModal` props gain `at` (the receipt's time for the postmark),
   `answer?` (the row's saved answer on a pill reopen) and `onAnswer(outcome)
   → Promise<boolean>` (false = the report failed); `Postmark` takes
-  `{wrote, name, at, size: 96 | 64, id, class?}`. The act page keeps
+  `{kind?: 'called' | 'wrote' | 'done', name, at, size: 96 | 64 | 32, id,
+  class?}`. The act page keeps
   `ReceiptStamp`.
 
 ## Invariants (regression checklist)
@@ -188,6 +212,8 @@ postmarks); the owner device tests (§4 of each) are open.
       the tap that posts the receipt.
 - [ ] The summary cards carry no `tel:`, ask text, counts line or target
       card; each is one link to `/results/<goal>`.
+- [ ] A done card sits after every open card with the DONE postmark and
+      "Done" chip; nothing about done is posted.
 - [ ] The modal/share chunk is absent from `/results/<goal>`'s initial
       requests and arrives on the first tap.
 - [ ] The modal has exactly one filled control (next office, or the other
@@ -205,12 +231,11 @@ postmarks); the owner device tests (§4 of each) are open.
       work" never post; a chip tap posts exactly one report.
 
 ## Performance budget
-`/results` and `/results/<goal>` ≤100 KB transferred before any tap (build
-2026-11-09: HTML 4.1 KB + CSS 6.6 KB + island JS closure 24.0 KB gzip, plus
-the first band ≤26 KB at 768 w); LCP ≤1.5 s on a mid-range phone over 4G;
-the share chunk `ShareRow` ≤4 KB gzip (3.99 KB; `ReceiptModal` 2.35 KB
-rides with it, grown ≤2 KB from 1.45 KB for the ask and the postmark header;
-build 2026-11-09), requested only after the tap; `Postmark` lives in the
-`Target` chunk (3.93 KB, from 3.07 KB) since the done card renders it on
-load, so no request is added;
-`/api/route` ≤2 s p95; $0/month infra.
+`/results` (with four goals, the third and fourth bands lazy) and
+`/results/<goal>` ≤100 KB transferred before any tap (build 2026-11-09:
+HTML 4.1 KB + CSS 6.6 KB + island JS 24.0 KB gzip, plus the first band
+≤26 KB at 768 w); LCP ≤1.5 s on a mid-range phone over 4G; the share chunk
+`ShareRow` ≤4 KB gzip (3.99 KB; `ReceiptModal` 2.35 KB rides with it),
+requested only after the tap; `Postmark` lives in the `Target` chunk
+(3.93 KB) since the done card renders it on load, so no request is added;
+`/api/route` ≤2 s p95 with four slots; $0/month infra.

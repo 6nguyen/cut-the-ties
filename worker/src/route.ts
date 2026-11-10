@@ -1,8 +1,11 @@
 // POST /api/route — §1.2–§1.4 + §5. Builds the response the results page renders.
 import { SWITCHBOARD, TAKES_OFFICE, type Action, type Chamber, type Delegation, type ElectSeat, type Goal, type IncomingSeat, type Member, type Office, type Position, type Repo } from './types';
-import { electoralSeat, topTwo } from './ranking';
+import { electoralSeat, topSlots } from './ranking';
 import { fillAsk, holdingsLine } from './state-copy';
 import { ELECTION_SOURCE_TITLE, recordFor, type RecordLine } from './electoral';
+
+/** tap-receipts-everywhere §8.1: `goals` holds today's two plus up to two more ranked slots for rollover. */
+export const SLOTS = 4;
 
 export interface TargetCard {
   bioguide_id: string | null; // the target id: a bioguide id, an elect_id for a member-elect (leadership-routing §2.6), null for a treasurer
@@ -197,7 +200,7 @@ async function officesFor(repo: Repo, members: Member[]): Promise<Office[]> {
 export async function buildRoute(repo: Repo, state: string, district: number, today: Date): Promise<RouteResponse> {
   const d = await repo.delegation(state, district);
   const goals = await repo.activeGoals();
-  const chosen = topTwo(goals, d, today);
+  const chosen = topSlots(goals, d, today, SLOTS);
   const slotGoals = chosen.flatMap((s) => (s.also ? [s.goal, s.also] : [s.goal]));
   const ids = slotGoals.map((g) => g.id);
   const members = [d.house, ...d.senators].filter((m): m is Member => m !== null);
