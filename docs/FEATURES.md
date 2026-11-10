@@ -15,7 +15,7 @@
 | member-pages | BUILDING | Roster import, member page with contact and position, whip… | [spec](specs/member-pages.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 +1 | 2026-11-08 |
 | on-device-districts | BUILDING | Browser location → district on the device, per-state TopoJS… | [spec](specs/on-device-districts.md) | [district-vintage-rollover](prd/district-vintage-rollover.md) 2/3 | 2026-11-08 |
 | personalised-documents | BUILDING | Act page → screened, generated document → receipt and report | [spec](specs/personalised-documents.md) | [social-sharing](prd/social-sharing.md) 3/4 +1 | 2026-11-08 |
-| results-pages | BUILDING | `/results` summary cards, one-action page `/results/<goal>`… | [spec](specs/results-pages.md) | [leadership-card-two-goals](prd/leadership-card-two-goals.md) 0/6 +3 | 2026-11-10 |
+| results-pages | BUILDING | `/results` summary cards, one-action page `/results/<goal>`… | [spec](specs/results-pages.md) | [leadership-card-two-goals](prd/leadership-card-two-goals.md) 1/6 +3 | 2026-11-10 |
 | social-sharing | BUILDING | On-device 1080×1920 poster after a receipt, file-only to th… | [spec](specs/social-sharing.md) | [share-from-results](prd/share-from-results.md) 0/4 +1 | 2026-11-09 |
 | target-cards | BUILDING | One spec 06 card per target (badge, name, role line, call s… | [spec](specs/target-cards.md) | [share-from-results](prd/share-from-results.md) 0/4 +1 | 2026-11-09 |
 | goal-pages | PINNED | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | [tap-receipts-everywhere](prd/tap-receipts-everywhere.md) 0/9 | 2026-11-10 |
