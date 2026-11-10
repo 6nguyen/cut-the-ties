@@ -135,14 +135,14 @@ documents, receipts and reports are in `personalised-documents.md`.
   when `TURNSTILE_SECRET` is set and skipped otherwise (local dev). A
   `{state, district}` body is never checked: it is the same read as
   `GET /api/goals/:slug/targets`, and the results page sends it with no
-  widget on a return visit or reload (before 2026-11-06 that reload
-  showed "Bot check failed"). `GEOCODER_URL` overrides the Census base URL.
+  widget on a return visit or reload. `GEOCODER_URL` overrides the Census
+  base URL.
 - Ranking (`worker/src/ranking.ts`): eligibility rule JSON (`always`,
   `all`, `any`, `house{field: value}`, `senator{…}`, `state{nonempty:
   […]}`) evaluated against the delegation; score = impact (`priority`,
-  1–5) × urgency (`1 + 2 × max(0, 1 − min(days, 90)/90)`, rounded to 3
-  decimals: 3 on the day, 2 at 45 days, 1 from 90 days; past or empty
-  date = 1); ties by earlier decision date then slug. One eligible
+  1–5) × urgency (`1 + 2 × max(0, 1 − min(days, 90)/90)`, 3 decimals: 3
+  on the day, 2 at 45 days, 1 from 90 days or no date); ties by earlier
+  decision date then slug. One eligible
   goal is padded with the state goal. Two eligible leadership goals fold
   into one slot (`slots`): the higher-ranked is the slot's goal, the other
   its `also`. A rule may test only the §5.1
@@ -151,8 +151,7 @@ documents, receipts and reports are in `personalised-documents.md`.
   with typed values (party `D|R|I`, caucus `D|R`, flags `0|1`, text
   strings); leadership rules see the incoming delegation (`ruleInput`),
   every other rule the sitting one. `parseRule` rejects
-  anything else, so the seed fails before a bad rule can silently
-  exclude a goal. Grammar: `data/README.md`.
+  anything else (the seed fails). Grammar: `data/README.md`.
 - Goal/action `id`s come from YAML and `data/ids.md`, never file order; a
   missing, duplicate, retired or unregistered id fails the seed.
 - Browser storage: `localStorage` `cut-ties:place` = `{state, district}`;
@@ -191,6 +190,10 @@ documents, receipts and reports are in `personalised-documents.md`.
 - Goal pages, `GET /api/goals`, the goal lifecycle, seed validation of
   goal rows and the donation config are in `goal-pages.md`; a `GoalCard`
   and a `TargetCard` share the row shapes defined there.
+- Actions: optional `office: dc | district` (default `dc`, D1 `NOT NULL
+  DEFAULT 'dc'`, else the seed fails) names the office that handles the
+  ask; cards and `targetContact` carry only its number
+  (`call-the-right-office` §1).
 
 ## Invariants (regression checklist)
 - [ ] The address is never logged, stored or echoed: the only outbound
@@ -203,11 +206,11 @@ documents, receipts and reports are in `personalised-documents.md`.
       `web/src/components/AddressForm.test.tsx`,
       `worker/test/route.test.ts`).
 - [ ] A ZIP-only submission never reaches the geocoder.
-- [ ] The district parser reads the number from `BASENAME`, then `GEOID`,
-      then a legacy `CD<nnn>` field, so a Census field rename never turns
-      every address into `unresolved` (`worker/test/route.test.ts`).
+- [ ] The district parser reads `BASENAME`, then `GEOID`, then a legacy
+      `CD<nnn>` field, so a Census rename never makes every address
+      `unresolved` (`worker/test/route.test.ts`).
 - [ ] A failed submit resets the Turnstile widget, so the retry carries
-      a fresh token instead of the consumed one.
+      a fresh token.
 - [ ] Two slots for a resolved district, each with ≥1 target; an
       all-Republican delegation with no incoming change gets the NDAA
       goal plus the state goal.
@@ -215,16 +218,16 @@ documents, receipts and reports are in `personalised-documents.md`.
       incoming delegation: a departing member's elect replaces them, an
       uncalled seat is a line, a flipped seat is nothing
       (`worker/test/leadership.test.ts`).
-- [ ] Every number and name on a card traces to a `data/` row; nothing is
-      computed by an LLM. Every dollar amount a state target shows equals
-      the `states.csv` cell (`web/src/components/Target.test.ts`); a
+- [ ] Every number and name on a card traces to a `data/` row, never an
+      LLM. Every dollar amount a state target shows equals the
+      `states.csv` cell (`web/src/components/Target.test.ts`); a
       `none` state shows "holds none" with a source link and an `unknown`
       state links the research file.
 - [ ] `/api/route` never writes to D1.
 - [ ] Fixture delegations D/DD, D/RR, R/DD, R/RR, R/DR, D/DR (one in a
       split city) resolve to the goals in `worker/test/fixtures.ts`.
-- [ ] A goal YAML whose rule names an unknown field, a wrong value type
-      or an unknown key fails `npm run seed` and `parseRule`.
+- [ ] A goal rule naming an unknown field, value type or key fails
+      `npm run seed` and `parseRule`.
 - [ ] Adding, renaming or removing a goal/action file moves no other id
       (`worker/test/ids.test.ts`).
 - [ ] No coordinate is ever sent or logged: during the location path the

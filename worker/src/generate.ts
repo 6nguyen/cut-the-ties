@@ -1,6 +1,6 @@
 // §4 personalised documents: input shape, Haiku screen, prompt, Opus stream, deterministic output
 // check, shingle uniqueness and the limits. Every number the page shows comes from this file, not the model.
-import { TAKES_OFFICE, type Action, type Chamber, type ContactKind, type Goal, type Member, type MemberElect, type Position, type Repo, type ScreenClass, type StateRow } from './types';
+import { SWITCHBOARD, TAKES_OFFICE, type Action, type Chamber, type ContactKind, type Goal, type Member, type MemberElect, type Position, type Repo, type ScreenClass, type StateRow } from './types';
 import { DOC_MODEL, SCREEN_MODEL, callMessage, streamMessage } from './anthropic';
 import { priorVote } from './route';
 import { fillAsk } from './state-copy';
@@ -164,19 +164,24 @@ export function targetName(t: Target): string {
   return t.row.treasurer_name || `${t.state} State Treasurer`;
 }
 
-/** email-button §1.4: `contact_kind` labels the contact link, `chamber` picks the form hint (null for a state office). */
-export interface TargetContact { id: string; name: string; role: string; phones: string[]; contact_form_url: string | null; contact_kind: ContactKind | null; chamber: Chamber | null }
-export function targetContact(t: Target): TargetContact {
+/**
+ * email-button §1.4: `contact_kind` labels the contact link, `chamber` picks the form hint (null for a state office).
+ * call-the-right-office §1: `phones` holds only the number of the office the action names (`dc` → the DC number or the
+ * switchboard, `district` → the district office); `office` is null for a treasurer or a member-elect.
+ */
+export interface TargetContact { id: string; name: string; role: string; phones: string[]; office: Action['office'] | null; contact_form_url: string | null; contact_kind: ContactKind | null; chamber: Chamber | null }
+export function targetContact(t: Target, office: Action['office'] = 'dc'): TargetContact {
   if (t.kind === 'member') {
     const m = t.member;
-    return { id: t.id, name: m.name, role: m.chamber === 'house' ? 'Rep.' : 'Sen.', phones: [m.dc_phone, m.district_phone].filter((p): p is string => !!p), contact_form_url: m.contact_form_url, contact_kind: m.contact_form_url ? m.contact_kind ?? 'homepage' : null, chamber: m.chamber };
+    const phones = office === 'district' ? [m.district_phone].filter((p): p is string => !!p) : [m.dc_phone ?? SWITCHBOARD];
+    return { id: t.id, name: m.name, role: m.chamber === 'house' ? 'Rep.' : 'Sen.', phones, office, contact_form_url: m.contact_form_url, contact_kind: m.contact_form_url ? m.contact_kind ?? 'homepage' : null, chamber: m.chamber };
   }
   if (t.kind === 'elect') {
     const e = t.elect;
     // A member-elect's link is a campaign site, never an office form.
-    return { id: t.id, name: e.name, role: ELECT_ROLE[e.chamber], phones: e.phone ? [e.phone] : [], contact_form_url: e.contact_url, contact_kind: e.contact_url ? 'homepage' : null, chamber: e.chamber };
+    return { id: t.id, name: e.name, role: ELECT_ROLE[e.chamber], phones: e.phone ? [e.phone] : [], office: null, contact_form_url: e.contact_url, contact_kind: e.contact_url ? 'homepage' : null, chamber: e.chamber };
   }
-  return { id: t.id, name: targetName(t), role: 'Treasurer', phones: t.row.treasurer_phone ? [t.row.treasurer_phone] : [], contact_form_url: t.row.campaign_url, contact_kind: t.row.campaign_url ? 'homepage' : null, chamber: null };
+  return { id: t.id, name: targetName(t), role: 'Treasurer', phones: t.row.treasurer_phone ? [t.row.treasurer_phone] : [], office: null, contact_form_url: t.row.campaign_url, contact_kind: t.row.campaign_url ? 'homepage' : null, chamber: null };
 }
 
 // ---- fact block (§4.2) -------------------------------------------------------------------
@@ -583,7 +588,7 @@ async function serveStandard(ctx: GenerateContext, emit: Emit, reason: StandardR
     return check.cls;
   }
   await emit('delta', { text: body });
-  const done: GenerateDone = { subject: '', body, facts_used: [], words: check.words, target: targetContact(ctx.target), standard: true, reason, ...(variant ? { variant } : {}) };
+  const done: GenerateDone = { subject: '', body, facts_used: [], words: check.words, target: targetContact(ctx.target, ctx.action.office), standard: true, reason, ...(variant ? { variant } : {}) };
   await emit('done', done);
   return null;
 }
@@ -669,6 +674,6 @@ export async function run(deps: GenerateDeps, ctx: GenerateContext, emit: Emit):
     await emit('error', { error: 'refused', message: `We could not produce a draft that passed our checks (${failed ?? 'no draft'}). Try different wording.` });
     return;
   }
-  const done: GenerateDone = { subject: final.doc.subject, body: final.doc.body, facts_used: final.doc.facts_used, words: final.words, target: targetContact(ctx.target), standard: false };
+  const done: GenerateDone = { subject: final.doc.subject, body: final.doc.body, facts_used: final.doc.facts_used, words: final.words, target: targetContact(ctx.target, ctx.action.office), standard: false };
   await emit('done', done);
 }

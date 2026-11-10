@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCsv } from '@worker/load';
 import { targetsFor } from '@worker/route';
 import { RESEARCH_URL, fillAsk, holdingsLine, moneyUsd } from '@worker/state-copy';
-import type { Delegation, Goal, StateRow } from '@worker/types';
+import type { Action, Delegation, Goal, StateRow } from '@worker/types';
 import { Target, TargetStack, roleLine } from './Target';
 
 const CSV = join(process.cwd(), '..', 'data', 'states.csv');
@@ -68,7 +68,7 @@ describe('state target holdings copy', () => {
 });
 
 // roster-freshness §1: a member target shows the DC "Call" button, then "District: <city> <phone>" as a tel: link; no office, no line.
-describe('member target district line', () => {
+describe('member target district line (call-the-right-office §1.4)', () => {
   const member = {
     bioguide_id: 'C001110', name: 'Lou Correa', party: 'D', chamber: 'house', state: 'CA', district: 46, dc_phone: '202-225-2965', district_phone: null,
     contact_form_url: 'https://correa.house.gov/contact', hasc: 0, conferee: 0, rc243: null, jrd_april_2026: null, btb_cosponsor: 0, target_2028: 0, money_url: null,
@@ -77,18 +77,26 @@ describe('member target district line', () => {
   const office = { bioguide_id: 'C001110', office_id: 'C001110-santa_ana', city: 'Santa Ana', state: 'CA', zip: null, address: null, suite: null, building: null, phone: '714-559-6190', fax: null, hours: null, lat: null, lng: null };
   const goal = { id: 1, slug: 'ndaa-1217', category: 'federal_vote', status: 'active' } as unknown as Goal;
   const d: Delegation = { state: 'CA', district: 46, house: { ...member }, senators: [], state_row: null, incoming: { house: { ...member }, senators: [], uncalled: [] } };
-  it('with an office: DC call button, then the district line', () => {
+  const dc = { target_scope: 'house', office: 'dc' } as unknown as Action;
+  const district = { target_scope: 'house', office: 'district' } as unknown as Action;
+  it('a dc action: the square dials the DC number; no district line even with an office on file', () => {
+    const out = render(h(Target, { t: targetsFor(goal, dc, d, [], [office])[0] }));
+    expect(out).toContain('href="tel:2022252965"');
+    expect(out).toContain('title="Call 202-225-2965"');
+    expect(out).not.toContain('data-district-line');
+    expect(out).not.toContain('7145596190');
+  });
+  it('no action (goal page default) behaves as dc', () => {
     const out = render(h(Target, { t: targetsFor(goal, undefined, d, [], [office])[0] }));
     expect(out).toContain('href="tel:2022252965"');
+    expect(out).not.toContain('data-district-line');
+  });
+  it('a district action (fixture): the square dials the district number and the district line names the city', () => {
+    const out = render(h(Target, { t: targetsFor(goal, district, d, [], [office])[0] }));
+    expect(out).toContain('title="Call 714-559-6190"');
     expect(out).toContain('data-district-line');
     expect(out).toContain('District: Santa Ana ');
-    expect(out).toContain('href="tel:7145596190"');
-    expect(out.indexOf('tel:2022252965')).toBeLessThan(out.indexOf('tel:7145596190'));
-  });
-  it('without an office: no district line', () => {
-    const out = render(h(Target, { t: targetsFor(goal, undefined, d, [], [])[0] }));
-    expect(out).toContain('href="tel:2022252965"');
-    expect(out).not.toContain('data-district-line');
+    expect(out).not.toContain('2022252965');
   });
 });
 

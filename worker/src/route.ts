@@ -1,5 +1,5 @@
 // POST /api/route — §1.2–§1.4 + §5. Builds the response the results page renders.
-import { TAKES_OFFICE, type Action, type Chamber, type Delegation, type ElectSeat, type Goal, type IncomingSeat, type Member, type Office, type Position, type Repo } from './types';
+import { SWITCHBOARD, TAKES_OFFICE, type Action, type Chamber, type Delegation, type ElectSeat, type Goal, type IncomingSeat, type Member, type Office, type Position, type Repo } from './types';
 import { electoralSeat, topTwo } from './ranking';
 import { fillAsk, holdingsLine } from './state-copy';
 import { ELECTION_SOURCE_TITLE, recordFor, type RecordLine } from './electoral';
@@ -97,8 +97,7 @@ export function priorVote(m: Member, goal: Goal): string {
   return NO_VOTE;
 }
 
-/** action-router §7: the Capitol switchboard, shown only when a member row has neither a DC nor a district number. */
-export const SWITCHBOARD = '202-224-3121';
+export { SWITCHBOARD };
 
 /** roster-freshness §1: the first office in the member's own state with a phone; a hand-filled district_phone stands in when there is none. */
 export function districtLine(m: Member, offices: Office[]): { district_phone: string | null; district_city: string | null } {
@@ -107,9 +106,10 @@ export function districtLine(m: Member, offices: Office[]): { district_phone: st
   return { district_phone: m.district_phone, district_city: null };
 }
 
-function memberCard(m: Member, goal: Goal, positions: Position[], offices: Office[]): TargetCard {
+/** call-the-right-office §1.4: the square dials the office the goal's call action names; the district line shows only for a `district` action. */
+function memberCard(m: Member, goal: Goal, positions: Position[], offices: Office[], office: Action['office'] = 'dc'): TargetCard {
   const p = positions.find((x) => x.bioguide_id === m.bioguide_id && x.goal_id === goal.id);
-  const d = districtLine(m, offices);
+  const d = office === 'district' ? districtLine(m, offices) : { district_phone: null, district_city: null };
   return {
     bioguide_id: m.bioguide_id,
     name: m.name,
@@ -120,7 +120,7 @@ function memberCard(m: Member, goal: Goal, positions: Position[], offices: Offic
     position: p?.position ?? 'unknown',
     position_source_url: p?.source_url ?? null,
     prior_vote: priorVote(m, goal),
-    phone: m.dc_phone ?? (d.district_phone ? null : SWITCHBOARD),
+    phone: (office === 'district' ? d.district_phone ?? m.dc_phone : m.dc_phone) ?? SWITCHBOARD,
     contact_form_url: m.contact_form_url || null,
     contact_kind: m.contact_form_url ? (m.contact_kind ?? 'homepage') : null,
     ...d,
@@ -173,7 +173,7 @@ export function targetsFor(goal: Goal, action: Action | undefined, d: Delegation
     const seats: IncomingSeat[] = [];
     if ((scope === 'house' || scope === 'both') && d.incoming.house) seats.push(d.incoming.house);
     if (scope === 'senate' || scope === 'both') seats.push(...d.incoming.senators);
-    return seats.filter((s) => s.caucus === 'D').map((s) => ('elect' in s ? electCard(s) : memberCard(s, goal, positions, offices)));
+    return seats.filter((s) => s.caucus === 'D').map((s) => ('elect' in s ? electCard(s) : memberCard(s, goal, positions, offices, action?.office)));
   }
   const out: Member[] = [];
   if ((scope === 'house' || scope === 'both') && d.house) out.push(d.house);
@@ -186,7 +186,7 @@ export function targetsFor(goal: Goal, action: Action | undefined, d: Delegation
     const seat = electoralSeat(goal.eligibility);
     filtered = filtered.filter((m) => seat !== null && m.chamber === 'house' && m.state === seat.state && m.district === seat.district);
   }
-  return filtered.map((m) => memberCard(m, goal, positions, offices));
+  return filtered.map((m) => memberCard(m, goal, positions, offices, action?.office));
 }
 
 /** The delegation's district offices in one list (at most three members, so three small reads). */

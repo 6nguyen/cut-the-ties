@@ -16,7 +16,7 @@ const fields = [
 ];
 const done = (over: Partial<GenerateDone['target']> = {}): GenerateDone => ({
   subject: '', body: 'Line one.\nLine two.', facts_used: [], words: 4, standard: false,
-  target: { id: 'C001110', name: 'Lou Correa', role: 'Rep.', phones: ['202-225-2965', '714-559-6190'], contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', chamber: 'house', ...over },
+  target: { id: 'C001110', name: 'Lou Correa', role: 'Rep.', phones: ['202-225-2965'], office: 'dc', contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', chamber: 'house', ...over },
 });
 const sse = (d: GenerateDone) => new Response(`event: done\ndata: ${JSON.stringify(d)}\n\n`, { status: 200, headers: { 'content-type': 'text/event-stream' } });
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status });
@@ -58,27 +58,58 @@ describe('email step (email-button §1)', () => {
     await mount(done(), OPEN);
     const side = q('[data-output-side]')!;
     const kids = [...side.firstElementChild!.children];
-    expect(kids.filter((k) => k.matches('a[href^="tel:"], span')).length).toBe(2);
+    expect(kids.filter((k) => k.matches('a[href^="tel:"], span')).length).toBe(1);
     expect(q('[data-email-closed]')).toBeNull();
     expect(q('[data-email-step]')).toBeNull();
     const link = q('[data-email-link]')!;
     expect(link.textContent).toBe("I can't call right now");
     expect(link.className).not.toMatch(/btn/);
-    // the link sits after both tel buttons
-    expect(kids.indexOf(link)).toBeGreaterThan(kids.indexOf(root.querySelectorAll('span')[1]));
+    // the link sits after the tel button
+    expect(kids.indexOf(link)).toBeGreaterThan(kids.indexOf(root.querySelectorAll('span')[0]));
   });
 
-  it('23:00 ET: "Both offices are closed. Email instead" is a primary button and the tel buttons stay', async () => {
+  it('23:00 ET, dc action: one DC tel button, the voicemail line, "The office is closed. Email instead" as a primary button (call-the-right-office §1.2)', async () => {
     await mount(done(), CLOSED);
-    expect(root.querySelectorAll('a[href^="tel:"]').length).toBe(2);
+    const tels = root.querySelectorAll('a[href^="tel:"]');
+    expect(tels.length).toBe(1);
+    expect(tels[0].textContent).toBe('Call Rep. Lou Correa · 202-225-2965');
+    expect(tels[0].getAttribute('data-office')).toBe('dc');
+    expect(q('[data-voicemail]')!.textContent).toBe('The DC office is closed. Leave a voicemail with your name and street address; offices count every message.');
     const btn = q('[data-email-closed]')!;
-    expect(btn.textContent).toBe('Both offices are closed. Email instead');
+    expect(btn.textContent).toBe('The office is closed. Email instead');
     expect(btn.className).toMatch(/btn-primary/);
     expect(q('[data-email-link]')).toBeNull();
+    expect(root.textContent).not.toContain('714-559-6190');
+    expect(root.textContent).not.toContain('Either number');
   });
 
-  it('one office: "The office is closed. Email instead"', async () => {
-    await mount(done({ phones: ['202-224-3553'] }), CLOSED);
+  it('10:00 ET, dc action: no voicemail line, the "I can\'t call right now" link', async () => {
+    await mount(done(), OPEN);
+    expect(q('[data-voicemail]')).toBeNull();
+    expect(q('[data-email-closed]')).toBeNull();
+    expect(q('[data-email-link]')).not.toBeNull();
+  });
+
+  it('district action (fixture): the district number only, state hours, "The district office is closed." (§1.3)', async () => {
+    await mount(done({ phones: ['714-559-6190'], office: 'district' }), CLOSED);
+    const tels = root.querySelectorAll('a[href^="tel:"]');
+    expect(tels.length).toBe(1);
+    expect(tels[0].getAttribute('href')).toBe('tel:7145596190');
+    expect(tels[0].getAttribute('data-office')).toBe('district');
+    expect(q('[data-voicemail]')!.textContent).toBe('The district office is closed.');
+    expect(q('[data-email-closed]')!.textContent).toBe('The office is closed. Email instead');
+  });
+
+  it('no DC phone on file: the Capitol switchboard button, labelled (§1.2)', async () => {
+    await mount(done({ phones: ['202-224-3121'] }), OPEN);
+    const tel = q('a[href^="tel:"]')!;
+    expect(tel.textContent).toBe('Call Rep. Lou Correa · Capitol switchboard · 202-224-3121');
+    expect(tel.getAttribute('href')).toBe('tel:2022243121');
+  });
+
+  it('treasurer (no office): closed promotes the email button without a voicemail line', async () => {
+    await mount(done({ phones: ['410-260-7533'], office: null, role: 'Treasurer', chamber: null }), CLOSED);
+    expect(q('[data-voicemail]')).toBeNull();
     expect(q('[data-email-closed]')!.textContent).toBe('The office is closed. Email instead');
   });
 
@@ -103,7 +134,7 @@ describe('email step (email-button §1)', () => {
     // Back to calling: the call row returns with nothing lost
     await act(() => { [...root.querySelectorAll('button')].find((b) => b.textContent === 'Back to calling')!.click(); });
     expect(q('[data-email-step]')).toBeNull();
-    expect(root.querySelectorAll('a[href^="tel:"]').length).toBe(2);
+    expect(root.querySelectorAll('a[href^="tel:"]').length).toBe(1);
     expect(q('[data-output-side]')!.textContent).toMatch(/I did it/);
   });
 
@@ -206,10 +237,14 @@ describe('helpers', () => {
   it('emailMessage uses the surname and the two fields on the device, nothing else', () => {
     expect(emailMessage({ role: 'Sen.', name: 'Alex Padilla' }, 'Body.', { first_name: ' Jo ', city: 'Fresno', why: 'secret' })).toBe('Dear Sen. Padilla,\n\nBody.\n\nJo, Fresno');
   });
-  it('allClosed: DC hours for the DC number, the state for the district office; no phones is never closed', () => {
+  it('allClosed: DC hours for a dc or lone number, the state\'s for a district office; no phones is never closed', () => {
     const closed = new Date(CLOSED), open = new Date(OPEN);
-    expect(allClosed(['202-225-2965', '714-559-6190'], 'CA', closed)).toBe(true);
-    expect(allClosed(['202-225-2965', '714-559-6190'], 'CA', open)).toBe(false);
+    const dcShutCaOpen = new Date('2026-11-02T23:00:00Z'); // Monday 18:00 Eastern, 15:00 Pacific
+    expect(allClosed(['202-225-2965'], 'CA', closed, 'dc')).toBe(true);
+    expect(allClosed(['202-225-2965'], 'CA', open, 'dc')).toBe(false);
+    expect(allClosed(['202-225-2965'], 'CA', dcShutCaOpen, 'dc')).toBe(true);
+    expect(allClosed(['714-559-6190'], 'CA', dcShutCaOpen, 'district')).toBe(false);
+    expect(allClosed(['714-559-6190'], 'CA', closed, 'district')).toBe(true);
     expect(allClosed(['202-224-3553'], 'CA', closed)).toBe(true);
     expect(allClosed([], 'CA', closed)).toBe(false);
   });

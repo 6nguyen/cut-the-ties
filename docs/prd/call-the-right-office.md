@@ -1,5 +1,5 @@
 # Call the right office — PRD
-Status: READY 2026-11-10 (auto) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: DEV COMPLETE (§2 owner check on a phone) · Owner: George Nguyen · Last updated: 2026-11-10
 
 ## Problem
 Every call action today is a vote or leadership ask, and those belong to a
@@ -157,25 +157,40 @@ office" reports in `other`.
 
 ## State (updated 2026-11-10)
 - Sections:
-  - [ ] 1. Route each call to the action's office
+  - [x] 1. Route each call to the action's office
   - [ ] 2. Owner check on a phone
-- Completed: PRD and research.
-- Folded: none.
-- Branch / open PRs: PRD merged in PR #95; cohesion pass with
-  `leadership-card-two-goals` and `tap-receipts-everywhere` in
-  `docs/one-shot-plan`.
-- Files changed (file:line map): none yet. Build touches
-  `data/actions/*.yaml`, `worker/schema.sql`, `worker/scripts/seed.ts`,
-  `worker/src/generate.ts:168-179`, `worker/src/route.ts:18-23,103-123`,
-  `web/src/components/ActForm.tsx:63-72,395-408`,
-  `web/src/components/Target.tsx:106,142-144` and their tests.
-- Tests run + result: none (docs only).
-- Remaining: both sections.
+- Completed: §1 (`feat/call-the-right-office`): every call action names
+  its office; the act page shows one button on that office's hours with
+  the voicemail line and the one-number email promotion; target cards
+  dial the routed office and drop the district line for `dc`.
+- Folded: §1 → `docs/specs/personalised-documents.md` §Behavior 4 and
+  §Data, `docs/specs/target-cards.md` §Behavior 1 and §Data,
+  `docs/specs/action-router.md` §Data & contracts.
+- Branch / open PRs: `feat/call-the-right-office` (this PR); PRD merged
+  in PR #95, cohesion pass in PR #98.
+- Files changed (file:line map): `data/actions/{house-caucus,ndaa-1217,
+  ndaa-report-vote,senate-leader}-call.yaml` (`office: dc`;
+  `state-bonds-call` takes the default), `worker/schema.sql:65-67`,
+  `worker/scripts/migrate.ts:18-19`, `worker/src/types.ts:58-60,147-148`
+  (`SWITCHBOARD`, `Action.office`), `worker/src/load.ts:331-334`,
+  `worker/src/route.ts:2,101,110-124` (`memberCard(…, office)`),
+  `worker/src/generate.ts:168-180` (`targetContact(t, office)`),
+  `worker/src/standard.ts:35`, `web/src/components/ActForm.tsx:5,58-82,
+  398-412` (`phoneOrder`, `closedLine`, `allClosed`, the call row).
+- Tests run + result: `quiet-check tsc` 0 errors; `test` (worker) pass;
+  `test-web` pass; `build` pass. New: `worker/test/data.test.ts` office
+  default and `office: capitol` failure, `worker/test/offices.test.ts`
+  routed office, `worker/test/generate.test.ts` one phone + office,
+  `web/src/components/phones.test.ts` (rewritten), `email.test.tsx`
+  dc / district / switchboard / treasurer cases, `Target.test.ts` dc
+  and district fixtures.
+- Remaining: §2 owner check on a phone.
 - Decisions since last update: owner 2026-11-10 (cohesion pass): lands
   first in the order `call-the-right-office` §1 → `leadership-card-two-goals` §2–5 → `tap-receipts-everywhere` §1–6 + §9 → `tap-receipts-everywhere` §7–8; the act page's single button is
   where tap-receipts §3 attaches its tap receipt.
 - Known failures / blockers: none.
-- Next action: `/implement-prd-section call-the-right-office`.
+- Next action: owner runs §2 on production after the deploy and notes
+  the result here.
 
 ## Open questions
 1. Should the act page tell DC callers to ask for a named staffer
@@ -192,3 +207,7 @@ office" reports in `other`.
   `tap-receipts-everywhere`: landing order fixed (this PRD first);
   §1.2 notes where the tap receipt attaches later; rollout note updated
   (tap-receipts PRD is merged). No behaviour change.
+- 2026-11-10 — §1 built (`feat/call-the-right-office`): `office` field,
+  D1 column + migration, routed phones in `targetContact` and
+  `memberCard`, single-button act page with the voicemail line, specs
+  folded. Status READY → DEV COMPLETE; §2 remains.

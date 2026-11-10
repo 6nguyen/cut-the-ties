@@ -19,7 +19,7 @@ const fields = [
 ];
 const done: GenerateDone = {
   subject: '', body: 'Line one.\nLine two.', facts_used: [], words: 4, standard: false,
-  target: { id: 'C001110', name: 'Lou Correa', role: 'Rep.', phones: ['202-225-2965'], contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', chamber: 'house' },
+  target: { id: 'C001110', name: 'Lou Correa', role: 'Rep.', phones: ['202-225-2965'], office: 'dc', contact_form_url: 'https://correa.house.gov/contact', contact_kind: 'zip_gate', chamber: 'house' },
 };
 const stream = (d: GenerateDone) => () => new Response(`event: done\ndata: ${JSON.stringify(d)}\n\n`, { status: 200, headers: { 'content-type': 'text/event-stream' } });
 const sse = stream(done);

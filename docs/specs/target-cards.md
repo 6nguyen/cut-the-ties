@@ -34,10 +34,13 @@ presentation: who the targets are and what each line says come from
    (envelope glyph, `aria-label="Write to <name>"`, `title` by
    `contact_kind`, `results-pages.md` §3). With `done` set the card is
    muted and one "✓ Share" pill replaces both squares; `ring` draws the
-   crimson Next ring on the call square. Below, in this order and only
-   when present: the elect line, the district office
-   line, the position chip with its source link, the holdings line, the
-   visit line, the record line.
+   crimson Next ring on the call square. The square dials the office the
+   goal's call action names (`call-the-right-office` §1.4: `dc` → the DC
+   number or the Capitol switchboard; `district` → the district office).
+   Below, in this order and only when present: the elect line, the
+   district office line ("District: <city> <phone>", a `district` action
+   only; never for a `dc` action), the position chip with its source
+   link, the holdings line, the visit line, the record line.
 2. **Member-elect.** No phone, so the square is hazard with an arrow
    glyph, `aria-label="Contact <name>"`, linking `contact_url`; the role
    line reads "Representative-elect"/"Senator-elect".
@@ -55,7 +58,10 @@ presentation: who the targets are and what each line says come from
   a senator or treasurer) build the role line; `party`, `role`, `name`,
   `phone`, `position`, `prior_vote`, `elect`, `office`, `holdings` and
   `bioguide_id` feed the other lines (`action-router.md` Data &
-  contracts).
+  contracts). `phone` is the routed office's number (the goal's first
+  call action by `order`; no action means `dc`); `district_phone` and
+  `district_city` are null for a `dc` action and carry the first office
+  in the member's state for a `district` one.
 - Tokens: `shadow-brutal-sm`, `border-ink`, `bg-acid`, `bg-hazard`
   (`web/src/styles/global.css`); tests in
   `web/src/components/Target.test.ts` and `Results.test.tsx`.

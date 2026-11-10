@@ -96,16 +96,15 @@ stores identifies them. Address routing, goals and ranking are in
    columns: the script with its copy / download / regenerate row on the
    left, the call buttons and the receipt card beside it on the right
    (stacked in that order below). It offers copy, download
-   `.txt`, `tel:` links for every phone on file (each with the open/closed
-   chip of `web/src/lib/hours.ts`; with two numbers each button names its
-   office, "DC office" / "District office", under a one-line note that
-   either works and both log the call; when the DC office is closed the
-   district number is listed first with "DC office closed; district
-   office answers in office hours."; under the call buttons of a call
-   action the one text link "I can't call right now", replaced by the
-   primary button "Both offices are closed. Email instead" ("The office
-   is closed. Email instead" with one number) when `isOpen` is false for
-   every office on file), the contact-form link
+   `.txt`, one `tel:` link for the office the call action names
+   (`call-the-right-office` §1: `dc` by default, the DC number or the
+   labelled Capitol switchboard 202-224-3121) with its open/closed chip
+   (`web/src/lib/hours.ts`); when it is closed, `data-voicemail` reads
+   "The DC office is closed. Leave a voicemail with your name and street
+   address; offices count every message." ("The district office is
+   closed." for `district`; none for a treasurer) and "I can't call
+   right now" becomes the primary button "The office is closed. Email
+   instead"), the contact-form link
    for letters and comments, and "I did it" → `POST /api/receipt`
    (goal, action, target, stored state/district, device hash). After a
    receipt, one screen in this order: the stamp ("I CALLED" / "I WROTE",
@@ -151,8 +150,10 @@ stores identifies them. Address routing, goals and ranking are in
   integer seed, ignored otherwise). Success is `text/event-stream`:
   `status {stage: drafting|redrafting|standard, reason?}`, `delta
   {text}`, `reset {reason}`, `done {subject, body, facts_used, words,
-  standard, reason?, variant?, target: {id, name, role, phones[],
-  contact_form_url, contact_kind, chamber}}` (`contact_kind` `form |
+  standard, reason?, variant?, target: {id, name, role, phones[], office,
+  contact_form_url, contact_kind, chamber}}` (`phones` holds only the
+  routed office's number, `office` `dc | district | null`, null for a
+  treasurer or member-elect; `contact_kind` `form |
   zip_gate | homepage | null`, `homepage` for a member-elect or treasurer
   URL; `chamber` `house | senate | null`) or `error {error: refused |
   internal, message}`;

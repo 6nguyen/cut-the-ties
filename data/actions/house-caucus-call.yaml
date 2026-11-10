@@ -2,6 +2,8 @@ id: 1
 slug: house-caucus-call
 goal: house-caucus
 type: call
+# call-the-right-office §1.1: the office that handles this ask (dc | district); a vote or leadership ask is DC's.
+office: dc
 target_scope: house
 order: 1
 ask_text: Ask your representative to vote for a new leader unless Hakeem Jeffries promises, in public, to take the Israel integration section out of the military bill.

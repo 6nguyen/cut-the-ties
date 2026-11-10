@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import type { DocFormat, FormField, GenerateDone, TargetContact } from '@worker/generate';
 import { CONTACT_ACTION } from '../lib/contact';
 import { surname } from '@worker/names';
+import { SWITCHBOARD } from '@worker/types';
 import ReceiptStamp, { stampOffice, stampDay } from './ReceiptStamp';
 import type { TargetCard } from '../lib/api';
 import { deviceId, loadPlace } from '../lib/store';
@@ -54,22 +55,26 @@ export function emailMessage(target: Pick<TargetContact, 'role' | 'name'>, body:
   const sign = [values.first_name, values.city].map((v) => (v ?? '').trim()).filter(Boolean).join(', ');
   return `Dear ${target.role} ${surname(target.name)},\n\n${body}\n\n${sign}`;
 }
-/** email-button §1.2: every office on file closed (DC hours for the DC or lone number, the state's for the district office). */
-export function allClosed(phones: string[], state: string | undefined, now: Date = new Date()): boolean {
-  return phones.length > 0 && phoneOrder(phones, now).every((p) => !isOpen(now, p.district ? { state } : undefined));
+/** email-button §1.2: the routed office is closed (DC hours for a DC or lone number, the state's for a district office); no phones is never closed. */
+export function allClosed(phones: string[], state: string | undefined, now: Date = new Date(), office: TargetContact['office'] = null): boolean {
+  return phones.length > 0 && phoneOrder(phones, office).every((p) => !isOpen(now, p.district ? { state } : undefined));
 }
 const OUTCOMES: [string, string][] = [['will_support', 'Will support'], ['undecided', 'Undecided'], ['opposed', 'Opposed'], ['no_answer', 'No answer'], ['other', 'Other']];
 export { stampOffice, stampDay };
 
 /**
- * call-follow-through §2: the Worker lists the DC number first, the district number second; when DC is closed the
- * district office (no sourced hours yet) goes first. With two numbers each button names its office ("DC office" /
- * "District office", the member page's wording); a lone number (member-elect, treasurer) carries no office label.
+ * call-the-right-office §1.2–1.3: the Worker sends one number, the office the action names; `office` (not the array
+ * position) says whose hours apply. Only the Capitol switchboard carries a label; a member's own number, a
+ * member-elect's or a treasurer's does not.
  */
-export function phoneOrder(phones: string[], now: Date = new Date()): { phone: string; district: boolean; label: string | null }[] {
-  const two = phones.length > 1;
-  const list = phones.map((phone, i) => ({ phone, district: two && i === 1, label: two ? (i === 1 ? 'District office' : 'DC office') : null }));
-  return two && !isOpen(now) ? [list[1], list[0]] : list;
+export function phoneOrder(phones: string[], office: TargetContact['office'] = null): { phone: string; district: boolean; label: string | null }[] {
+  return phones.map((phone) => ({ phone, district: office === 'district', label: phone === SWITCHBOARD ? 'Capitol switchboard' : null }));
+}
+/** call-the-right-office §1.2–1.3: the line under a closed call button; a treasurer's number (no office) gets none. */
+export function closedLine(office: TargetContact['office']): string | null {
+  if (office === 'dc') return 'The DC office is closed. Leave a voicemail with your name and street address; offices count every message.';
+  if (office === 'district') return 'The district office is closed.';
+  return null;
 }
 
 /** Parses the Worker's SSE body (`event:` + `data:` lines, blank-line separated). */
@@ -393,18 +398,18 @@ export default function ActForm({ goal, action, type, scope, fields, fmt, siteKe
             </div>
           ) : (
           <div class="flex flex-wrap gap-2 items-center">
-            {phoneOrder(phase.doc.target.phones).map(({ phone, district, label }) => (
+            {phoneOrder(phase.doc.target.phones, phase.doc.target.office).map(({ phone, district, label }) => (
               <span class="flex items-center gap-2">
                 <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} class={`btn ${fill}`} data-office={district ? 'district' : 'dc'}>Call {phase.doc.target.role} {phase.doc.target.name} · {label ? `${label} · ` : ''}{phone}</a>
                 <OpenChip state={district ? place?.state : undefined} />
               </span>
             ))}
-            {/* email-button §1.2: the one email affordance sits under the call buttons; closed offices promote it to a primary button. */}
-            {emailSubject && (allClosed(phase.doc.target.phones, place?.state)
-              ? <button type="button" class={`btn ${fill} w-full sm:w-auto`} onClick={() => setWriting(true)} data-email-closed>{phase.doc.target.phones.length > 1 ? 'Both offices are closed. Email instead' : 'The office is closed. Email instead'}</button>
+            {/* call-the-right-office §1.2: a closed office stays the target; the voicemail line sits under the button and the email affordance is promoted. */}
+            {allClosed(phase.doc.target.phones, place?.state, undefined, phase.doc.target.office) && closedLine(phase.doc.target.office) && <p class="text-sm w-full" data-voicemail>{closedLine(phase.doc.target.office)}</p>}
+            {/* email-button §1.2: the one email affordance sits under the call button; a closed office promotes it to a primary button. */}
+            {emailSubject && (allClosed(phase.doc.target.phones, place?.state, undefined, phase.doc.target.office)
+              ? <button type="button" class={`btn ${fill} w-full sm:w-auto`} onClick={() => setWriting(true)} data-email-closed>The office is closed. Email instead</button>
               : <button type="button" class="text-sm underline w-full text-left" onClick={() => setWriting(true)} data-email-link>I can't call right now</button>)}
-            {phoneOrder(phase.doc.target.phones)[0]?.district && <p class="text-sm w-full" data-dc-closed>DC office closed; district office answers in office hours.</p>}
-            {phase.doc.target.phones.length > 1 && <p class="text-sm w-full" data-two-offices>Either number works and both log your call. The DC office is where the legislative staff sit; the district office is the local one.</p>}
             {type !== 'call' && phase.doc.target.contact_form_url && (
               <a href={phase.doc.target.contact_form_url} class={`btn ${fill}`} rel="noopener" target="_blank">Open the contact form ↗</a>
             )}

@@ -2,6 +2,8 @@ id: 2
 slug: ndaa-1217-call
 goal: ndaa-1217
 type: call
+# call-the-right-office §1.1: the office that handles this ask (dc | district); a vote or leadership ask is DC's.
+office: dc
 target_scope: both
 order: 1
 ask_text: Ask your member to get the Israel integration section taken out of the military bill, and to vote no on the bill if it stays in.
