@@ -19,17 +19,19 @@ export default function Postmark({ wrote, name, at, size = 96, id, class: cls = 
   const d = typeof at === 'string' ? new Date(at) : at;
   const s = SIZE[size];
   const filter = `postmark-grain-${id}`;
+  // The ring is `absolute inset-0`, so the box must be positioned; a caller that places it (`absolute …`) wins.
+  const positioned = /\b(absolute|fixed|sticky|relative)\b/.test(cls);
   return (
-    <div class={`shrink-0 relative ${cls}`} style={{ width: `${size}px`, height: `${size}px` }} role="img" aria-label={`${wrote ? 'Wrote to' : 'Called'} ${name}, ${postmarkDay(d)} ${postmarkTime(d)}`} data-postmark={wrote ? 'wrote' : 'called'} data-postmark-size={size}>
+    <div class={`shrink-0 ${positioned ? '' : 'relative'} ${cls}`.replace(/\s+/g, ' ').trim()} style={{ width: `${size}px`, height: `${size}px` }} role="img" aria-label={`${wrote ? 'Wrote to' : 'Called'} ${name}, ${postmarkDay(d)} ${postmarkTime(d)}`} data-postmark={wrote ? 'wrote' : 'called'} data-postmark-size={size}>
       <svg aria-hidden="true" width="0" height="0" class="absolute">
         <filter id={filter} x="-5%" y="-5%" width="110%" height="110%">
           <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="noise" />
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
-      <div aria-hidden="true" class={`absolute inset-0 rounded-full ${s.ring} border-crimson bg-paper text-crimson flex flex-col items-center justify-center gap-px -rotate-[12deg]`}
+      <div aria-hidden="true" class={`postmark-round absolute inset-0 ${s.ring} border-crimson bg-paper text-crimson flex flex-col items-center justify-center gap-px -rotate-[12deg]`}
         style={{ filter: `url(#${filter})`, WebkitMaskImage: MASK, maskImage: MASK }}>
-        <span class={`absolute rounded-full ${s.inner} border-crimson`} />
+        <span class={`postmark-round absolute ${s.inner} border-crimson`} />
         <span class={`font-mono font-bold ${s.date} leading-none tracking-[0.16em] uppercase`}>{postmarkDay(d)}</span>
         <span class={`font-condensed ${s.word} leading-none tracking-[0.06em]`}>{wrote ? 'WROTE' : 'CALLED'}</span>
         <span class={`font-mono font-bold ${s.date} leading-none tracking-[0.16em]`}>{postmarkTime(d)}</span>

@@ -97,7 +97,7 @@ export default function ReceiptModal({ g, target, channel, at, state, district, 
             <Postmark wrote={wrote} name={target.name} at={at} size={96} id="modal" class="ml-1 mt-0.5" />
             <div class="min-w-0 pt-7">
               <span aria-hidden="true" class="block relative w-[70px] h-[30px] border-t-2 border-b-2 border-crimson/85 -ml-1.5"><span class="absolute inset-x-0 top-[12px] border-t-2 border-crimson/85" /></span>
-              <p class="font-mono text-xs uppercase tracking-[0.08em] mt-2 truncate" data-receipt-who>{who}{seat ? ` · ${seat}` : ''}</p>
+              <p class="font-mono text-xs uppercase tracking-[0.08em] mt-2 leading-tight" data-receipt-who>{who}{seat ? ` · ${seat}` : ''}</p>
             </div>
           </div>
           <button type="button" class="shrink-0 w-11 h-11 border-2 border-ink shadow-brutal-sm flex items-center justify-center hover:bg-ink hover:text-acid font-condensed text-2xl leading-none" onClick={close} aria-label="Close" data-modal-close>✕</button>
