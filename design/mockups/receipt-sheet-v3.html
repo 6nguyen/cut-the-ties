@@ -113,6 +113,16 @@ h1{font:400 44px/0.92 var(--cond);margin:10px 0 14px;letter-spacing:.01em}
 .segc div:last-child{border-right:0}
 .segc div.on{background:var(--ink);color:var(--acid)}
 </style>
+<style>
+/* S10: the modal header wears the done-card postmark instead of the dashed ReceiptStamp */
+.pmk{width:96px;height:96px;flex:none;border-radius:50%;border:4px solid var(--crimson);color:var(--crimson);display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--paper);transform:rotate(-12deg);position:relative;margin:2px 0 0 4px;
+-webkit-mask-image:radial-gradient(circle at 45% 45%,#000 70%,rgba(0,0,0,.8) 90%,rgba(0,0,0,.5) 100%);mask-image:radial-gradient(circle at 45% 45%,#000 70%,rgba(0,0,0,.8) 90%,rgba(0,0,0,.5) 100%)}
+.pmk::before{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid var(--crimson)}
+.pmk .w{font:400 26px/1 var(--cond);letter-spacing:.06em}.pmk .d{font:700 9px/1 var(--mono);letter-spacing:.16em}
+.waves{width:70px;height:30px;border-top:2px solid var(--crimson);border-bottom:2px solid var(--crimson);position:relative;opacity:.85;flex:none;margin-top:34px;margin-left:-6px}
+.waves::before{content:"";position:absolute;left:0;right:0;top:12px;border-top:2px solid var(--crimson)}
+.who{font:700 11px/1.5 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:rgba(9,10,15,.75);margin:0;align-self:center}
+</style>
 <body>
 <svg aria-hidden="true" width="0" height="0" style="position:absolute"><filter id="grain" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
 
@@ -165,6 +175,25 @@ h1{font:400 44px/0.92 var(--cond);margin:10px 0 14px;letter-spacing:.01em}
     <p class="echo" style="margin:0">You're one of <b>212</b> in CA-46 who called this week.</p>
     <div class="seg"><p class="lbl">The office said <span>Skip</span></p>
       <div class="segc"><div>With us</div><div>Undecided</div><div>Opposed</div><div class="on">No answer</div></div></div>
+    <div class="share-row"><div class="thumb"><div><div class="t1">I CALLED</div><div class="t2">REP. CORREA, CA</div><div class="t3" style="margin-top:6px">Strip §1217 from the NDAA</div></div><div class="t4">CUT THE TIES</div></div>
+      <div class="sbtns"><a class="btn"><i></i>Share</a><a class="btn"><i class="l"></i>Copy link</a><a class="btn"><i class="m"></i>Message</a></div></div>
+    <p class="hint">Pick Instagram, then Story, Post, Reel or Message.</p>
+    <a class="btn primary">Next: call Sen. Padilla →</a>
+    <p class="foot"><span>Not now</span><span>No answer? Remind me tomorrow</span></p>
+  </div>
+</section>
+
+<!-- S10: S8 with the circular postmark in the header -->
+<section class="screen" id="s10" style="min-height:900px">
+  <span class="tag">S10 · S8 + postmark header</span>
+  <div class="page"><p class="ticker">← Your two actions · Action 1 of 2</p><h1>Strip §1217 from the NDAA</h1></div>
+  <div class="backdrop"></div>
+  <div class="modal" style="top:28px">
+    <div class="hdr"><div class="pmk grain"><span class="d">NOV 9</span><span class="w">CALLED</span><span class="d">2:14 PM</span></div><div class="waves"></div><p class="who" style="flex:1;padding-left:6px">Rep. Correa<br>CA-46</p><div class="xb">✕</div></div>
+    <p class="echo" style="margin:0">You're one of <b>212</b> in CA-46 who called this week.</p>
+    <div class="strip"><p class="q">What did the office say?</p>
+      <div class="grid"><span class="chip">With us</span><span class="chip">Undecided</span><span class="chip">Opposed</span><span class="chip">No answer</span></div>
+      <span class="skip">Skip</span></div>
     <div class="share-row"><div class="thumb"><div><div class="t1">I CALLED</div><div class="t2">REP. CORREA, CA</div><div class="t3" style="margin-top:6px">Strip §1217 from the NDAA</div></div><div class="t4">CUT THE TIES</div></div>
       <div class="sbtns"><a class="btn"><i></i>Share</a><a class="btn"><i class="l"></i>Copy link</a><a class="btn"><i class="m"></i>Message</a></div></div>
     <p class="hint">Pick Instagram, then Story, Post, Reel or Message.</p>

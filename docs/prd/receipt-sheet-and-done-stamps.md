@@ -17,18 +17,18 @@ with no outcome question (`share-from-results.md` Non-goals; research
 `post-contact-share-prompt.md` implication 7); this PRD reverses that
 decision at the owner's request the same day: the receipt sheet asks
 whether the call was answered, and a done card wears a stamp that says
-CALLED or WROTE. Mock-ups: `design/mockups/receipt-sheet-v3.html` (S7–S9,
-the ask on today's receipt card) and `receipt-sheet-v2.html` #pm (P1–P3
-the postmark); `receipt-sheet.html` and v2 S5–S6 hold the rejected
-rounds. The vote this serves is whichever goals
+CALLED or WROTE. Mock-ups: `design/mockups/receipt-sheet-v3.html` S10
+(the receipt card as decided) and `receipt-sheet-v2.html` #pm P1 (the
+done-card postmark); S7–S9, v2 S5–S6 and `receipt-sheet.html` hold the
+rejected rounds. The vote this serves is whichever goals
 `/results` routes today, the NDAA §219/§1217 integration sections first.
 
 ## Goals / Non-goals
 - Goals:
   1. Today's receipt card gains one data point: a single ask ("What did
-     the office say?" / write: "Did it go through?") with the stamp, the
-     count, the existing share card and then the next office all visible
-     at once. One tap answers; it posts the act page's `POST /api/report`
+     the office say?" / write: "Did it go through?") as a hazard strip
+     under the count, with the postmark, the count, the existing share
+     card and then the next office all visible at once (S10). One tap answers; it posts the act page's `POST /api/report`
      where an outcome fits. Nothing is gated on the answer, "Skip" is one
      tap, there is no second question (owner, 2026-11-09).
   2. The done card wears a CALLED / WROTE postmark on its top-right corner
@@ -45,7 +45,8 @@ rounds. The vote this serves is whichever goals
     or the `/done` page.
   - A new `form_failed` outcome in D1 (`reports.outcome` CHECK); the write
     variant's "Form didn't work" is client-only (§2).
-  - Redesigning the big "I CALLED" / "I WROTE" `ReceiptStamp`.
+  - Changing the share poster's own "I CALLED" / "I WROTE" artwork
+    (`poster.ts`); only the modal header's stamp changes (§1.2).
   - A two-step question (answered? → what did they say?) or revealing the
     receipt only after an answer: rejected by the owner on 2026-11-09 as
     a three-step flow (mock-ups S1–S3).
@@ -74,24 +75,27 @@ to the page later reads the stamp before any text.
    once). The sheet is today's `ReceiptModal` `<dialog>` as shipped
    (centred paper panel, ✕, Esc and backdrop close); no bottom-sheet
    redesign (owner, 2026-11-09: "use the existing share card").
-2. Top to bottom (mock-ups S7–S9): `ReceiptStamp` "I CALLED" and ✕, the
-   `Counts` echo (or the §4 message), the ask, the existing share card
-   (`ShareRow`: poster thumbnail, Share / Copy link / Message, hint),
-   then the filled "Next: call <Role Name> →" (or "Your other action →"),
-   then "Not now" and "No answer? Remind me tomorrow". The ask is the one
-   addition; its placement is Open question 1 (S9 proposed: a mono label
-   "The office said" with a "Skip" link, and one segmented control `With
-   us | Undecided | Opposed | No answer` → `will_support · undecided ·
-   opposed · no_answer`; S7 puts a display-face question and chip row
-   above the stamp, S8 a hazard strip with a 2×2 chip grid under the
-   echo). Everything renders on open; the ask gates nothing.
+2. Top to bottom (mock-up S10, owner 2026-11-09): the header is the §3
+   `Postmark` at 96 px (CALLED / WROTE, day above, time below, −12°,
+   grain) with three cancellation lines to its right and a mono line
+   "<Role Surname> · <district>" beside them, the ✕ at the top-right; the
+   dashed "I CALLED" `ReceiptStamp` leaves the modal (it stays on the act
+   page). Then the `Counts` echo (or the §4 message); the ask as a hazard
+   strip (hazard fill, 2 px ink border, small shadow): "What did the
+   office say?" in the display face, a 2×2 grid of paper chips `With us ·
+   Undecided · Opposed · No answer` → `will_support · undecided · opposed
+   · no_answer`, and a "Skip" link at the strip's bottom-right; then the
+   existing share card (`ShareRow`: poster thumbnail, Share / Copy link /
+   Message, hint); then the filled "Next: call <Role Name> →" (or "Your
+   other action →"); then "Not now" and "No answer? Remind me tomorrow".
+   Everything renders on open; the ask gates nothing.
 3. A chip tap posts `POST /api/report {goal, target, outcome, device}`
-   (no `note`), fills the segment (ink, acid text) and shows "Saved" in
-   crimson mono beside the label on a 2xx; a second tap on another
-   segment posts again (the act page already allows this). A failed post
-   reads "Could not save that. Try again." under the control with the
-   segments still tappable. `Skip` hides the control with no post and no
-   "Saved".
+   (no `note`), fills the chip (ink, acid text) and shows "Saved" in
+   crimson mono beside the question on a 2xx; a second tap on another
+   chip posts again (the act page already allows this). A failed post
+   reads "Could not save that. Try again." under the grid with the chips
+   still tappable. `Skip` collapses the strip to one line ("Skipped") with
+   no post and no "Saved".
 4. The answer is stored on the receipt row (`LoggedReceipt.outcome`) so a
    reload and the done card (§3) know it; a receipt that was `limit_day`,
    `limit_ip` or a network failure writes no row and the answer is posted
@@ -100,10 +104,10 @@ to the page later reads the stamp before any text.
    page is unchanged.
 
 ### 2. Write variant
-1. A tap on the write square opens the same modal with the "I WROTE"
-   stamp, the echo ("who wrote this week"), the ask "Did it go through?"
-   as `Sent it | Form didn't work` with "Skip", the share card, Next and
-   "Not now" (no reminder link), all visible on open.
+1. A tap on the write square opens the same modal with the WROTE
+   postmark, the echo ("who wrote this week"), the strip "Did it go
+   through?" with two chips `Sent it · Form didn't work` and "Skip", the
+   share card, Next and "Not now" (no reminder link), all visible on open.
 2. `Sent it` and `Skip` post nothing; `Sent it` fills and shows no
    "Saved" (there is nothing to save).
 3. `Form didn't work` posts nothing (no D1 outcome fits, Non-goals),
@@ -117,9 +121,10 @@ to the page later reads the stamp before any text.
 ### 3. Done-card postmark
 1. After the sheet closes, the tapped office's card (`data-done`) keeps
    its newsprint mute and its ✓ Share pill, drops the "· Called 2:14 pm"
-   suffix from the role line, and gains a crimson postmark (double ring,
-   the `ReceiptStamp` grain filter, −12°) reading CALLED or WROTE with the
-   day above and the time below ("NOV 9" / "2:14 PM"). The card's top
+   suffix from the role line, and gains the same crimson postmark as the
+   modal header (double ring, the `ReceiptStamp` grain filter, −12°)
+   reading CALLED or WROTE with the day above and the time below ("NOV 9"
+   / "2:14 PM"), at 64 px. The card's top
    padding does not change. Placement P1 (owner, 2026-11-09): 64 px on
    the top-right corner, hanging 8 px over the edge, the header text
    keeping 56 px clear on the right, the ✓ Share pill and the answer chip
@@ -161,9 +166,10 @@ to the page later reads the stamp before any text.
 - MODIFIED `docs/specs/results-pages.md` §4: "Nothing asks whether the
   office answered." → the ask of §1.2–1.3 and §2.1–2.3 above, with the
   `POST /api/report` mapping.
-- MODIFIED `docs/specs/results-pages.md` §5: the modal's order gains the
-  ask between the echo and the share block (or as Open question 1
-  decides); the rest unchanged.
+- MODIFIED `docs/specs/results-pages.md` §5: "the act page's
+  `ReceiptStamp` ("I CALLED" / "I WROTE", …)" → the 96 px `Postmark`
+  header of §1.2; the order gains the hazard strip between the echo and
+  the share block; the rest unchanged.
 - MODIFIED `docs/specs/results-pages.md` §7: "its role line gains
   '· Called 2:14 pm' / '· Wrote 2:14 pm'" → the CALLED / WROTE postmark
   and the answer chip of §3.
@@ -178,15 +184,16 @@ to the page later reads the stamp before any text.
 
 ## Acceptance criteria
 - [ ] Tap a call square on `/results/<goal>` at 375 px: today's modal
-      opens with the stamp, count echo, the ask, the share card (thumbnail
+      opens with the CALLED postmark header (no dashed stamp), count echo,
+      the hazard strip with four chips and Skip, the share card (thumbnail
       and buttons), the filled Next after it, "Not now" and the reminder,
       all without a further tap.
 - [ ] `No answer` → one `POST /api/report` with `outcome: 'no_answer'`,
-      the segment fills, "Saved" appears; `With us` → one post with
+      the chip fills, "Saved" appears; `With us` → one post with
       `will_support`; then `Opposed` → a second post with `opposed`.
 - [ ] `Skip` → no post, no "Saved"; the rest of the modal is unchanged.
 - [ ] A failed report shows "Could not save that. Try again." and the
-      segments remain tappable; the rest of the modal is unchanged.
+      chips remain tappable; the rest of the modal is unchanged.
 - [ ] Write square: "Did it go through?"; `Form didn't work` posts
       nothing, the filled control reads "Call <Surname> instead →" and
       rings that call square; the receipt row stands.
@@ -222,23 +229,19 @@ with no drop in receipts per visit.
 - Remaining: §1–4
 - Decisions since last update: owner 2026-11-09: one ask on today's
   receipt card (no two-step flow, no gating, no bottom-sheet redesign),
-  Next after the share card; postmark P1; proposals of Open questions
-  1–3 are the decisions.
+  Next after the share card; the ask is the S8 hazard strip; the modal
+  header is the postmark (S10); done-card postmark P1; proposals of Open
+  questions 1–2 are the decisions.
 - Known failures / blockers: none
 - Next action: merge the PRD PR, then `/implement-prd-section
   docs/prd/receipt-sheet-and-done-stamps.md` (§1)
 
 ## Open questions
-1. Where does the ask sit on the receipt card
-   (`design/mockups/receipt-sheet-v3.html`)? Proposal: S9, one segmented
-   line under the count echo (no heading, ~60 px). S7 (question and chip
-   row above the stamp) reads first but pushes the stamp down; S8 (hazard
-   strip, 2×2 grid) is the loudest and tallest.
-2. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
+1. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
    client-only until the digest shows it is chosen often enough to count.
-3. Should a second answer after "Change" post again? Proposal: yes, as
-   the act page does; `reports` keeps every row and the digest reads the
-   latest per device and target.
+2. Should a second answer post again? Proposal: yes, as the act page
+   does; `reports` keeps every row and the digest reads the latest per
+   device and target.
 
 ## Changes
 - 2026-11-09 — created (READY, auto): reverses the 2026-11-09 "no outcome
@@ -251,3 +254,6 @@ with no drop in receipts per visit.
   card as shipped (no bottom sheet); add one data point and keep Next
   after the share card (S7–S9 in `receipt-sheet-v3.html`); postmark P1
   decided.
+- 2026-11-09 — owner review 3: the ask is S8 (hazard strip, 2×2 chips,
+  Skip); the modal header swaps the dashed "I CALLED" stamp for the same
+  circular postmark as the done card (S10). No open questions on design.
