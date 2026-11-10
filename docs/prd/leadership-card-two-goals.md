@@ -100,7 +100,7 @@ card are unchanged: no pair copy, no h3, no rule, no link. Copy follows
 
 ### 2. Pair copy and card framing
 1. `data/goals/house-caucus.yaml` gains a `pair` block, the only place
-   the combined copy lives (wording pending §1):
+   the combined copy lives (wording confirmed with the §1 mock-ups):
    - `title`: "Kick out Jeffries and Schumer"
    - `summary`: "Democrats in Congress are about to pick their leaders.
      House Democrats vote on whether Hakeem Jeffries keeps his job, and
@@ -123,9 +123,11 @@ card are unchanged: no pair copy, no h3, no rule, no link. Copy follows
 
 ### 3. Block anatomy
 Each chamber block on a split card, House first, renders top to bottom:
-1. A rule (`border-t` ink) above the Senate block, to separate the two.
+1. A 2 px ink rule (`border-t-2`) above the Senate block, running the
+   full width of the card body, to separate the two.
 2. The block goal's title as an `h3` ("Kick out Hakeem Jeffries",
-   "Kick out Chuck Schumer"), `headline-sm`.
+   "Kick out Chuck Schumer"), `headline-sm`: a new utility in
+   `global.css`, `headline-md` at 22px/22px.
 3. The existing label line: "House · Decision: <date>" /
    "Senate · Decision: <date>".
 4. The ask text, "Get my script →", the target stack and counter line,
@@ -240,17 +242,18 @@ visitors who make at least one Senate-block call (receipts with
 `senate-leader-call` over visitors whose route returned a split card),
 before and after, from the existing receipt rows.
 
-## State (updated 2026-11-10, PR #94)
+## State (updated 2026-11-10, PR #96)
 - Sections:
-  - [~] 1. Mock-ups, confirmed before any code · docs/leadership-card-two-goals · PR #94
+  - [x] 1. Mock-ups, confirmed before any code · owner confirmed 2026-11-10 · PR #94
   - [ ] 2. Pair copy and card framing
   - [ ] 3. Block anatomy
   - [ ] 4. Summary card on `/results`
   - [ ] 5. Either slug opens the split card
   - [ ] 6. Live check
-- Completed: none
+- Completed: §1 mock-ups (owner confirmed 2026-11-10: L1–L4, headline A)
 - Folded: none
-- Branch / open PRs: `docs/leadership-card-two-goals` (this PRD), PR #94
+- Branch / open PRs: PRD and mock-ups merged in PR #94; confirmation
+  logged in `docs/leadership-card-confirmed`, PR #96
 - Files changed (file:line map): §1 sent 2026-11-10:
   `design/mockups/leadership-card.html` (L1 390+1024, L2–L5; `?only=<id>`
   shows one screen) and `design/mockups/leadership-card/<id>.png`. §1 is
@@ -265,7 +268,7 @@ before and after, from the existing receipt rows.
   `:134` (mini card), `:178` (`also` lookup), `:269` (H1),
   `SummaryCard.tsx:9-22,54`.
 - Tests run + result: none (mock-up only)
-- Remaining: §1–6
+- Remaining: §2–6
 - Decisions since last update: owner 2026-11-10: the split card must
   say it is two goals; slot stays shared. Owner 2026-11-10 (review):
   mock-ups first, confirmed in chat before any code (§1); `pair` allowed
@@ -282,14 +285,14 @@ before and after, from the existing receipt rows.
   tap-receipts §7–8 rebase onto the pair title, per-block offices lines
   and h3 blocks. Whoever builds tap-receipts §7 reads this PRD's §2–4
   first.
-- Next action: owner confirms the mock-ups in chat, naming the screens and
-  the headline (A "Kick out Jeffries and Schumer", recommended, or B
-  "New Democratic leaders in Congress"). Then log it in `## Changes`,
-  mark §1 done, and build §2–5 in one PR.
+- Next action: `/implement-prd-section docs/prd/leadership-card-two-goals.md`
+  builds §2–5 in one PR, matching `design/mockups/leadership-card.html`;
+  then §6 owner live check.
 ## Open questions
-1. Headline wording. Proposal: "Kick out Jeffries and Schumer", which
-   matches the two goal titles and fits `headline-lg` at 390 px on two
-   lines. Alternative: "New Democratic leaders in Congress".
+1. Headline wording. Decided 2026-11-10 (owner, §1 mock-ups): "Kick out
+   Jeffries and Schumer". It matches the two goal titles and fits
+   `headline-lg` at 390 px on two lines. "New Democratic leaders in
+   Congress" was rejected.
 2. Should the `/goals` index or the home page show the pair? Proposal:
    no; those list goals, and the pair exists only on the routed slot.
 
@@ -301,3 +304,9 @@ before and after, from the existing receipt rows.
   split card stated unchanged; loader pointer corrected to the goal
   loader; the overlap with `tap-receipts-everywhere` §7–8 named with the
   landing order; spec delta covers `document.title` and the mini card.
+- 2026-11-10 — §1 confirmed: the owner approved the mock-ups in
+  `design/mockups/leadership-card.html` (screens L1 at 390 and 1024 px,
+  L2, L3 and the L4 control) in chat. Headline A, "Kick out Jeffries and
+  Schumer", replaces the proposal in §2 and Open question 1. Copy and
+  layout as proposed in §2–4. The mock-ups pin two details: the §3 rule
+  is 2 px and full width, and `headline-sm` is a new 22px utility.
