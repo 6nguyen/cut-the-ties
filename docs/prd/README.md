@@ -71,13 +71,14 @@ it is generated from the same markers.
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [receipt-sheet-and-done-stamps.md](receipt-sheet-and-done-stamps.md) | IN PROGRESS (§1–3 in one PR) | — | Receipt sheet on `/results/<goal>` asks "What did the office say?" / "Did it go through?" (reuses `POST /api/report`): today's receipt modal with a postmark header, a hazard-strip ask under the count, the share card, then Next; CALLED / WROTE postmark on done cards; §4 owner device test |
-| 2 | [share-from-results.md](share-from-results.md) | IN PROGRESS (§4 owner device test) | — | `/results` as two summary cards with stamps, `/results/<goal>` one-action page, write square beside the call square, tap = receipt + share modal ("I called" / "I wrote"), per-office repeat key; §1–3 code, §4 owner device test |
-| 3 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
-| 4 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
-| 5 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
-| 6 | [primary-2028.md](primary-2028.md) | IN PROGRESS (§2 blocked: counsel) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
-| 7 | [district-vintage-rollover.md](district-vintage-rollover.md) | IN PROGRESS (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 merged (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
+| 1 | [senate-leader-pick.md](senate-leader-pick.md) | READY | — | `our_picks` on the Senate leader goal names Chris Van Hollen with a sourced rationale; prep copy and sources updated; data rows only |
+| 2 | [receipt-sheet-and-done-stamps.md](receipt-sheet-and-done-stamps.md) | IN PROGRESS (§1–3 in one PR) | — | Receipt sheet on `/results/<goal>` asks "What did the office say?" / "Did it go through?" (reuses `POST /api/report`): today's receipt modal with a postmark header, a hazard-strip ask under the count, the share card, then Next; CALLED / WROTE postmark on done cards; §4 owner device test |
+| 3 | [share-from-results.md](share-from-results.md) | IN PROGRESS (§4 owner device test) | — | `/results` as two summary cards with stamps, `/results/<goal>` one-action page, write square beside the call square, tap = receipt + share modal ("I called" / "I wrote"), per-office repeat key; §1–3 code, §4 owner device test |
+| 4 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
+| 5 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
+| 6 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
+| 7 | [primary-2028.md](primary-2028.md) | IN PROGRESS (§2 blocked: counsel) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
+| 8 | [district-vintage-rollover.md](district-vintage-rollover.md) | IN PROGRESS (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 merged (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
 
 ## Next (ideas without a PRD, in intended order; ≤10)
 Targets is an existing spec stem or `new`. Writing the PRD deletes its row
