@@ -217,13 +217,15 @@ with no drop in receipts per visit.
 
 ## State (updated 2026-11-09)
 - Sections:
-  - [ ] 1. Receipt sheet after a call
-  - [ ] 2. Write variant
-  - [ ] 3. Done-card postmark
+  - [~] 1. Receipt sheet after a call · feat/receipt-sheet-and-done-stamps
+  - [~] 2. Write variant · feat/receipt-sheet-and-done-stamps
+  - [~] 3. Done-card postmark · feat/receipt-sheet-and-done-stamps
   - [ ] 4. Owner device test
 - Completed: none
 - Folded: none
-- Branch / open PRs: `docs/receipt-sheet-prd` (this PRD)
+- Branch / open PRs: `docs/receipt-sheet-prd` (this PRD, PR #90);
+  `feat/receipt-sheet-and-done-stamps` (§1–3, cut from main with the PRD
+  branch merged in)
 - Files changed (file:line map): —
 - Tests run + result: —
 - Remaining: §1–4
@@ -231,11 +233,10 @@ with no drop in receipts per visit.
   receipt card (no two-step flow, no gating, no bottom-sheet redesign),
   Next after the share card; the ask is the S8 hazard strip; the modal
   header is the postmark (S10); done-card postmark P1; proposals of Open
-  questions 1–2 are the decisions.
+  questions 1–2 are the decisions. §1–3 build in one PR (owner
+  2026-11-09: "complete the entire prd").
 - Known failures / blockers: none
-- Next action: merge the PRD PR, then `/implement-prd-section
-  docs/prd/receipt-sheet-and-done-stamps.md` (§1)
-
+- Next action: build §1–3, fold the spec, open the PR
 ## Open questions
 1. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
    client-only until the digest shows it is chosen often enough to count.
