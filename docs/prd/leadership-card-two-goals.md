@@ -242,7 +242,7 @@ before and after, from the existing receipt rows.
 
 ## State (updated 2026-11-10, PR #94)
 - Sections:
-  - [ ] 1. Mock-ups, confirmed before any code
+  - [~] 1. Mock-ups, confirmed before any code · docs/leadership-card-two-goals · PR #94
   - [ ] 2. Pair copy and card framing
   - [ ] 3. Block anatomy
   - [ ] 4. Summary card on `/results`
@@ -251,7 +251,9 @@ before and after, from the existing receipt rows.
 - Completed: none
 - Folded: none
 - Branch / open PRs: `docs/leadership-card-two-goals` (this PRD), PR #94
-- Files changed (file:line map): none yet. §1 is
+- Files changed (file:line map): §1 sent 2026-11-10:
+  `design/mockups/leadership-card.html` (L1 390+1024, L2–L5; `?only=<id>`
+  shows one screen) and `design/mockups/leadership-card/<id>.png`. §1 is
   `design/mockups/leadership-card.html` alone, on this branch or its own
   PR, and ends with the owner's confirmation. §2–5 then build as one PR:
   `data/goals/house-caucus.yaml` (`pair`), `data/actions/*-call.yaml`
@@ -262,7 +264,7 @@ before and after, from the existing receipt rows.
   `Results.tsx:57-120` (`Block` h3/rule/link, `Card` title/summary),
   `:134` (mini card), `:178` (`also` lookup), `:269` (H1),
   `SummaryCard.tsx:9-22,54`.
-- Tests run + result: none yet
+- Tests run + result: none (mock-up only)
 - Remaining: §1–6
 - Decisions since last update: owner 2026-11-10: the split card must
   say it is two goals; slot stays shared. Owner 2026-11-10 (review):
@@ -280,11 +282,10 @@ before and after, from the existing receipt rows.
   tap-receipts §7–8 rebase onto the pair title, per-block offices lines
   and h3 blocks. Whoever builds tap-receipts §7 reads this PRD's §2–4
   first.
-- Next action: `/implement-prd-section docs/prd/leadership-card-two-goals.md`
-  for §1 (mock-ups): build `design/mockups/leadership-card.html`, send
-  it, stop for the owner's confirmation. §2–5 in one PR only after §1 is
-  logged in `## Changes`.
-
+- Next action: owner confirms the mock-ups in chat, naming the screens and
+  the headline (A "Kick out Jeffries and Schumer", recommended, or B
+  "New Democratic leaders in Congress"). Then log it in `## Changes`,
+  mark §1 done, and build §2–5 in one PR.
 ## Open questions
 1. Headline wording. Proposal: "Kick out Jeffries and Schumer", which
    matches the two goal titles and fits `headline-lg` at 390 px on two
