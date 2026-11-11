@@ -130,13 +130,13 @@ partner's repost. The copy change is the same for every visitor.
 No flag; ships on the next deploy. Measure: the deployed-HTML grep above
 returns nothing.
 
-## State (updated 2026-11-11, PR pending)
+## State (updated 2026-11-11, PR #103)
 - Sections:
   - [ ] 1. Site copy, link removal and build guard
   - [ ] 2. Owner checklist
 - Completed: PRD written.
 - Folded: none.
-- Branch / open PRs: `docs/no-owner-ties` (this PRD).
+- Branch / open PRs: `docs/no-owner-ties`, PR #103 (this PRD).
 - Files changed (file:line map): to touch in §1: `web/src/pages/about.astro:12`,
   `web/src/pages/donate.astro:9`, `web/src/components/Target.tsx:5,151`,
   `worker/src/state-copy.ts:5-6`, `web/src/components/Target.test.ts:10,36,44-48`,
