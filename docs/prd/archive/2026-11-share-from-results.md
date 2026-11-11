@@ -1,5 +1,5 @@
 # Share from results — PRD
-Status: IN PROGRESS 2026-11-09 (§1–3 built, §4 owner device test) · Owner: George Nguyen · Last updated: 2026-11-09
+Status: SHIPPED 2026-11-11 (PR #104) · Owner: George Nguyen · Last updated: 2026-11-11
 
 ## Problem
 The share poster and share row exist only at the end of the script flow
@@ -252,11 +252,11 @@ owner device test (§4) closes the PRD.
 
 ## State (updated 2026-11-09, PR #89)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [~] 1. Summary cards on `/results` · feat/share-from-results · PR #89
-  - [~] 2. One-action page `/results/<goal>` · feat/share-from-results · PR #89
-  - [~] 3. Receipt modal after a call or a write · feat/share-from-results · PR #89
-  - [~] 4. Owner device test · desktop part passed 2026-11-09; iPhone + Android pending (owner)
-- Completed: §1–3 built and tested (one branch, one PR, owner asked for end to end)
+  - [x] 1. Summary cards on `/results` · PR #89 merged
+  - [x] 2. One-action page `/results/<goal>` · PR #89 merged
+  - [x] 3. Receipt modal after a call or a write · PR #89 merged
+  - [x] 4. Owner device test · owner verified 2026-11-11 (the same flow, run through tap-receipts-everywhere §10 and receipt-sheet-and-done-stamps §4)
+- Completed: §1–3 (PR #89, merged 2026-11-10); §4 owner verified 2026-11-11
 - Folded: §1, §2, §3 (`docs/specs/results-pages.md` added; action-router §5,
   target-cards §1/§3, countdown-stamp §3, social-sharing §3,
   commitment-funnel §7, district-counters §8, specs README index)
@@ -278,7 +278,7 @@ owner device test (§4) closes the PRD.
   Budgets (gzip, build 2026-11-09): `/results` 4.1 KB HTML + 6.6 KB CSS +
   24.0 KB island JS + 26 KB first band ≈ 61 KB ≤ 100 KB; ShareRow chunk
   3.99 KB ≤ 4 KB, loaded only on the tap (dynamic import confirmed).
-- Remaining: §4 iPhone Safari + Android Chrome (Instagram Story share) — needs the owner's devices
+- Remaining: none
 - Decisions since last update: modal stamp reuses the act page's
   `ReceiptStamp` (paper/crimson dashed, −4°) rather than a new crimson
   block; `what_we_want` added to GoalCard; `short_label` is a new
@@ -286,8 +286,7 @@ owner device test (§4) closes the PRD.
   `CONTACT_LABEL` (square title) split from `CONTACT_ACTION` (act page);
   tests stub `ShareRow` and block happy-dom navigation on external links.
 - Known failures / blockers: every PR preview's `/api/*` answers the Cloudflare 404 page (older previews too, so the Pages Preview `API_ORIGIN` points at a dead workers.dev origin, not this PR); the desktop §4 pass ran on the local stack (seed + wrangler dev + astro dev) at 375 px: tap → 200 receipt, modal with stamp, poster, intent links, one filled Next; Next rang the next office; write tap → "I wrote" modal with "Your other action →"; reload kept three pills, no squares, no POST, no modal chunk. Device test on the preview needs `API_ORIGIN` fixed first or production after merge.
-- Next action: fix the Pages Preview `API_ORIGIN` (or merge PR #89 and test on production), then owner runs §4 on iPhone + Android and marks §4 `[x]`; then `/implement-prd-section docs/prd/share-from-results.md` (next: none)
-  `https://feat-share-from-results.cut-ties.pages.dev`
+- Next action: none; archived. Merge the PR in the Status line.
 ## Open questions
 1. Should the goal detail page's call squares get the same tap-receipt and
    modal? Proposal: not in this PRD; row in `## Next` (`results-pages`
@@ -306,3 +305,4 @@ owner device test (§4) closes the PRD.
 - 2026-11-09 — created from mock-up D minus the outcome sheet (READY, auto).
 - 2026-11-09 — §1–3 built on `feat/share-from-results` (PR #89, owner asked for end to end): summary cards, `/results/<goal>`, write square, tap-is-receipt modal; `limit_repeat` keyed on target; spec delta folded (`results-pages.md` added). Stamp reuses `ReceiptStamp`. IN PROGRESS; §4 next.
 - 2026-11-09 — §4 desktop part passed on the local stack at 375 px (call modal, Next ring, write modal, reload pills); PR previews' `/api/*` 404 (Preview `API_ORIGIN`), so the phone test waits for that fix or production.
+- 2026-11-11 — owner verified §4 through the later receipt PRDs' device tests; later PRDs changed the modal (postmark header, office-answer ask) and spread the flow to every page. SHIPPED and archived (PR #104).
