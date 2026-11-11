@@ -1,5 +1,5 @@
 # Which office number fits which ask
-Researched: 2026-11-10 · Informs: [call-the-right-office](../prd/call-the-right-office.md)
+Researched: 2026-11-10 · Informs: [call-the-right-office](../prd/archive/2026-11-call-the-right-office.md)
 Supersedes: action-conversion-levers.md (only the verdict "show the district number first when the DC line is likely closed")
 
 ## Question

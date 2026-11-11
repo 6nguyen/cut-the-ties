@@ -1,5 +1,5 @@
 # Tap receipts everywhere — PRD
-Status: DEV COMPLETE (§10 owner device test) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: SHIPPED 2026-11-11 (PR #104) · Owner: George Nguyen · Last updated: 2026-11-11
 
 ## Problem
 On `/goals/senate-leader/` the "Who to call" squares open the dialer or
@@ -585,7 +585,7 @@ week.
   - [x] 7. Goal done stamp
   - [x] 8. Rollover on `/results`
   - [x] 9. Reason picks name the leader
-  - [ ] 10. Owner device test
+  - [x] 10. Owner device test · owner verified 2026-11-11
 - Completed: §1–6, §9 (2026-11-10, PR 101); §7–8 (2026-11-10, PR on
   `feat/tap-receipts-rollover`)
 - Folded: §1–6, §9 → `docs/specs/results-pages.md` (Purpose, §4, Data &
@@ -623,11 +623,10 @@ week.
   `build` PASS, `tsc` PASS (web tsc at its 22-error baseline), `prd-lint`
   and `doc-lint` PASS. Chunks (gzip): receipt-flow 2.8 KB, GoalTargets
   1.2 KB, MemberContact 1.3 KB, WhipReceipts 1.0 KB, ActForm 7.9 KB.
-- Remaining: §10 owner device test
+- Remaining: none
 - Decisions since last update: see 2026-11-10 entries under Changes.
 - Known failures / blockers: none
-- Next action: §10 owner device test on the live site, then archive
-
+- Next action: none; archived. Merge the PR in the Status line.
 ## Open questions
 1. Which goal does a member-page or whip-table call count toward when the
    visitor's stored place is not that member's district? Proposal: the
@@ -696,3 +695,4 @@ week.
   is the first open goal, titled "Your next action"; `Results` re-splits
   open/done after every receipt (`tick` on `flow.done`), so finishing the
   last office turns the page into the done card without a reload.
+- 2026-11-11 — owner verified the last section; SHIPPED and archived (PR #104).

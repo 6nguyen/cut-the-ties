@@ -1,5 +1,5 @@
 # Receipt sheet and done-card stamps — PRD
-Status: IN PROGRESS · Owner: George Nguyen · Last updated: 2026-11-09
+Status: SHIPPED 2026-11-11 (PR #104) · Owner: George Nguyen · Last updated: 2026-11-11
 
 ## Problem
 On `/results/<goal>` a tap on a call or write square is the receipt: the
@@ -219,11 +219,11 @@ with no drop in receipts per visit.
 
 ## State (updated 2026-11-09)
 - Sections:
-  - [~] 1. Receipt sheet after a call · feat/receipt-sheet-and-done-stamps · PR #91
-  - [~] 2. Write variant · feat/receipt-sheet-and-done-stamps · PR #91
-  - [~] 3. Done-card postmark · feat/receipt-sheet-and-done-stamps · PR #91
-  - [ ] 4. Owner device test · local QA done 2026-11-09 (375 + 1024 px); production device run is the owner's
-- Completed: none (§1–3 built, PR open, not merged)
+  - [x] 1. Receipt sheet after a call · PR #91 merged
+  - [x] 2. Write variant · PR #91 merged
+  - [x] 3. Done-card postmark · PR #91 merged
+  - [x] 4. Owner device test · owner verified 2026-11-11
+- Completed: §1–3 (PR #91, merged 2026-11-10); §4 owner verified 2026-11-11
 - Folded: §1, §2, §3 → `docs/specs/results-pages.md` (§Purpose, §4, §5,
   §7, Data & contracts, Invariants, Performance budget)
 - Branch / open PRs: `docs/receipt-sheet-prd` (this PRD, PR #90, merged);
@@ -251,7 +251,7 @@ with no drop in receipts per visit.
   postmark 12 px in / 6 px over the card at both widths. Three render
   bugs the happy-dom tests could not see were fixed (squared postmark,
   done-card postmark in flow, modal who-line truncation) in commit 3c00221.
-- Remaining: merge §1–3; §4 owner device test on production
+- Remaining: none
 - Decisions since last update: owner 2026-11-09: one ask on today's
   receipt card (no two-step flow, no gating, no bottom-sheet redesign),
   Next after the share card; the ask is the S8 hazard strip; the modal
@@ -260,7 +260,7 @@ with no drop in receipts per visit.
   2026-11-09: "complete the entire prd"). Build: modal props `answer` /
   `onAnswer`; done card keeps a ringed call square after "Form didn't work".
 - Known failures / blockers: none
-- Next action: merge PR #91, then /implement-prd-section receipt-sheet-and-done-stamps.md (next: §4. Owner device test)
+- Next action: none; archived. Merge the PR in the Status line.
 ## Open questions
 1. Should "Form didn't work" become a D1 outcome? Proposal: no; it is
    client-only until the digest shows it is chosen often enough to count.
@@ -289,3 +289,4 @@ with no drop in receipts per visit.
   is written with `setReceiptOutcome`, or by `logReceipt` when the chip is
   tapped before the receipt POST returns; `Postmark` ships in the `Target`
   chunk, not the lazy one. Spec folded into `docs/specs/results-pages.md`.
+- 2026-11-11 — owner verified the last section; SHIPPED and archived (PR #104).

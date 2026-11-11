@@ -1,5 +1,5 @@
 # Leadership card names both goals — PRD
-Status: DEV COMPLETE (§6 live check) 2026-11-10 (auto) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: SHIPPED 2026-11-11 (PR #104) · Owner: George Nguyen · Last updated: 2026-11-11
 
 ## Problem
 When a visitor has a Democratic representative and at least one Democratic
@@ -251,7 +251,7 @@ before and after, from the existing receipt rows.
   - [x] 3. Block anatomy · `feat/leadership-card-two-goals`
   - [x] 4. Summary card on `/results` · `feat/leadership-card-two-goals`
   - [x] 5. Either slug opens the split card · `feat/leadership-card-two-goals`
-  - [ ] 6. Live check
+  - [x] 6. Live check · owner verified 2026-11-11
 - Completed: §1 mock-ups (owner confirmed 2026-11-10: L1–L4, headline A);
   §2–5 (`feat/leadership-card-two-goals`): `pair` on `house-caucus.yaml`
   validated by the loader, the split card's pair headline and summary, an
@@ -288,7 +288,7 @@ before and after, from the existing receipt rows.
   mini card and `/results` summary card), `worker/test/data.test.ts`
   (`pair` loaded, refused on `senate-leader.yaml` naming the file,
   `checkPair` field errors, absent `pair` loads).
-- Remaining: §6 owner live check on production.
+- Remaining: none
 - Decisions since last update: owner 2026-11-10: the split card must
   say it is two goals; slot stays shared. Owner 2026-11-10 (review):
   mock-ups first, confirmed in chat before any code (§1); `pair` allowed
@@ -306,9 +306,7 @@ before and after, from the existing receipt rows.
   among the route's four) and its §7.2 keeps the pair title and both
   offices lines on a done split card. Whoever builds tap-receipts §7
   reads this PRD's §2–4 first.
-- Next action: after the deploy the owner runs §6 on production
-  (`/results` and `/results/senate-leader` for a CA address) and notes
-  the result here.
+- Next action: none; archived. Merge the PR in the Status line.
 ## Open questions
 1. Headline wording. Decided 2026-11-10 (owner, §1 mock-ups): "Kick out
    Jeffries and Schumer". It matches the two goal titles and fits
@@ -341,3 +339,4 @@ before and after, from the existing receipt rows.
   "More on this vote" links, summary card pair title and per-block
   offices lines, either slug opens the card; specs and `data/README.md`
   folded. Status READY → DEV COMPLETE; §6 remains.
+- 2026-11-11 — owner verified the last section; SHIPPED and archived (PR #104).

@@ -9,9 +9,9 @@ modal with the stamp, the count echo, one ask about the office's answer, the
 share card and the next office is on screen when the visitor comes back. The same flow runs on every phone
 and email control on the site (`tap-receipts-everywhere`): the goal page's
 stack, the member page, the whip table; the act page posts its own receipt
-card on a tap. Shipped from `docs/prd/share-from-results.md` (§1–3) and
-`docs/prd/receipt-sheet-and-done-stamps.md` (§1–3); their owner device
-tests (§4) are open.
+card on a tap. Shipped from `docs/prd/share-from-results.md` (§1–3; its
+§4 device test is open) and
+`docs/prd/archive/2026-11-receipt-sheet-and-done-stamps.md`.
 
 ## Behavior
 1. **Summary cards (`/results`).** Header, delegation line and the page's
