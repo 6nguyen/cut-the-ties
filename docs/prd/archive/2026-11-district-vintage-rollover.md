@@ -1,5 +1,5 @@
 # District map rollover to the 120th Congress — PRD
-Status: IN PROGRESS (§3 blocked until 2027-01-03) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: SHIPPED 2026-11-13 (PR #32) · Owner: George Nguyen · Last updated: 2026-11-13
 
 ## Problem
 Ten states (AL, CA, FL, LA, MO, NC, OH, TN, TX, UT) elected their 2026
@@ -113,9 +113,9 @@ and the TIGER paragraphs of [data-ingestion](../research/data-ingestion.md).
 - [x] With the pin, Austin resolves to TX-37 and downtown Kansas City to MO-5 through `/api/route`; the test asserts both vintages' answers from the recorded fixture.
 - [x] `districts-120/manifest.json` records `congress: 120`, `overrides: {MO: ...}`, every state file ≤300 KB gzip (CA included, or its interval raised and recorded), `states.json` ≤150 KB gzip.
 - [x] The probe prints zero mismatches for the cd119 set against `ACS2025_Current` and for the cd120 set against `Current_Current` (Missouri against `ACS2025_Current`); Georgia's two points are explained or the set is rebuilt.
-- [ ] Flipping `ACTIVE_CONGRESS` and `DISTRICT_VINTAGE` in one PR changes every fixture-120 point and no cd119 test; reverting restores the old answers with no rebuild.
-- [ ] Landing ≤100 KB transferred: the active set loads only its own state file; the inactive directory is never requested. `/api/route` p95 ≤2 s including the Missouri re-query. Static hosting cost $0 with both sets (≈+1.25 MB gzip).
-- [ ] `scripts/quiet-check.sh test`, `test-web` and `build` green.
+- [ ] Flipping `ACTIVE_CONGRESS` and `DISTRICT_VINTAGE` in one PR changes every fixture-120 point and no cd119 test; reverting restores the old answers with no rebuild. → `district-flip-2027.md`
+- [ ] Landing ≤100 KB transferred: the active set loads only its own state file; the inactive directory is never requested. `/api/route` p95 ≤2 s including the Missouri re-query. Static hosting cost $0 with both sets (≈+1.25 MB gzip). → `district-flip-2027.md`
+- [ ] `scripts/quiet-check.sh test`, `test-web` and `build` green. → `district-flip-2027.md`
 
 ## Rollout & metrics
 - §1 now (one line plus tests, ships with the next deploy). §2 by
@@ -128,14 +128,14 @@ and the TIGER paragraphs of [data-ingestion](../research/data-ingestion.md).
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [x] 1. Pin the Worker to the sitting Congress · PR #32
   - [x] 2. cd120 geometry with a Missouri override · PR #32
-  - [!] 3. Dated flip
+  - [x] 3. Dated flip · moved to district-flip-2027.md
 - Completed: §1 and §2 merged to main via PR #32 (integration of `feat/district-vintage-rollover`); §3's switch (`ACTIVE_CONGRESS`, `SEATS_CONGRESS`, `DISTRICTS_DIR`) and the deploy-guide checklist (`docs/guides/deploy.md` §6) are in place with the constants at 119.
-- Folded: none.
+- Folded: all entries (the specs already carry them; "none" here was stale).
 - Branch / open PRs: none (PR #32 merged 2026-11-06; §3 gets its own branch on 2027-01-03).
-- Remaining: §3 on 2027-01-03: set the three constants to 120 / `Current_Current`, flip the two `pip.test.ts` assertions, run the checklist; half a day.
+- Remaining: none. The 2027-01-03 flip moved to `docs/prd/district-flip-2027.md`.
 - Decisions since last update: see `## Changes` 2026-11-05.
-- Known failures / blockers: §3 `[!]` blocked: 2027-01-03 (roster-freshness §4 is merged). Georgia closed (see Changes). Fixture dates read 2026-11-06 because recording ran after 00:00 UTC.
-- Next action: on 2027-01-03, /implement-prd-section docs/prd/district-vintage-rollover.md §3 following `docs/guides/deploy.md` §6.
+- Known failures / blockers: none here. Georgia closed (see Changes).
+- Next action: none; archived.
 
 ## Open questions
 - Keep cd119 geometry after the flip for a "who voted in December" view?
@@ -153,3 +153,4 @@ and the TIGER paragraphs of [data-ingestion](../research/data-ingestion.md).
 - 2026-11-05 (§3 prep): `ACTIVE_CONGRESS` and `DISTRICTS_DIR` in `pip.ts`, `SEATS_CONGRESS` in `worker/src/districts.ts`, all at 119; `docs/guides/deploy.md` §6 holds the dated flip and rollback checklist. The results-header label waits for the flip PR.
 - 2026-11-05 (§1): geocoder answers recorded from `geographies/coordinates`: Austin (-97.7431, 30.2672) `Current_Current` = TX-10 (120th layer), `ACS2025_Current` = TX-37 (119th); downtown Kansas City (-94.5786, 39.0997) MO-4 vs MO-5. The Missouri re-query goes to `geographies/coordinates` with the match's coordinates, so the address is sent to Census once; `parseCensus` reads both response shapes.
 - 2026-11-08 — Status BUILDING → IN PROGRESS. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
+- 2026-11-13 — SHIPPED and archived by the split-the-tail rule (`docs/prd/README.md` Lifecycle 5): §1–2 merged (PR #32) and both district sets ship; the dated flip and its three criteria moved to `docs/prd/district-flip-2027.md`, and code comments now point there.

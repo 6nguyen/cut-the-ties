@@ -6,7 +6,7 @@ behavior lives in `docs/specs/deployment.md`; variables in `.env.example`.
 
 ## 1. One-time provisioning (in order)
 Run from the repo root unless noted. `<domain>` is the apex domain,
-`cutthetiesmovement.org` (decided 2026-11-08, `docs/prd/deploy.md` open
+`cutthetiesmovement.org` (decided 2026-11-08, `docs/prd/archive/2026-11-deploy.md` open
 question 1). Steps 1–12 are done; §5 is what remains.
 
 1. Log in: `npx wrangler login` (any directory; opens the browser).
@@ -120,7 +120,7 @@ revert the data PR instead; the merge redeploys.
       Turnstile and Email Routing.
 
 ## 6. District flip to the 120th Congress (2027-01-03, dated checklist)
-Context: `docs/prd/district-vintage-rollover.md` §3. Both district sets
+Context: `docs/prd/district-flip-2027.md` §1. Both district sets
 are already deployed (`web/public/districts/` = cd119,
 `web/public/districts-120/` = cd120 with Missouri on cd119), so the flip
 is one PR and the rollback is its revert. Do not open it before

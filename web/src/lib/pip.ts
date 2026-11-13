@@ -6,7 +6,7 @@
 export interface Place { state: string; district: number }
 
 /**
- * Which district set the browser loads (docs/prd/district-vintage-rollover.md §3). 119 until the
+ * Which district set the browser loads (docs/prd/district-flip-2027.md §1). 119 until the
  * 120th Congress is sworn in on 2027-01-03; the flip PR sets 120 here and DISTRICT_VINTAGE =
  * Current_Current in worker/wrangler.jsonc in the same commit, after the roster PR has merged.
  */

@@ -24,7 +24,24 @@ the source of truth; a change to one updates the other in the same PR.
    also sets Status `SHIPPED YYYY-MM-DD (PR #n)`, `git mv`s the PRD to
    `archive/YYYY-MM-<change>.md`, removes its row from the index below and
    deletes its pointer lines from the root `CLAUDE.md`.
-5. **Superseded or abandoned** PRDs move to `archive/` with Status
+5. **Split the tail.** A PRD whose build is done, or done but for one
+   small step, and that now waits only on something outside the build (a
+   review, a device test, an owner checklist or account step, counsel, a
+   date) does not stay open for it. The next docs commit:
+   - writes `docs/prd/<tail>.md` holding only the remaining work: Problem
+     says what is left and what it waits on; Expected behavior holds the
+     moved section(s) verbatim; the original's unticked acceptance
+     criteria and any unfolded `## Spec delta` entries move with it; its
+     first Changes line names the archived original;
+   - ships the original as in step 4, Status `SHIPPED YYYY-MM-DD (PR #n)`
+     naming its last merged build PR, the moved section marked
+     `[x] … · moved to <tail>.md` and each moved criterion suffixed
+     `→ <tail>.md`;
+   - gives the tail its own index row at its priority and repoints every
+     link and code comment that named the moved section.
+   Not a tail: work that is the PRD's main payload (a multi-batch data
+   sweep, a section still to be designed). That PRD stays open.
+6. **Superseded or abandoned** PRDs move to `archive/` with Status
    `SUPERSEDED by <prd>` or `DROPPED`, no fold, and the same pointer
    deletion.
 
@@ -50,7 +67,10 @@ no `Needs` entry can run in parallel with the row above it. Rules:
   below, then the section still open and why in parentheses. The same
   commit that changes a PRD's Status or State block updates its row.
 - A PRD that ships, is superseded or is dropped loses its row in the
-  commit that archives it (Lifecycle 4–5); completed work never stays here.
+  commit that archives it (Lifecycle 4–6); completed work never stays here.
+- A row whose build is done and that waits only on a review, a device
+  test, an owner step, counsel or a date is split (Lifecycle 5): the
+  original archives and the tail PRD takes a row of its own.
 - `prd-lint` fails on a `docs/prd/*.md` without a row, a row whose PRD is
   missing or archived, and a row whose Status word differs from the PRD's.
 
@@ -60,7 +80,7 @@ Status follows the board a team would keep. The word comes from the PRD's
 | Status | Means | Sections markers |
 |---|---|---|
 | `DRAFT` | A `[blocking]` question is open; no code | all `[ ]` |
-| `READY` | Approved, nothing started | all `[ ]` |
+| `READY` | Approved, nothing started | all `[ ]`, or `[!]` where a gate (owner, counsel, a date) holds the first section |
 | `IN PROGRESS` | Build work remains: a section is being built, not yet started, or blocked | some `[x]` or `[~]`, and a build section still `[ ]`, `[~]` or `[!]` |
 | `DEV COMPLETE` | All code is merged; verification has not started | every build section `[x]`; a verification section `[ ]` |
 | `TESTING` | Only verification remains and it is under way or waiting on the owner (device matrix, go-live checklist, measured budgets) | every build section `[x]`; a verification section `[~]` or `[!]` |
@@ -72,11 +92,11 @@ it is generated from the same markers.
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
 | 1 | [no-owner-ties.md](no-owner-ties.md) | READY 2026-11-11 (auto) | — | `/about` and `/donate` say "one volunteer" instead of the owner's name; an unsourced state's holdings line drops the "help us find it" GitHub link (`RESEARCH_URL` deleted); a build test fails on the owner's surname or `github.com/6nguyen` in any page; §2 owner checklist: Stripe public details, Instagram sign-up identity |
-| 2 | [social-sharing.md](social-sharing.md) | TESTING (§1 owner device test: iPhone passed, Android not run) | — | On-device 1080×1920 poster shared file-only to the OS sheet (Instagram first), fallback download + caption + intent links, `?via=share` counted in the digest; all code merged (PR #67); §1 is the owner device test, Android still to run |
-| 3 | [deploy.md](deploy.md) | TESTING (§3 owner go-live checklist) | — | Cloudflare provisioning and CI deploy on merge are live at cutthetiesmovement.org; §3 is the owner's go-live checklist with measured numbers |
-| 4 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
-| 5 | [primary-2028.md](primary-2028.md) | IN PROGRESS (§2 blocked: counsel) | — | `electoral` goal per 2028 target, `data/elections.csv`; §2 picks wait for counsel; stays `upcoming` until the NDAA goal closes |
-| 6 | [district-vintage-rollover.md](district-vintage-rollover.md) | IN PROGRESS (§3 blocked until 2027-01-03) | — (§3 date-gated 2027-01-03) | §1–2 merged (PR #32); §3 dated flip on 2027-01-03 per `docs/guides/deploy.md` §6 |
+| 2 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
+| 3 | [go-live-checklist.md](go-live-checklist.md) | TESTING (§1 owner go-live checklist: 1 of 11 ticked) | — | Split from the shipped deploy PRD: tick `docs/guides/deploy.md` §5 with measured production numbers; owner sets `STRIPE_LINKS` and checks the Cloudflare bill; preview `/api/*` 404 needs a fix PR |
+| 4 | [android-share-test.md](android-share-test.md) | TESTING (§1 needs an Android phone; the owner has none) | — | Split from the shipped social-sharing PRD: one Android run (Chrome, Samsung Internet) of the poster share to Instagram, final `SHARE_PAYLOAD`, phone draw time |
+| 5 | [primary-2028-picks.md](primary-2028-picks.md) | READY 2026-11-13 (§1 gated: counsel) | — (counsel's written answer) | Split from the shipped primary-2028 PRD: picks with a disclosure line, or the state's filing-list link; no candidate name anywhere until counsel answers |
+| 6 | [district-flip-2027.md](district-flip-2027.md) | READY 2026-11-13 (§1 gated: not before 2027-01-03) | — (date-gated 2027-01-03; roster PR first) | Split from the shipped district rollover PRD: one PR flips both district paths to the 120th Congress per `docs/guides/deploy.md` §6 |
 
 ## Next (ideas without a PRD, in intended order; ≤10)
 Targets is an existing spec stem or `new`. Writing the PRD deletes its row
