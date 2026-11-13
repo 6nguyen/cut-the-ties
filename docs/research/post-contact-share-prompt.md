@@ -1,5 +1,5 @@
 # Post-contact share prompt
-Researched: 2026-11-09 · Informs: [share-from-results](../prd/share-from-results.md)
+Researched: 2026-11-09 · Informs: [share-from-results](../prd/archive/2026-11-share-from-results.md)
 
 Question: how do the best civic-action products prompt a share right after
 a call or an email to a legislator, in what order, and what does the

@@ -1,5 +1,5 @@
 # Call the right office — PRD
-Status: DEV COMPLETE (§2 owner check on a phone) · Owner: George Nguyen · Last updated: 2026-11-10
+Status: SHIPPED 2026-11-11 (PR #104) · Owner: George Nguyen · Last updated: 2026-11-11
 
 ## Problem
 Every call action today is a vote or leadership ask, and those belong to a
@@ -158,7 +158,7 @@ office" reports in `other`.
 ## State (updated 2026-11-10)
 - Sections:
   - [x] 1. Route each call to the action's office
-  - [ ] 2. Owner check on a phone
+  - [x] 2. Owner check on a phone · owner verified 2026-11-11
 - Completed: §1 (`feat/call-the-right-office`): every call action names
   its office; the act page shows one button on that office's hours with
   the voicemail line and the one-number email promotion; target cards
@@ -184,14 +184,12 @@ office" reports in `other`.
   `web/src/components/phones.test.ts` (rewritten), `email.test.tsx`
   dc / district / switchboard / treasurer cases, `Target.test.ts` dc
   and district fixtures.
-- Remaining: §2 owner check on a phone.
+- Remaining: none
 - Decisions since last update: owner 2026-11-10 (cohesion pass): lands
   first in the order `call-the-right-office` §1 → `leadership-card-two-goals` §2–5 → `tap-receipts-everywhere` §1–6 + §9 → `tap-receipts-everywhere` §7–8; the act page's single button is
   where tap-receipts §3 attaches its tap receipt.
 - Known failures / blockers: none.
-- Next action: owner runs §2 on production after the deploy and notes
-  the result here.
-
+- Next action: none; archived. Merge the PR in the Status line.
 ## Open questions
 1. Should the act page tell DC callers to ask for a named staffer
    ("the legislative assistant for defense" for NDAA asks, "the chief of
@@ -211,3 +209,4 @@ office" reports in `other`.
   D1 column + migration, routed phones in `targetContact` and
   `memberCard`, single-button act page with the voicemail line, specs
   folded. Status READY → DEV COMPLETE; §2 remains.
+- 2026-11-11 — owner verified the last section; SHIPPED and archived (PR #104).
