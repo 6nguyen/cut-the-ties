@@ -91,7 +91,7 @@ it is generated from the same markers.
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [no-owner-ties.md](no-owner-ties.md) | READY 2026-11-11 (auto) | — | `/about` and `/donate` say "one volunteer" instead of the owner's name; an unsourced state's holdings line drops the "help us find it" GitHub link (`RESEARCH_URL` deleted); a build test fails on the owner's surname or `github.com/6nguyen` in any page; §2 owner checklist: Stripe public details, Instagram sign-up identity |
+| 1 | [no-owner-ties.md](no-owner-ties.md) | IN PROGRESS (§1) | — | `/about` and `/donate` say "one volunteer" instead of the owner's name; an unsourced state's holdings line drops the "help us find it" GitHub link (`RESEARCH_URL` deleted); a build test fails on the owner's surname or `github.com/6nguyen` in any page; §2 owner checklist: Stripe public details, Instagram sign-up identity |
 | 2 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
 | 3 | [go-live-checklist.md](go-live-checklist.md) | TESTING (§1 owner go-live checklist: 2 of 11 ticked) | — | Split from the shipped deploy PRD: tick `docs/guides/deploy.md` §5 with measured production numbers; owner sets `STRIPE_LINKS` and checks the Cloudflare bill; preview `/api/*` 404 needs a fix PR |
 | 4 | [android-share-test.md](android-share-test.md) | TESTING (§1 needs an Android phone; the owner has none) | — | Split from the shipped social-sharing PRD: one Android run (Chrome, Samsung Internet) of the poster share to Instagram, final `SHARE_PAYLOAD`, phone draw time |
