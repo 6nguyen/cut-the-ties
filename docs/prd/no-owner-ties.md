@@ -130,16 +130,16 @@ partner's repost. The copy change is the same for every visitor.
 No flag; ships on the next deploy. Measure: the deployed-HTML grep above
 returns nothing.
 
-## State (updated 2026-11-13, PR #103)
+## State (updated 2026-11-13, PR #109)
 - Sections:
-  - [~] 1. Site copy, link removal and build guard · `feat/no-owner-ties-site-copy-build-guard`
+  - [~] 1. Site copy, link removal and build guard · `feat/no-owner-ties-site-copy-build-guard` · PR #109
   - [ ] 2. Owner checklist
 - Completed: PRD written; §1 built (copy on `/about` and `/donate`, `unknown`
   holdings line has no link, `RESEARCH_URL` deleted, build guard
   `web/test/no-owner-ties.test.ts`, CI runs `build` before `test-web` so the
   guard sees `web/dist`).
 - Folded: §1 (goal-pages.md §Behavior 5–7).
-- Branch / open PRs: `feat/no-owner-ties-site-copy-build-guard` (§1).
+- Branch / open PRs: `feat/no-owner-ties-site-copy-build-guard`, PR #109 (§1).
 - Files changed (file:line map): `web/src/pages/about.astro:12`,
   `web/src/pages/donate.astro:9`, `web/src/components/Target.tsx:147-150`,
   `worker/src/state-copy.ts` (RESEARCH_URL removed),
@@ -156,7 +156,7 @@ returns nothing.
   `web/dist` is missing, so it cannot be skipped in CI.
 - Known failures / blockers: §2.1 needs the owner's Stripe and Instagram
   accounts; an agent cannot do it.
-- Next action: merge §1's PR, then `/implement-prd-section docs/prd/no-owner-ties.md` §2.
+- Next action: merge PR #109, then `/implement-prd-section docs/prd/no-owner-ties.md` (next: §2. Owner checklist).
 ## Open questions
 1. Does dropping the name from the "paid for by" line break a disclosure
    rule? Proposal: no change needed now. Federal disclaimer rules reach
