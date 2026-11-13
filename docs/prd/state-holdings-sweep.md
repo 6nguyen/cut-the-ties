@@ -65,8 +65,8 @@ the 44 states that currently show nothing.
 ### 3. State page copy
 1. The state goal card and target list read `holdings_status`: `held`
    shows the amount and date with the source link; `none` shows "holds
-   none" with its source; `unknown` keeps "not yet sourced" and adds
-   "help us find it" linking the research file on GitHub.
+   none" with its source; `unknown` keeps "not yet sourced" with no
+   link (the "help us find it" link was removed by no-owner-ties §1).
 2. The ask on the state action names the deciding body from `decider`
    when set and falls back to "your state treasurer".
 

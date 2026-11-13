@@ -2,7 +2,6 @@ import type preact from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { GoalCard, TargetCard } from '../lib/api';
 import type { RecordLine } from '@worker/electoral';
-import { RESEARCH_URL } from '@worker/state-copy';
 import { BIOGUIDE, visitLine, visitsFor, type VisitPublic } from '../lib/visits';
 import NO_PORTRAIT from '../assets/portraits/missing.json';
 import { CONTACT_LABEL } from '../lib/contact';
@@ -145,12 +144,9 @@ export function Target({ t, partner, done, ring, onContact, onShare }: { t: Targ
       <p class="mt-2 text-sm"><span class={`chip mr-2 ${POSITION_CLASS[t.position]}`}>{POSITION[t.position]}</span>
         {t.position_source_url && <a href={t.position_source_url} class="underline label-ticker" rel="noopener">source</a>}
       </p>
-      {t.holdings_status && (
-        <p class="mt-1 text-sm label-ticker text-ink/70">
-          {t.holdings_status === 'unknown'
-            ? <a href={RESEARCH_URL} class="underline" rel="noopener noreferrer">help us find it →</a>
-            : t.holdings_source_url && <a href={t.holdings_source_url} class="underline" rel="noopener noreferrer">source</a>}
-        </p>
+      {/* no-owner-ties §1.3: `held` and `none` link their source; `unknown` ends at "not yet sourced" with no link. */}
+      {t.holdings_status && t.holdings_status !== 'unknown' && t.holdings_source_url && (
+        <p class="mt-1 text-sm label-ticker text-ink/70"><a href={t.holdings_source_url} class="underline" rel="noopener noreferrer">source</a></p>
       )}
       {BIOGUIDE.test(t.bioguide_id) && <VisitLine member={t.bioguide_id} partner={partner} />}
       {t.record && (
