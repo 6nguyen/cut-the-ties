@@ -1,6 +1,6 @@
 // House seat table: 2020-census apportionment, unchanged from the 119th to the
 // 120th Congress (next change 2033). SEATS_CONGRESS labels the table and the seed
-// errors; the 2027-01-03 flip (docs/prd/district-vintage-rollover.md §3) sets it to
+// errors; the 2027-01-03 flip (docs/prd/district-flip-2027.md §1) sets it to
 // 120 with ACTIVE_CONGRESS, counts untouched. A seat count of 1 means an at-large
 // seat, stored as district 0 (the Census geocoder's CD "00" and the
 // congress-legislators convention). Delegates have no floor vote and are kept

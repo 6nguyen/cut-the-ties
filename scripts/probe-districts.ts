@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 // probe-districts — check a committed district set against the Census Geocoder
-// (docs/prd/district-vintage-rollover.md §2, docs/specs/on-device-districts.md).
+// (docs/prd/archive/2026-11-district-vintage-rollover.md §2, docs/specs/on-device-districts.md).
 //
 //   npx tsx scripts/probe-districts.ts --generate [--seed 2026] [--per-state 10]
 //       writes scripts/probe-points.json: seeded points inside each state's cd119
@@ -168,7 +168,7 @@ async function main(): Promise<void> {
     writeFileSync(out, JSON.stringify({
       recorded: new Date().toISOString().slice(0, 10),
       source: `Census Geocoder geographies/coordinates, benchmark Public_AR_Current, vintage ${VINTAGE_BY_CONGRESS[set]}${ov ? ` (${ov})` : ''}, layer ${set}th Congressional Districts (GEOID[2:])`,
-      note: `districts.fixture.json's points plus the redrawn-area points of docs/prd/district-vintage-rollover.md §2, answered for the ${set}th Congress. Re-record with scripts/probe-districts.ts --record; tests never call the network.`,
+      note: `districts.fixture.json's points plus the redrawn-area points of docs/prd/archive/2026-11-district-vintage-rollover.md §2, answered for the ${set}th Congress. Re-record with scripts/probe-districts.ts --record; tests never call the network.`,
       points,
     }, null, 1) + '\n');
     console.log(`wrote ${points.length} points to ${out}`);

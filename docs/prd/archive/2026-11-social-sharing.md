@@ -1,5 +1,5 @@
 # Social sharing: a poster for the action you just took — PRD
-Status: TESTING (§1 owner device test: iPhone passed, Android not run) · Owner: George Nguyen · Last updated: 2026-11-08
+Status: SHIPPED 2026-11-13 (PR #67) · Owner: George Nguyen · Last updated: 2026-11-13
 
 ## Problem
 After a call the receipt screen offers one "Share" button that hands the
@@ -183,6 +183,7 @@ can hand each platform:
       primary button opens the OS share sheet with Instagram listed, and
       choosing it offers at least the feed composer with the poster
       loaded; the composers offered are logged in `## Changes`.
+      iPhone passed 2026-11-08; Android → `android-share-test.md`.
 - [x] The poster is 1080×1920, every glyph lies within y 285–1635 and x
       72–1008, headline ≥72 px, body ≥44 px, URL ≥40 px; it names the
       goal, the office role and surname, the date and the site, and
@@ -205,6 +206,7 @@ can hand each platform:
 - [ ] Performance: landing stays ≤100 KB transferred; the poster chunk ≤4
       KB gzip and loaded only on the receipt screen; draw + encode ≤300
       ms on a mid-range Android; the act page's LCP is unchanged.
+      Landing and chunk measured (PR #69); phone timing → `android-share-test.md`.
 
 ## Rollout & metrics
 No flag. §1 is a half-day owner task and gates the Instagram copy only;
@@ -216,7 +218,7 @@ before any new platform is added.
 
 ## State (updated 2026-11-08)
 - Sections:
-  - [!] 1. Device test matrix · blocked: owner runs the rest of the matrix on an Android phone (Chrome and Samsung Internet); iPhone passed 2026-11-08
+  - [x] 1. Device test matrix · iPhone passed 2026-11-08; Android moved to android-share-test.md
   - [x] 2. Poster and share after a receipt · PR #67 merged
   - [x] 3. Fallback and desktop row · PR #67 merged
   - [x] 4. Captain-list share uses the poster · PR #67 merged
@@ -225,10 +227,10 @@ before any new platform is added.
 - Branch / open PRs: none (PR #67 and PR #69 merged)
 - Files changed (file:line map): `web/src/components/share.test.tsx:89-112` (share-link payload, intents at 1024 px); `web/src/components/funnel.test.ts:9-15,154-173` (captain-list poster attach)
 - Tests run + result: test-web 168 passed, test (worker) 356 passed, tsc 0 errors, build PASS (PR #69). Landing 38.5 KB; poster chunk 1.8 KB gzip, lazy; desktop Chromium draw + encode 11–23 ms, 0 requests during drawing.
-- Remaining: §1 on Android only. It sets `SHARE_PAYLOAD` / `POSTER_LABEL` in `web/src/lib/poster.ts:11-12` (today `'files'` / "Share poster") and closes two criteria: Instagram composers on both phones, and draw + encode ≤300 ms on a mid-range Android with the act page's LCP.
+- Remaining: none. The Android run and the `SHARE_PAYLOAD` decision moved to `docs/prd/android-share-test.md`.
 - Decisions since last update: none.
-- Known failures / blockers: §1 needs a physical Android phone; no agent can run it. The iPhone run did not record the iOS or Instagram version, and no phone draw time has been measured.
-- Next action: owner runs §1 on Android and gives the results, then /implement-prd-section docs/prd/social-sharing.md (next: §1. Device test matrix) logs them, sets the two constants, ticks the last criteria and archives the PRD. `one-screen-receipt.md` reworks the same poster and row; whichever lands second re-checks the other's criteria.
+- Known failures / blockers: none here (see `docs/prd/android-share-test.md`).
+- Next action: none; archived.
 ## Open questions
 1. Should the poster carry a QR code for the Story link? Proposal: not
    now; the URL is seven syllables and a QR needs a ~5 KB library; add it
@@ -265,3 +267,4 @@ before any new platform is added.
   (Chrome and Samsung Internet) not run; phone draw time not measured.
   `SHARE_PAYLOAD` / `POSTER_LABEL` stay as they are until Android is in.
 - 2026-11-08 — Status BUILDING → TESTING: all code is merged (PR #67, PR #69) and only §1 remains. Status word moved to the board vocabulary in `docs/prd/README.md` (READY, IN PROGRESS, DEV COMPLETE, TESTING); no scope change.
+- 2026-11-13 — SHIPPED and archived by the split-the-tail rule (`docs/prd/README.md` Lifecycle 5): all code merged (PR #67, PR #69) and the iPhone run passed; the Android run waits on a phone the owner does not have, so it moved with its two criteria to `docs/prd/android-share-test.md`. `POSTER_LABEL` no longer exists (`one-screen-receipt` fixed the label); only `SHARE_PAYLOAD` is left to decide.

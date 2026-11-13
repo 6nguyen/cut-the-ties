@@ -31,7 +31,7 @@
     "COUNT_THRESHOLD": "5",
     "VISITS_ENABLED": "1",
     // Geocoder vintage: ACS2025_Current = the 119th map the sitting members hold. Flip to
-    // Current_Current on 2027-01-03 with ACTIVE_CONGRESS (docs/prd/district-vintage-rollover.md §3).
+    // Current_Current on 2027-01-03 with ACTIVE_CONGRESS (docs/prd/district-flip-2027.md §1).
     "DISTRICT_VINTAGE": "ACS2025_Current"
     // Secrets (wrangler secret put): TURNSTILE_SECRET, ANTHROPIC_API_KEY, IP_SALT, VISITS_REVIEW_SECRET.
     // Without TURNSTILE_SECRET the route endpoint skips the Turnstile check (local dev only).

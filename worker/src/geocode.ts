@@ -2,7 +2,7 @@
 // never logged, never stored, never put in an error message.
 export const CENSUS_URL = 'https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress';
 
-// Which Congress's districts the geocoder answers with (docs/prd/district-vintage-rollover.md §1).
+// Which Congress's districts the geocoder answers with (docs/prd/archive/2026-11-district-vintage-rollover.md §1).
 // Probed 2026-11-05: `Current_Current` already returns the 120th-Congress map (Austin → TX-10,
 // downtown Kansas City → MO-4); `ACS2025_Current` returns the 119th map the sitting members hold
 // (TX-37, MO-5). The Worker var DISTRICT_VINTAGE flips on 2027-01-03; until then the default pins

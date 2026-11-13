@@ -5,7 +5,7 @@
 import { surname } from '@worker/names';
 
 /**
- * social-sharing §1.2: the constant the owner's device matrix sets (docs/prd/social-sharing.md §1).
+ * android-share-test §1: the constant the Android device test sets (docs/prd/android-share-test.md §1).
  * `SHARE_PAYLOAD` — `'files'` hands the OS sheet the poster alone; `'files+title'` adds `title: ''` for
  * sheets that need it. Default until the matrix runs: files only. The button's label is fixed
  * (one-screen-receipt §3: the Instagram glyph and "Share").

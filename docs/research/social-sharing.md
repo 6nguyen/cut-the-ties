@@ -1,5 +1,5 @@
 # Post-action social sharing: platforms, mechanics, poster and priority
-Researched: 2026-11-08 · Informs: [social-sharing](../prd/social-sharing.md)
+Researched: 2026-11-08 · Informs: [social-sharing](../prd/archive/2026-11-social-sharing.md)
 
 Every URL below was observed on 2026-11-08 unless a different date is given. "not verified" marks a claim no fetched source confirmed.
 

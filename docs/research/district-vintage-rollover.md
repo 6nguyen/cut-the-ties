@@ -1,5 +1,5 @@
 # District map rollover to the 120th Congress
-Researched: 2026-11-05 · Informs: [district-vintage-rollover](../prd/district-vintage-rollover.md)
+Researched: 2026-11-05 · Informs: [district-vintage-rollover](../prd/archive/2026-11-district-vintage-rollover.md)
 
 ## Summary
 - **Census already shipped cd120.** `TIGER2026/CD/tl_2026_<fips>_cd120.zip` (56 files) went up 2026-10-06. The geocoder's default `Current_Current` vintage already returns "120th Congress" districts (probed 2026-11-05). No waiting and no bridge shapefiles needed.

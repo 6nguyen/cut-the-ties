@@ -1,5 +1,5 @@
 # Data ingestion: pipelines or a research agent for the next 45 days
-Researched: 2026-11-04 · Informs: [member-pages](../prd/member-pages.md), [state-holdings-sweep](../prd/state-holdings-sweep.md), [office-visits](../prd/office-visits.md), [on-device-districts](../prd/on-device-districts.md), [primary-2028](../prd/primary-2028.md)
+Researched: 2026-11-04 · Informs: [member-pages](../prd/member-pages.md), [state-holdings-sweep](../prd/state-holdings-sweep.md), [office-visits](../prd/office-visits.md), [on-device-districts](../prd/on-device-districts.md), [primary-2028](../prd/archive/2026-11-primary-2028.md)
 
 Question: which backend data does the site need for the eight open PRDs,
 how fresh must each kind be, and should any of it arrive through a
