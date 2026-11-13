@@ -1,5 +1,5 @@
 # No owner ties — PRD
-Status: READY 2026-11-11 (auto) · Owner: George Nguyen · Last updated: 2026-11-11
+Status: IN PROGRESS (§1 site copy, link removal and build guard) · Owner: George Nguyen · Last updated: 2026-11-13
 
 ## Problem
 The owner is about to open an Instagram account for the site and pitch it
@@ -130,24 +130,33 @@ partner's repost. The copy change is the same for every visitor.
 No flag; ships on the next deploy. Measure: the deployed-HTML grep above
 returns nothing.
 
-## State (updated 2026-11-11, PR #103)
+## State (updated 2026-11-13, PR #109)
 - Sections:
-  - [ ] 1. Site copy, link removal and build guard
+  - [~] 1. Site copy, link removal and build guard · `feat/no-owner-ties-site-copy-build-guard` · PR #109
   - [ ] 2. Owner checklist
-- Completed: PRD written.
-- Folded: none.
-- Branch / open PRs: `docs/no-owner-ties`, PR #103 (this PRD).
-- Files changed (file:line map): to touch in §1: `web/src/pages/about.astro:12`,
-  `web/src/pages/donate.astro:9`, `web/src/components/Target.tsx:5,151`,
-  `worker/src/state-copy.ts:5-6`, `web/src/components/Target.test.ts:10,36,44-48`,
-  a new build guard test under `web/`, `docs/specs/goal-pages.md` §5–7,
-  `docs/prd/state-holdings-sweep.md:69` (its shipped "help us find it" line).
-- Tests run + result: none (docs only).
-- Remaining: §1, §2.
-- Decisions since last update: none.
-- Known failures / blockers: none.
-- Next action: `/implement-prd-section docs/prd/no-owner-ties.md` §1.
-
+- Completed: PRD written; §1 built (copy on `/about` and `/donate`, `unknown`
+  holdings line has no link, `RESEARCH_URL` deleted, build guard
+  `web/test/no-owner-ties.test.ts`, CI runs `build` before `test-web` so the
+  guard sees `web/dist`).
+- Folded: §1 (goal-pages.md §Behavior 5–7).
+- Branch / open PRs: `feat/no-owner-ties-site-copy-build-guard`, PR #109 (§1).
+- Files changed (file:line map): `web/src/pages/about.astro:12`,
+  `web/src/pages/donate.astro:9`, `web/src/components/Target.tsx:147-150`,
+  `worker/src/state-copy.ts` (RESEARCH_URL removed),
+  `web/src/components/Target.test.ts:30-50`, `web/test/no-owner-ties.test.ts`
+  (new), `.github/workflows/ci.yml:17`, `docs/specs/goal-pages.md` §5–7,
+  `docs/prd/state-holdings-sweep.md:68-69`.
+- Tests run + result: build PASS, test-web PASS (guard hand-checked: name
+  put back in donate.astro → FAIL naming `dist/donate/index.html`, reverted
+  → PASS), tsc PASS, test PASS. Landing `/` HTML 24.8 KB raw / 6.1 KB gzip.
+- Remaining: §2 (owner: Stripe public details and Instagram identity; then
+  the deployed-HTML grep after §1 deploys).
+- Decisions since last update: CI target order changed to run `build`
+  before `test-web`, and the guard fails (not skips) when `CI` is set and
+  `web/dist` is missing, so it cannot be skipped in CI.
+- Known failures / blockers: §2.1 needs the owner's Stripe and Instagram
+  accounts; an agent cannot do it.
+- Next action: merge PR #109, then `/implement-prd-section docs/prd/no-owner-ties.md` (next: §2. Owner checklist).
 ## Open questions
 1. Does dropping the name from the "paid for by" line break a disclosure
    rule? Proposal: no change needed now. Federal disclaimer rules reach
@@ -161,3 +170,7 @@ returns nothing.
 ## Changes
 - 2026-11-11 — created (READY, auto): no blocking questions. Proposals 1–2
   became decisions.
+- 2026-11-13 — §1 built: `/about` and `/donate` copy, `unknown` holdings
+  line loses its link, `RESEARCH_URL` deleted, build guard added; CI runs
+  `build` before `test-web` so the guard checks the real `web/dist`. Spec
+  delta folded into goal-pages.md §5–7.

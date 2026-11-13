@@ -91,7 +91,7 @@ it is generated from the same markers.
 
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
-| 1 | [no-owner-ties.md](no-owner-ties.md) | READY 2026-11-11 (auto) | — | `/about` and `/donate` say "one volunteer" instead of the owner's name; an unsourced state's holdings line drops the "help us find it" GitHub link (`RESEARCH_URL` deleted); a build test fails on the owner's surname or `github.com/6nguyen` in any page; §2 owner checklist: Stripe public details, Instagram sign-up identity |
+| 1 | [no-owner-ties.md](no-owner-ties.md) | IN PROGRESS (§1) | — | `/about` and `/donate` say "one volunteer" instead of the owner's name; an unsourced state's holdings line drops the "help us find it" GitHub link (`RESEARCH_URL` deleted); a build test fails on the owner's surname or `github.com/6nguyen` in any page; §2 owner checklist: Stripe public details, Instagram sign-up identity |
 | 2 | [homepage-copy.md](homepage-copy.md) | DRAFT (owner string sign-off) | no-owner-ties | Landing strings: title, description, H1, subhead, address form, privacy line, card CTA and date, trust line, footer line; every string tabled for owner review before any code |
 | 3 | [faq-and-structured-data.md](faq-and-structured-data.md) | DRAFT (owner answer sign-off) | no-owner-ties, homepage-copy | `data/faq.yaml` and a script-free FAQ on `/` with dates from goal rows; Organization, WebSite and FAQPage JSON-LD; footer "Updated <date>"; twelve answers tabled for owner review |
 | 4 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
