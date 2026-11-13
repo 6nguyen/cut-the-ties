@@ -1,5 +1,5 @@
 # Mission and topics — PRD
-Status: DRAFT · Owner: George Nguyen · Last updated: 2026-11-13
+Status: READY 2026-11-13 (owner sign-off) · Owner: George Nguyen · Last updated: 2026-11-13
 
 ## Problem
 The site is built as a general "call your representatives about the
@@ -178,13 +178,13 @@ merge records).
   - [ ] 5. Docs and FAQ follow
 - Completed: none.
 - Branch / open PRs: `docs/mission-and-topics` (this PRD).
-- Remaining: all; blocked on Open question 0.
-- Next action: owner edits §1 in the PR; then `/implement-prd-section` 1.
+- Remaining: all.
+- Next action: `/implement-prd-section` 1 after `no-owner-ties` merges (both touch `/about`).
 
 ## Open questions
-0. `[blocking]` Owner sign-off on every §1 string, including the
-   condition list (row 10). Proposal: the owner edits the column in this
-   PR; when accepted, Status becomes READY and §1 may start.
+0. Owner sign-off on every §1 string, including the condition list
+   (row 10). Answered 2026-11-13: accepted as written, with the
+   proposals of questions 1–3 as decisions.
 1. Topic set: `israel`, `lobby_money`, `wars`, `healthcare`. Is a fifth
    needed now (e.g. `labor`, `climate`)? Proposal: no; a topic is added
    when its first goal is written, in that goal's PRD.
@@ -199,3 +199,6 @@ merge records).
 ## Changes
 - 2026-11-13 — created (DRAFT, blocking: owner mission sign-off) from
   the owner's decision to widen the mission beyond US ties with Israel.
+- 2026-11-13 — owner signed off every §1 string and the five conditions;
+  READY. Proposals 1–3 became decisions: four topics, `off_topic` stops
+  counting toward the device block, the "Kick out" titles stay.
