@@ -92,11 +92,13 @@ it is generated from the same markers.
 | # | PRD | Status | Needs | Owner surfaces |
 |---|---|---|---|---|
 | 1 | [no-owner-ties.md](no-owner-ties.md) | READY 2026-11-11 (auto) | — | `/about` and `/donate` say "one volunteer" instead of the owner's name; an unsourced state's holdings line drops the "help us find it" GitHub link (`RESEARCH_URL` deleted); a build test fails on the owner's surname or `github.com/6nguyen` in any page; §2 owner checklist: Stripe public details, Instagram sign-up identity |
-| 2 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
-| 3 | [go-live-checklist.md](go-live-checklist.md) | TESTING (§1 owner go-live checklist: 2 of 11 ticked) | — | Split from the shipped deploy PRD: tick `docs/guides/deploy.md` §5 with measured production numbers; owner sets `STRIPE_LINKS` and checks the Cloudflare bill; preview `/api/*` 404 needs a fix PR |
-| 4 | [android-share-test.md](android-share-test.md) | TESTING (§1 needs an Android phone; the owner has none) | — | Split from the shipped social-sharing PRD: one Android run (Chrome, Samsung Internet) of the poster share to Instagram, final `SHARE_PAYLOAD`, phone draw time |
-| 5 | [primary-2028-picks.md](primary-2028-picks.md) | READY 2026-11-13 (§1 gated: counsel) | — (counsel's written answer) | Split from the shipped primary-2028 PRD: picks with a disclosure line, or the state's filing-list link; no candidate name anywhere until counsel answers |
-| 6 | [district-flip-2027.md](district-flip-2027.md) | READY 2026-11-13 (§1 gated: not before 2027-01-03) | — (date-gated 2027-01-03; roster PR first) | Split from the shipped district rollover PRD: one PR flips both district paths to the 120th Congress per `docs/guides/deploy.md` §6 |
+| 2 | [homepage-copy.md](homepage-copy.md) | DRAFT (owner string sign-off) | no-owner-ties | Landing strings: title, description, H1, subhead, address form, privacy line, card CTA and date, trust line, footer line; every string tabled for owner review before any code |
+| 3 | [faq-and-structured-data.md](faq-and-structured-data.md) | DRAFT (owner answer sign-off) | no-owner-ties, homepage-copy | `data/faq.yaml` and a script-free FAQ on `/` with dates from goal rows; Organization, WebSite and FAQPage JSON-LD; footer "Updated <date>"; twelve answers tabled for owner review |
+| 4 | [state-holdings-sweep.md](state-holdings-sweep.md) | IN PROGRESS (§2 maintainer research sweep) | — | `draft-holding`, `states.csv` checks, 50-state sweep; maintainer research, runs alone |
+| 5 | [go-live-checklist.md](go-live-checklist.md) | TESTING (§1 owner go-live checklist: 2 of 11 ticked) | — | Split from the shipped deploy PRD: tick `docs/guides/deploy.md` §5 with measured production numbers; owner sets `STRIPE_LINKS` and checks the Cloudflare bill; preview `/api/*` 404 needs a fix PR |
+| 6 | [android-share-test.md](android-share-test.md) | TESTING (§1 needs an Android phone; the owner has none) | — | Split from the shipped social-sharing PRD: one Android run (Chrome, Samsung Internet) of the poster share to Instagram, final `SHARE_PAYLOAD`, phone draw time |
+| 7 | [primary-2028-picks.md](primary-2028-picks.md) | READY 2026-11-13 (§1 gated: counsel) | — (counsel's written answer) | Split from the shipped primary-2028 PRD: picks with a disclosure line, or the state's filing-list link; no candidate name anywhere until counsel answers |
+| 8 | [district-flip-2027.md](district-flip-2027.md) | READY 2026-11-13 (§1 gated: not before 2027-01-03) | — (date-gated 2027-01-03; roster PR first) | Split from the shipped district rollover PRD: one PR flips both district paths to the 120th Congress per `docs/guides/deploy.md` §6 |
 
 ## Next (ideas without a PRD, in intended order; ≤10)
 Targets is an existing spec stem or `new`. Writing the PRD deletes its row
@@ -104,6 +106,7 @@ in the same commit; dropping an idea deletes its row.
 | # | Idea | Targets | Notes |
 |---|---|---|---|
 | 1 | Weekly social-trend watch: which frames about Jeffries, Schumer, the military bill and Israel are moving on Instagram, TikTok and search; proposes goal-title and `this_week` changes as a PR | maintainer-tooling | Needs a logged-in trend source or a listening tool; never edits `data/` on its own; follows `plain-english-copy` |
+| 2 | Member-page SEO: `Person` JSON-LD on `/m/<bioguide>`, title pattern "<Name> on US military ties with Israel", `dateModified` from the row's position date | member-pages | The 535 member pages are the long-tail query people type ("<name> position on Israel"); follows `faq-and-structured-data` for the shared JSON-LD helper |
 
 ## Template (copy for a new feature)
 
