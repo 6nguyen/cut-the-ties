@@ -1,5 +1,5 @@
 # Go-live checklist — PRD
-Status: TESTING (§1 owner go-live checklist: 1 of 11 ticked) · Owner: George Nguyen · Last updated: 2026-11-13
+Status: TESTING (§1 owner go-live checklist: 2 of 11 ticked) · Owner: George Nguyen · Last updated: 2026-11-13
 
 ## Problem
 The site has been live at `https://cutthetiesmovement.org/` since
@@ -69,11 +69,11 @@ No flag. Each ticked item is its own small docs commit with the number.
 ## State (updated 2026-11-13)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
   - [~] 1. Go-live checklist · owner and agent tick `docs/guides/deploy.md` §5
-- Completed: §5 README item (2026-11-08). Everything else in `archive/2026-11-deploy.md`.
+- Completed: §5 README item (2026-11-08); §1.5 Turnstile refusal (2026-11-13, 403). Everything else in `archive/2026-11-deploy.md`.
 - Branch / open PRs: none.
-- Remaining: §1.1–1.8.
-- Known failures / blockers: preview `/api/*` 404s (§1.8). §1.2 and §1.7 need the owner's GitHub and Cloudflare accounts.
-- Next action: an agent session runs §1.1, 1.3, 1.5, 1.6 against the live site and records the numbers; the owner does §1.2, 1.4, 1.7; a fix PR for §1.8.
+- Remaining: §1.1–1.4, 1.6–1.8.
+- Known failures / blockers: §1.6 fails on two budgets (2026-11-13): landing 117.7 KB first-party plus 1,974 KB Turnstile, and LCP 4.2 s; each needs a fix PR. Turnstile refuses the automated browser, so §1.1's address path and §1.3 need a person in a real browser. Preview `/api/*` 404s (§1.8). §1.2 and §1.7 need the owner's GitHub and Cloudflare accounts.
+- Next action: the owner routes the three fixture addresses and runs one generation in their own browser (DevTools Network for `/api/route` and `/api/generate` timing) and does §1.2, 1.4, 1.7; fix PRs for landing weight and LCP, then re-measure §1.6; a fix PR for §1.8.
 
 ## Open questions
 1. Is a generation (§1.3) worth its LLM cost just to tick the box?
@@ -85,3 +85,10 @@ No flag. Each ticked item is its own small docs commit with the number.
   (`docs/prd/README.md` Lifecycle 5); no blocking questions, READY (auto),
   Status TESTING because only verification remains. Added §1.8 for the
   preview 404 found on 2026-11-11.
+- 2026-11-13 — agent run on the live site: §1.5 passes (403
+  `turnstile`). §1.6 measured and recorded in `docs/guides/deploy.md` §5, not the spec, because `action-router.md` is at doc-lint's 16 KB cap (the spec only drops its "no third-party script" claim): landing 117.7 KB
+  first-party plus 1,974 KB Turnstile and a 10.2 KB Cloudflare Insights
+  beacon; LCP 4.2 s; `/api/route` 395 ms p95 on the district path only.
+  Landing and LCP fail. §1.1's address path and §1.3 are not run: Turnstile
+  refuses the automated browser. The `{state, district}` path does return
+  CA-46 Correa, TX-35 Casar and PA-1 Fitzpatrick.
