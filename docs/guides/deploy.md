@@ -106,13 +106,18 @@ revert the data PR instead; the merge redeploys.
 - [ ] The digest ran once by manual trigger (dashboard → Worker →
       Triggers → Cron → "Trigger") and the email arrived at
       `MAINTAINER_EMAIL`.
-- [ ] `curl -X POST https://<domain>/api/route -d '{"address":"x"}'`
-      without a Turnstile token is refused.
+- [x] `curl -X POST https://<domain>/api/route -d '{"address":"x"}'`
+      without a Turnstile token is refused (2026-11-13: 403 `turnstile`).
 - [ ] Landing transfer size ≤100 KB measured and recorded in
       `docs/specs/action-router.md` §Performance budget: ___ KB.
+      2026-11-13, fails: 117.7 KB first-party, plus 1,974 KB Turnstile
+      and 10.2 KB Cloudflare Insights (fonts excluded).
 - [ ] LCP ≤1.5 s on a mid-range phone over 4G (Lighthouse, mobile,
-      slow 4G): ___ s.
-- [ ] `/api/route` p95 ≤2 s over 20 requests: ___ ms.
+      slow 4G): ___ s. 2026-11-13, fails: 4.2 s (FCP 3.4 s, Lighthouse
+      12.2.1, headless).
+- [ ] `/api/route` p95 ≤2 s over 20 requests: ___ ms. 2026-11-13, the
+      `{state, district}` path only (no geocode): 395 ms; the address path
+      still needs a run from a real browser.
 - [ ] First streamed token ≤3 s p95 and generation complete ≤10 s p95:
       ___ s / ___ s.
 - [x] `README.md` carries the live URL (2026-11-08).

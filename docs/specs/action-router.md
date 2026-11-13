@@ -243,8 +243,8 @@ documents, receipts and reports are in `personalised-documents.md`.
 ## Performance budget
 Landing ≤100 KB transferred on a phone, ≤170 KB on desktop, fonts
 excluded (2026-11-08, combobox and photos in: 94.9 and 98.8 KB; the
-`pip` chunk, 1.0 KB gzip, loads only on a pick or a location tap; no
-third-party script);
+`pip` chunk, 1.0 KB gzip, loads only on a pick or a location tap; the
+Turnstile script loads too);
 LCP ≤1.5 s on a mid-range phone over 4G; `/api/route` ≤2 s p95;
 suggestions ≤800 ms p95 from the browser; infra cost excluding LLM and
 domain = $0/month.
