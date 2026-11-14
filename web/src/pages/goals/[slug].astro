@@ -5,7 +5,7 @@ import Photo from '../../components/Photo.astro';
 import SubscribeLine from '../../components/SubscribeLine.astro';
 import GoalTargets from '../../components/GoalTargets';
 import { fillAsk } from '@worker/state-copy';
-import { actionsFor, CATEGORY, fmtDate, markdown, picks, publishedGoals, sources, type Goal } from '../../lib/goals';
+import { actionsFor, CATEGORY, conditions, fmtDate, markdown, picks, publishedGoals, sources, TOPIC_LABELS, topicLabels, type Goal } from '../../lib/goals';
 import { whipGoals } from '../../lib/members';
 import { HERO, PHOTO_OUTPUT, heroWidths, imageFor, imageIdFor } from '../../lib/images';
 export function getStaticPaths() {
@@ -15,6 +15,7 @@ const { goal } = Astro.props as { goal: Goal };
 const actions = actionsFor(goal);
 const pick = picks(goal)[0];
 const srcs = sources(goal);
+const conds = conditions(goal); // mission-and-topics §3: leadership goals only
 const situation = markdown(goal.detail_md);
 const date = fmtDate(goal.decision_date);
 const open = goal.status === 'active';
@@ -36,6 +37,7 @@ const electoral = goal.category === 'electoral'; // primary-2028 §1.2: decision
         {!open && <span class={`chip ${goal.status === 'completed' ? 'bg-acid text-ink' : 'bg-crimson text-paper'} border-newsprint`}>{goal.status}</span>}
       </div>
       <h1 class="display-lg max-w-4xl">{goal.title}</h1>
+      <p class="mt-3 label-code text-newsprint/80">{topicLabels(goal).join(' · ')}</p>
       <p class="mt-5 text-lg max-w-2xl">{goal.summary}</p>
       {open && <p class="mt-4 label-code text-hazard">{electoral ? 'Primary' : 'Decision'}: {date ?? 'not yet scheduled'}</p>}
     </div>
@@ -60,6 +62,19 @@ const electoral = goal.category === 'electoral'; // primary-2028 §1.2: decision
       <section class="card-lg p-5 lg:p-6 bg-acid" aria-labelledby="want">
         <p class="label-code">What we are asking for</p>
         <h2 id="want" class="headline-lg mt-1">{goal.what_we_want}</h2>
+        {conds.length > 0 && (
+          <ol class="mt-4 flex flex-col gap-3" aria-label="Conditions">
+            {conds.map((c) => (
+              <li class="flex flex-col gap-1">
+                <span class="label-code text-xs">{TOPIC_LABELS[c.topic]}</span>
+                <span class="font-semibold">{c.text}</span>
+                {c.source_url
+                  ? <a href={c.source_url} rel="noopener" class="label-code text-xs underline underline-offset-4 self-start">source{c.source_date ? ` · ${fmtDate(c.source_date)}` : ''}</a>
+                  : <span class="label-code text-xs text-ink/70">position unsourced</span>}
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
       <section aria-labelledby="decides">
         <p class="label-code">Who makes the call, and when</p>

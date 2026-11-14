@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/index';
 import { MANIFEST_FILE, activateSuccessors, checkImage, checkPicks, imageIds, loadRows, manifestPath } from '../src/load';
+import { conditionsLine, factBlock, parseFormat } from '../src/generate';
 import { fillLeader, leaderName } from '../src/leader';
 import { MemoryRepo } from '../src/repo';
 import { buildRoute } from '../src/route';
@@ -226,5 +227,58 @@ describe('site-imagery §4: a pick\'s bioguide_id', () => {
     const never = () => { throw new Error('roster read'); };
     expect(() => checkPicks({ slug: 'a', our_picks: '[{"name": "X"}]' }, never)).not.toThrow();
     expect(() => checkPicks({ slug: 'a', our_picks: '[{"bioguide_id": "P000145"}]' }, never)).toThrow('roster read');
+  });
+});
+
+describe('mission-and-topics §2–§3: topics and conditions', () => {
+  const setTopics = (v: string) => (y: string) => y.replace(/^topics:.*$/m, v);
+  const setConds = (v: string) => (y: string) => y.replace(/^conditions:[\s\S]*?(?=^[a-z_]+:|(?![\s\S]))/m, v ? `conditions: ${v}\n` : '');
+  const real = loadRows(DATA);
+  const goal = (slug: string) => real.goals.find((g) => g.slug === slug)!;
+
+  it('every goal names at least one known topic, once; the seed refuses anything else', () => {
+    for (const g of real.goals) expect(JSON.parse(g.topics).length, g.slug).toBeGreaterThan(0);
+    expect(JSON.parse(goal('house-caucus').topics)).toEqual(['israel', 'lobby_money', 'wars', 'healthcare']);
+    expect(JSON.parse(goal('ndaa-1217').topics)).toEqual(['israel', 'wars']);
+    expect(() => loadRows(dataWith({ 'ndaa-1217': setTopics('topics: []') }))).toThrow(/goal ndaa-1217: topics must list at least one of/);
+    expect(() => loadRows(dataWith({ 'ndaa-1217': setTopics('topics: [israel, taxes]') }))).toThrow(/goal ndaa-1217: unknown topic taxes \(known: israel, lobby_money, wars, healthcare\)/);
+    expect(() => loadRows(dataWith({ 'ndaa-1217': setTopics('topics: [israel, israel]') }))).toThrow(/goal ndaa-1217: topics repeats an entry/);
+  });
+
+  it('conditions: leadership goals carry one to many, each on a known topic with no digits; other goals carry none', () => {
+    const conds = JSON.parse(goal('senate-leader').conditions) as { topic: string; text: string }[];
+    expect(conds.map((c) => c.topic)).toEqual(['israel', 'israel', 'lobby_money', 'wars', 'healthcare']);
+    expect(JSON.parse(goal('ndaa-1217').conditions)).toEqual([]);
+    expect(() => loadRows(dataWith({ 'ndaa-1217': (y) => `${y}\nconditions: [{"topic": "wars", "text": "No new war"}]\n` }))).toThrow(/goal ndaa-1217: conditions belong to leadership goals only/);
+    expect(() => loadRows(dataWith({ 'senate-leader': setConds('') }))).toThrow(/goal senate-leader: a leadership goal needs at least one condition/);
+    expect(() => loadRows(dataWith({ 'senate-leader': setConds('[{"topic": "taxes", "text": "x"}]') }))).toThrow(/goal senate-leader: conditions\[0\] needs a known topic/);
+    expect(() => loadRows(dataWith({ 'senate-leader': setConds('[{"topic": "wars", "text": "Repeal section 1217"}]') }))).toThrow(/goal senate-leader: conditions\[0\] holds a number/);
+    expect(() => loadRows(dataWith({ 'senate-leader': setConds('[{"topic": "wars", "text": "No new war", "source_url": "example.org"}]') }))).toThrow(/goal senate-leader: conditions\[0\] source_url must be a URL/);
+    expect(() => loadRows(dataWith({ 'senate-leader': setConds('[{"topic": "wars", "text": "No new war", "source_url": "https://example.org", "source_date": "Nov 3"}]') }))).toThrow(/goal senate-leader: conditions\[0\] source_date must be YYYY-MM-DD/);
+  });
+
+  it('the conditions line and the fact block carry every condition; non-leadership goals get neither', () => {
+    const line = conditionsLine(goal('house-caucus'));
+    expect(line).toMatch(/^That means: Stop Israel's integration into the US military; Oppose a new long-term weapons deal with Israel; Refuse AIPAC .*; No new war without a vote of Congress; Whip the caucus for Medicare for All.*\.$/);
+    expect(line).not.toMatch(/\.\./);
+    expect(conditionsLine(goal('ndaa-1217'))).toBe('');
+    const action = real.actions.find((a) => a.slug === 'house-caucus-call')!;
+    const t = { kind: 'member' as const, id: 'C001110', member: real.members.find((m) => m.bioguide_id === 'C001110')!, position: null, prior_vote: 'No recorded vote yet' };
+    const block = factBlock(goal('house-caucus'), action, parseFormat(action), t);
+    expect(block).toContain('Condition (US ties with Israel): Stop Israel\'s integration into the US military');
+    expect(block).toContain('Condition (Lobby money): Refuse AIPAC');
+    expect(block).toContain('Condition (Healthcare): Whip the caucus for Medicare for All');
+    const ndaa = real.actions.find((a) => a.slug === 'ndaa-1217-call')!;
+    expect(factBlock(goal('ndaa-1217'), ndaa, parseFormat(ndaa), t)).not.toContain('Condition (');
+  });
+
+  it('the /api/route card carries topics on every goal and conditions on leadership goals only', async () => {
+    const r = await buildRoute(new MemoryRepo(real), 'NY', 8, TODAY);
+    for (const g of r.goals) expect(g.topics.length, g.slug).toBeGreaterThan(0);
+    const leader = r.goals.find((g) => g.slug === 'house-caucus')!;
+    expect(leader.topics).toEqual(['israel', 'lobby_money', 'wars', 'healthcare']);
+    expect(leader.conditions!.map((c) => c.topic)).toEqual(['israel', 'israel', 'lobby_money', 'wars', 'healthcare']);
+    expect(leader.what_we_want).toMatch(/unless Jeffries promises, in public, to every condition below\.$/);
+    expect(r.goals.find((g) => g.slug === 'ndaa-1217')).not.toHaveProperty('conditions');
   });
 });

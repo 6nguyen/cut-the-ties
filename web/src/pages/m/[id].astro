@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { fmtDate } from '../../lib/goals';
+import { fmtDate, topicLabels } from '../../lib/goals';
 import { contactLabel, goalsFor, members, officesFor, PARTY, positionLine, role, seat, type Member } from '../../lib/members';
 import Offices from '../../components/Offices.astro';
 import MemberContact from '../../components/MemberContact';
@@ -65,6 +65,7 @@ const POS: Record<string, string> = { for: 'bg-acid text-ink', uncommitted: 'bg-
         <section class="card p-5 lg:p-6" aria-labelledby={`g-${goal.slug}`}>
           <p class="label-code">Where they stand</p>
           <h2 id={`g-${goal.slug}`} class="headline-lg mt-1"><a href={`/goals/${goal.slug}`} class="hover:underline">{goal.title}</a></h2>
+          <p class="mt-1 label-code text-xs text-ink/70">{topicLabels(goal).join(' · ')}</p>
           <p class="mt-4 flex flex-wrap items-center gap-2">
             <span class={`chip border-ink ${POS[position?.position ?? 'unknown']}`}>{position?.position ?? 'unknown'}</span>
             {position

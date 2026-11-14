@@ -7,8 +7,8 @@ import { createApp } from '../src/index';
 import { loadRows } from '../src/load';
 import { MemoryRepo, decodeShingles } from '../src/repo';
 import { ANTHROPIC_URL, DOC_MODEL, SCREEN_MODEL, encodeSse, sseEvents } from '../src/anthropic';
-import { BodyExtractor, LIMITS, checkOutput, docRequest, overlap, parseFormat, parseSchema, sanitize, shapeFields, shingles, wordCount, type Doc, type GenerateContext } from '../src/generate';
-import type { GenerationRow, ScreenClass } from '../src/types';
+import { BodyExtractor, LIMITS, checkOutput, docRequest, overlap, parseFormat, parseSchema, sanitize, screenSystemPrompt, shapeFields, shingles, wordCount, type Doc, type GenerateContext } from '../src/generate';
+import { MISSION, TOPIC_LABELS, type GenerationRow, type ScreenClass } from '../src/types';
 import { ENV, fakeFetch } from './fixtures';
 import { ABUSIVE, BENIGN } from './fixtures.screen';
 
@@ -366,6 +366,37 @@ describe('POST /api/generate — screen (§4.8.2) and abuse response (§4.8.5)',
     expect(((await res.json()) as { error: string }).error).toBe('blocked');
     expect(calls.haiku).toBe(3);
     expect(calls.opus).toBe(0);
+  });
+
+  it('mission-and-topics §4: three off_topic screenings are logged but never block; a later injection still counts from one', async () => {
+    const { generate, repo } = app({ screen });
+    const off = ABUSIVE.filter((a) => a.cls === 'off_topic').slice(0, 3);
+    for (const a of off) expect((await generate({ fields: { ...FIELDS, why: a.fields.why! } })).status).toBe(422);
+    expect(repo.screenings.map((x) => x.class)).toEqual(['off_topic', 'off_topic', 'off_topic']);
+    expect(await repo.blockedUntil(await sha(DEVICE))).toBeNull();
+    expect(await repo.screenedOutCount(await sha(DEVICE), new Date(0))).toBe(0);
+    const bad = ABUSIVE.filter((a) => a.cls !== 'off_topic' && a.fields.why).slice(0, 3);
+    for (const a of bad.slice(0, 2)) expect((await generate({ fields: { ...FIELDS, why: a.fields.why! } })).status).toBe(422);
+    expect(await repo.blockedUntil(await sha(DEVICE))).toBeNull();
+    expect((await generate({ fields: { ...FIELDS, why: bad[2].fields.why! } })).status).toBe(422);
+    expect((await repo.blockedUntil(await sha(DEVICE)))?.toISOString()).toBe(new Date(TODAY.getTime() + 24 * 3_600_000).toISOString());
+  });
+
+  it('mission-and-topics §4: the screen prompt carries the mission, every tie and the goal\'s own topics; an AIPAC-money reason passes on the Senate leader goal', async () => {
+    const rows = loadRows(join(__dirname, '..', '..', 'data'), '2026-11-06T00:00:00Z');
+    const ndaa = rows.goals.find((g) => g.slug === 'ndaa-1217')!;
+    const prompt = screenSystemPrompt(ndaa, parseFormat(rows.actions.find((a) => a.slug === 'ndaa-1217-call')!));
+    expect(prompt).toContain(MISSION);
+    for (const label of Object.values(TOPIC_LABELS)) expect(prompt).toContain(label);
+    expect(prompt).toContain('This goal is about: US ties with Israel, Wars.');
+    expect(prompt).toMatch(/^ok: about this goal, about any of the site's ties, about this official's record/m);
+    expect(prompt).toMatch(/^off_topic: none of those: a complaint about this website/m);
+    // A blocks action: the model stub echoes the starting script, so the only gate between the request and `done` is the screen.
+    const echo = (req: Record<string, unknown>): Doc => ({ subject: '', body: String((req.messages as { content: string }[])[0].content).match(/<starting_script>\n?([\s\S]*?)\n?<\/starting_script>/)?.[1] ?? '', facts_used: [] });
+    const { generate, calls } = app({ screen, doc: echo });
+    const evs = await events(await generate({ action: 'senate-leader-call', target: 'S000148', fields: { ...FIELDS, city: 'Brooklyn', why: 'The money he takes from AIPAC is the reason I do not trust his vote on this.' } }, KEYED));
+    expect(doneOf(evs)).toBeDefined();
+    expect(calls.haiku).toBe(1);
   });
 });
 
@@ -734,7 +765,7 @@ describe('POST /api/generate — script blocks (leader-call-scripts §2–§3)',
       expect(d.body).toContain('integration section');
       expect(d.body).toContain('vote only for a leader');
       expect(d.words).toBeGreaterThanOrEqual(60);
-      expect(d.words).toBeLessThanOrEqual(160);
+      expect(d.words).toBeLessThanOrEqual(220); // mission-and-topics §3: leadership max_words is 220;
     }
     expect(a.variant).not.toBe(b.variant);
     expect(a.body).not.toBe(b.body);

@@ -155,7 +155,7 @@ export class D1Repo implements Repo {
   }
   async screenedOutCount(deviceHash: string, since: Date): Promise<number> {
     const row = await this.db
-      .prepare(`SELECT COUNT(*) AS n FROM screenings WHERE device_hash = ? AND created_at >= ?`)
+      .prepare(`SELECT COUNT(*) AS n FROM screenings WHERE device_hash = ? AND created_at >= ? AND class <> 'off_topic'`)
       .bind(deviceHash, iso(since))
       .first<{ n: number }>();
     return row?.n ?? 0;
@@ -434,7 +434,7 @@ export class MemoryRepo implements Repo {
   async tokensSince(sinceIso: string): Promise<TokenSum[]> { return sumTokens(this.generations.filter((g) => g.created_at >= sinceIso)); }
   async screenedOutCount(deviceHash: string, since: Date): Promise<number> {
     const s = iso(since);
-    return this.screenings.filter((x) => x.device_hash === deviceHash && x.created_at >= s).length;
+    return this.screenings.filter((x) => x.device_hash === deviceHash && x.created_at >= s && x.class !== 'off_topic').length;
   }
   async insertScreening(deviceHash: string, actionId: number, cls: ScreenClass, at: Date): Promise<void> {
     this.screenings.push({ device_hash: deviceHash, action_id: actionId, class: cls, created_at: iso(at) });

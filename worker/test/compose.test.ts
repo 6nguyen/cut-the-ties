@@ -193,6 +193,7 @@ describe('checkScriptBlocks (seed check, §4)', () => {
   it('fails when a combination can fall outside the word range', () => {
     const long = Array.from({ length: 60 }, (_, i) => `word${String.fromCharCode(97 + (i % 26))}`).join(' ');
     expect(run(edit((b) => { slot(b, 'close').variants[0].text += ` ${long}`; }))).toThrow(/longest combination is \d+ words, above max_words/);
-    expect(run(edit((b) => { for (const s of b.slots) if (s.name !== 'ask') for (const v of s.variants) v.text = v.text.includes('{{') ? v.text : 'So.'; }))).toThrow(/shortest combination is \d+ words, below min_words/);
+    // mission-and-topics §3: without the conditions line (about fifty words on its own) the fixed text alone is under min_words.
+    expect(run(edit((b) => { for (const s of b.slots) for (const v of s.variants) v.text = s.name === 'ask' ? v.text.replace('{{conditions_line}} ', '') : v.text.includes('{{') ? v.text : 'So.'; }))).toThrow(/shortest combination is \d+ words, below min_words/);
   });
 });

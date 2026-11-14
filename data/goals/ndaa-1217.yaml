@@ -9,6 +9,7 @@ window_start: 2026-10-01
 window_end: 2026-12-31
 decision_date: 2026-12-10   # placeholder: set to the conference report date when scheduled
 priority: 3
+topics: [israel, wars]   # mission-and-topics §2
 eligibility: {"any": [{"house": {}}, {"senator": {}}]}
 image: hasc-hearing-room   # site-imagery §3: the two NDAA goals show the committee room, not the landing's Capitol
 our_picks: []
