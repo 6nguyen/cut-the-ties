@@ -6,7 +6,7 @@
 | Feature | State | What it does | Spec | Change | Updated |
 |---|---|---|---|---|---|
 | action-router | BUILDING | Address → delegation → two ranked goal cards, return visit,… | [spec](specs/action-router.md) | [go-live-checklist](prd/go-live-checklist.md) 0/1 +2 | 2026-11-13 |
-| goal-pages | BUILDING | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | [no-owner-ties](prd/no-owner-ties.md) 0/2 | 2026-11-13 |
+| goal-pages | BUILDING | Goals overview, goal detail and prep pages, goal lifecycle,… | [spec](specs/goal-pages.md) | [no-owner-ties](prd/no-owner-ties.md) 1/2 | 2026-11-13 |
 | maintainer-tooling | BUILDING | Draft a sourced position row, weekly report digest by email… | [spec](specs/maintainer-tooling.md) | [state-holdings-sweep](prd/state-holdings-sweep.md) 2/3 | 2026-11-08 |
 | deployment | PINNED | Merge → Worker + D1 seed + Pages deploy, PR previews, rollb… | [spec](specs/deployment.md) | [district-flip-2027](prd/district-flip-2027.md) 0/1 | 2026-11-13 |
 | electoral-record | PINNED | One-seat sourced record before a 2028 primary: member's pos… | [spec](specs/electoral-record.md) | [primary-2028-picks](prd/primary-2028-picks.md) 0/1 | 2026-11-13 |
