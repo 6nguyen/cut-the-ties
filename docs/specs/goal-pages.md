@@ -86,7 +86,7 @@ there.
    stored place shows "Enter your address" plus a plain link to the first
    action). A closed goal has no Take action block.
 5. **Donate (`/donate`).** States "This site is built and paid for by
-    George Nguyen, one person, not a PAC or organisation. Donations are not
+    one volunteer, not a PAC or organisation. Donations are not
     tax-deductible and are not political contributions to any candidate.",
     then "Donations pay for hosting and the model that drafts your
     documents. Nothing else is funded." No running cost is shown; actual
@@ -101,9 +101,14 @@ there.
     section, one line per image a page shows and absent while none does
     ([site-imagery.md](site-imagery.md)). It says who runs the site (one person,
     not a PAC), what it does, who pays and links to `/donate` and
-    `/privacy`. `/privacy` lists what is stored (district only in the
-    browser and on the server, never the address; receipts without
-    identity; shingle hashes, not document text) and what is sent where
+    `/privacy`. `/about` opens "Cut the Ties is built and run by one
+    volunteer. It is not a PAC, a campaign or an organisation, and it is
+    not affiliated with any candidate or party." No page names the owner
+    or links the owner's GitHub account; a build test enforces it
+    (`web/test/no-owner-ties.test.ts`, run after `build` in CI).
+    `/privacy` lists what is stored (district only in the browser and on
+    the server, never the address; receipts without identity; shingle
+    hashes, not document text) and what is sent where
     (address → Census Geocoder through the Worker, not logged; when
     `PUBLIC_SUGGEST_PROVIDER` is set, that bullet instead names the
     provider and the three paths: the characters typed go from the
@@ -122,8 +127,7 @@ there.
     holds $<israel_bonds_usd> (as of <holdings_date>)" with a "source"
     link to `holdings_source`; `none` → "Israel Bonds: holds none (as of
     <holdings_date>)" with the same source link; `unknown` → "Israel
-    Bonds: not yet sourced" with a "help us find it" link to the research
-    file on GitHub (`RESEARCH_URL`). The state action's ask replaces
+    Bonds: not yet sourced", with no link. The state action's ask replaces
     `{decider}` with the row's `decider` when set, else "your state
     treasurer" (static pages, which have no state, always show the
     fallback). `worker/src/state-copy.ts`: `holdingsLine`, `fillAsk`,

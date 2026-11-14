@@ -1,5 +1,5 @@
 # No owner ties — PRD
-Status: READY 2026-11-11 (auto) · Owner: George Nguyen · Last updated: 2026-11-11
+Status: TESTING (§2 owner checklist: Stripe and Instagram) · Owner: George Nguyen · Last updated: 2026-11-13
 
 ## Problem
 The owner is about to open an Instagram account for the site and pitch it
@@ -104,16 +104,16 @@ partner's repost. The copy change is the same for every visitor.
   'Israel Bonds: not yet sourced', with no link".
 
 ## Acceptance criteria
-- [ ] `/about` and `/donate` show the copy in Expected behavior 1–2; the
+- [x] `/about` and `/donate` show the copy in Expected behavior 1–2; the
       owner's name appears on neither.
-- [ ] A state target with `holdings_status: unknown` shows "Israel Bonds:
+- [x] A state target with `holdings_status: unknown` shows "Israel Bonds:
       not yet sourced" and no link; `held` and `none` targets still show
       "source" linking `holdings_source` (`Target.test.ts` updated, not
       weakened: the held and none cases keep their assertions).
-- [ ] The build guard fails when either string is put back into any page
+- [x] The build guard fails when either string is put back into any page
       (checked once by hand during the build, then reverted), and passes
       on the shipped build.
-- [ ] `grep -ri -E 'nguyen|github.com/6nguyen'` over the deployed site's
+- [x] `grep -ri -E 'nguyen|github.com/6nguyen'` over the deployed site's
       HTML (`/`, `/about/`, `/donate/`, `/privacy/`, every `/goals/*` and
       a state results page) finds nothing.
 - [ ] Owner: the Stripe account's public business name, statement
@@ -124,30 +124,41 @@ partner's repost. The copy change is the same for every visitor.
       `cutthetiesmovement.org`, is not linked to a personal Facebook or
       Instagram account in Accounts Center, has contact syncing off and
       has "suggest account to others" off.
-- [ ] Landing page weight is unchanged (≤100 KB transferred).
+- [x] Landing page weight is unchanged (≤100 KB transferred).
 
 ## Rollout & metrics
 No flag; ships on the next deploy. Measure: the deployed-HTML grep above
 returns nothing.
 
-## State (updated 2026-11-11, PR #103)
+## State (updated 2026-11-13, PR #110)
 - Sections:
-  - [ ] 1. Site copy, link removal and build guard
-  - [ ] 2. Owner checklist
-- Completed: PRD written.
-- Folded: none.
-- Branch / open PRs: `docs/no-owner-ties`, PR #103 (this PRD).
-- Files changed (file:line map): to touch in §1: `web/src/pages/about.astro:12`,
-  `web/src/pages/donate.astro:9`, `web/src/components/Target.tsx:5,151`,
-  `worker/src/state-copy.ts:5-6`, `web/src/components/Target.test.ts:10,36,44-48`,
-  a new build guard test under `web/`, `docs/specs/goal-pages.md` §5–7,
-  `docs/prd/state-holdings-sweep.md:69` (its shipped "help us find it" line).
-- Tests run + result: none (docs only).
-- Remaining: §1, §2.
+  - [x] 1. Site copy, link removal and build guard · PR #109 merged
+  - [!] 2. Owner checklist · `feat/no-owner-ties-owner-checklist` · PR #110 · blocked: §2.1 needs the owner's Stripe and Instagram accounts (an agent cannot set them); §2.2 done, see below
+- Completed: §1 shipped and deployed 2026-11-13 (deploy run 43527407805
+  from merge 656e4b0). §2.2 deployed-HTML grep run 2026-11-13 against
+  `https://cutthetiesmovement.org`: `/`, `/about/`, `/donate/`,
+  `/privacy/`, `/goals/`, `/results/?state=OH&district=1`,
+  `/goals/{house-caucus,ndaa-1217,senate-leader,state-bonds}/`,
+  `/goals/state-bonds/prep/` (11 pages, all 200) → 0 hits for
+  `nguyen|github.com/6nguyen`. `/api/goals/state-bonds/targets?state=OH`
+  returns `prior_vote: "Israel Bonds: not yet sourced"` with
+  `holdings_source_url: null` and no "help us find it". Landing `/` HTML
+  6,114 bytes transferred.
+- Folded: §1 (goal-pages.md §Behavior 5–7). §2 has no spec delta.
+- Branch / open PRs: `feat/no-owner-ties-owner-checklist`, PR #110 (§2 record).
+- Files changed (file:line map): this PR touches only
+  `docs/prd/no-owner-ties.md` and `docs/prd/README.md`.
+- Tests run + result: none this PR (docs only); §1's QA in the 2026-11-13
+  Changes entry.
+- Remaining: §2.1 (owner): Stripe public business name, statement
+  descriptor, support email and phone on checkout and receipts carry no
+  personal name or contact; Instagram signed up with a
+  `cutthetiesmovement.org` address, not linked to a personal account in
+  Accounts Center, contact syncing off, "suggest account to others" off.
+  When done, tick the two Owner criteria, set Status `SHIPPED`, archive.
 - Decisions since last update: none.
-- Known failures / blockers: none.
-- Next action: `/implement-prd-section docs/prd/no-owner-ties.md` §1.
-
+- Known failures / blockers: §2.1 is owner-only.
+- Next action: merge PR #110; owner completes §2.1, then `/implement-prd-section docs/prd/no-owner-ties.md` (next: none; archive).
 ## Open questions
 1. Does dropping the name from the "paid for by" line break a disclosure
    rule? Proposal: no change needed now. Federal disclaimer rules reach
@@ -161,3 +172,11 @@ returns nothing.
 ## Changes
 - 2026-11-11 — created (READY, auto): no blocking questions. Proposals 1–2
   became decisions.
+- 2026-11-13 — §1 built: `/about` and `/donate` copy, `unknown` holdings
+  line loses its link, `RESEARCH_URL` deleted, build guard added; CI runs
+  `build` before `test-web` so the guard checks the real `web/dist`. Spec
+  delta folded into goal-pages.md §5–7.
+- 2026-11-13 — §1 merged (PR #109) and deployed. §2.2 recorded: the
+  deployed-HTML grep over 11 production pages and the state-target API
+  found no owner name or GitHub link. §2.1 (Stripe, Instagram) waits on
+  the owner; Status → TESTING.

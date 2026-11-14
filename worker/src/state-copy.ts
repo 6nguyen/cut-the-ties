@@ -2,8 +2,6 @@
 // the Worker (route cards, fact block) and the static pages, so every amount shown is the CSV cell.
 import type { StateRow } from './types';
 
-/** Where a visitor can help source a state that still reads "not yet sourced". */
-export const RESEARCH_URL = 'https://github.com/6nguyen/cut-the-ties/blob/main/docs/research/state-israel-bonds.md';
 export const DEFAULT_DECIDER = 'your state treasurer';
 
 /** `{decider}` in an action's ask → the row's deciding body, else "your state treasurer". */

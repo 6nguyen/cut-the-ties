@@ -7,7 +7,7 @@ import { render } from 'preact-render-to-string';
 import { describe, expect, it } from 'vitest';
 import { parseCsv } from '@worker/load';
 import { targetsFor } from '@worker/route';
-import { RESEARCH_URL, fillAsk, holdingsLine, moneyUsd } from '@worker/state-copy';
+import { fillAsk, holdingsLine, moneyUsd } from '@worker/state-copy';
 import type { Action, Delegation, Goal, StateRow } from '@worker/types';
 import { Target, TargetStack, roleLine } from './Target';
 
@@ -33,7 +33,7 @@ describe('state target holdings copy', () => {
     const out = html(row);
     expect(out).toContain('holds $12,500,000 (as of 2026-09-30)');
     expect(out).toContain('href="https://sra.maryland.gov/holdings"');
-    expect(out).not.toContain(RESEARCH_URL);
+    expect(out).not.toContain('help us find it');
   });
   it('none: "holds none" with its date and source link, no amount', () => {
     const out = html(cell(FIXTURE[1]));
@@ -41,11 +41,12 @@ describe('state target holdings copy', () => {
     expect(out).toContain('href="https://tre.wa.gov/report"');
     expect(out).not.toMatch(/\$\d/);
   });
-  it('unknown: "not yet sourced" plus "help us find it" linking the research file', () => {
+  it('unknown: "not yet sourced" with no link after it (no-owner-ties §1.3)', () => {
     const out = html(cell(FIXTURE[2]));
-    expect(out).toContain('not yet sourced');
-    expect(out).toContain(`href="${RESEARCH_URL}"`);
-    expect(out).toContain('help us find it');
+    expect(out).toContain('Israel Bonds: not yet sourced');
+    expect(out).not.toContain('help us find it');
+    expect(out).not.toContain('github.com/6nguyen');
+    expect(out.slice(out.indexOf('not yet sourced'))).not.toMatch(/<a /);
   });
   it('every rendered amount equals the CSV cell, for the fixture rows and the shipped data/states.csv', () => {
     const rows = [...FIXTURE, ...parseCsv(readFileSync(CSV, 'utf8'))].map(cell);
