@@ -1,5 +1,5 @@
 # Mission and topics — PRD
-Status: READY 2026-11-13 (owner sign-off) · Owner: George Nguyen · Last updated: 2026-11-13
+Status: READY 2026-11-13 (owner sign-off) · Owner: George Nguyen · Last updated: 2026-11-14
 
 ## Problem
 The site is built as a general "call your representatives about the
@@ -169,18 +169,18 @@ with §2). Measure: screened-out `off_topic` rows per week in the digest
 before and after §4 (today's rate is the baseline the first digest after
 merge records).
 
-## State (updated 2026-11-13)
+## State (updated 2026-11-14)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [ ] 1. Mission strings
-  - [ ] 2. Topics on goals
-  - [ ] 3. Conditions on leadership asks
-  - [ ] 4. The screen accepts the mission
-  - [ ] 5. Docs and FAQ follow
-- Completed: none.
-- Branch / open PRs: `docs/mission-and-topics` (this PRD).
-- Remaining: all.
-- Next action: `/implement-prd-section` 1 after `no-owner-ties` merges (both touch `/about`).
-
+  - [~] 1. Mission strings · feat/mission-and-topics
+  - [~] 2. Topics on goals · feat/mission-and-topics
+  - [~] 3. Conditions on leadership asks · feat/mission-and-topics
+  - [~] 4. The screen accepts the mission · feat/mission-and-topics
+  - [~] 5. Docs and FAQ follow · feat/mission-and-topics
+- Completed: all five built on one branch (owner asked for the whole PRD at once); none merged yet.
+- Branch / open PRs: `feat/mission-and-topics` (one PR for §1–§5, base `docs/mission-and-topics`).
+- Folded: §1–§5 into action-router, goal-pages, standard-scripts, personalised-documents, member-pages.
+- Remaining: none.
+- Next action: owner merges the PR; the archive commit on the same branch records its number.
 ## Open questions
 0. Owner sign-off on every §1 string, including the condition list
    (row 10). Answered 2026-11-13: accepted as written, with the
@@ -202,3 +202,17 @@ merge records).
 - 2026-11-13 — owner signed off every §1 string and the five conditions;
   READY. Proposals 1–3 became decisions: four topics, `off_topic` stops
   counting toward the device block, the "Kick out" titles stay.
+- 2026-11-14 — §1–§5 built on one branch and one PR instead of one PR
+  per section (owner: "complete the next up PRD entirely"); every string
+  is the signed-off §1 table, the owner's merge is the review gate.
+- 2026-11-14 — leadership call actions' `max_words` 160 → 220: the
+  conditions line (five conditions, about 50 words) pushed the longest
+  composition to 171 words, over the old bound (`standard-scripts.md`
+  Behavior 3).
+- 2026-11-14 — the web manifest and icon description (not in the §1
+  table; it repeated the old description) now carry row 7, as the
+  default description does.
+- 2026-11-14 — the five conditions ship without `source_url`; the goal
+  page shows "position unsourced" until the owner adds the leaders'
+  statements (follow-up, `data/goals/house-caucus.yaml`,
+  `senate-leader.yaml`).

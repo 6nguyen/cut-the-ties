@@ -48,9 +48,15 @@ would do. Generation, its guardrails, receipts and reports are in
    the act page sends; absent or invalid = random), so one seed always gives
    one script and the next seed a different one; `done.variant` names the
    chosen block ids joined by `.`.
-3. **Self asks and the leader line.** Only an incumbent gets the self asks
-   (commit in public or step aside); every other target gets the vote-only
-   asks, each ending in `{{leader_line}}`: one code-built sentence
+3. **Self asks, the conditions line and the leader line.** Only an
+   incumbent gets the self asks (commit in public or step aside); every
+   other target gets the vote-only asks. A leadership goal's ask variants
+   place `{{conditions_line}}`: one code-built sentence (`conditionsLine`,
+   `worker/src/generate.ts`) "That means: <condition>; <condition>; ….",
+   the goal's `conditions` texts in file order with their trailing
+   punctuation dropped, empty for a goal without conditions. The
+   leadership call actions' `doc_format.max_words` is 220 so the longest
+   composition fits. Each vote-only ask also ends in `{{leader_line}}`: one code-built sentence
    (`leaderLine`, `worker/src/generate.ts`) on the incumbent leader of the
    target's chamber (the file's `incumbents`), from that leader's row in the
    goal's positions file — `for`: "<Leader> has made that commitment in

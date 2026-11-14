@@ -23,11 +23,15 @@ there.
    ≥768 px. The footer, and each goal page's aside, carry the
    decision-date feed link (`decision-feed.md`).
 2. **Goal detail (`/goals/<slug>`).** Hero (category chip, status chip
-   when closed, title, summary, decision date) over the goal's photo,
+   when closed, title, the goal's topic labels under it, summary,
+   decision date) over the goal's photo,
    full bleed; the prep page's hero carries the same photo
    ([site-imagery.md](site-imagery.md) Behavior 12); "The basics / What is
    going on" (`detail_md` rendered as markdown, else the summary); "What
-   we are asking for"; "Who makes the call, and when" (`decider`, decision
+   we are asking for" (`what_we_want`; a leadership goal lists its
+   `conditions` under it in file order, each with its topic label, text
+   and a source link with date, or "position unsourced" when the row has
+   no `source_url`); "Who makes the call, and when" (`decider`, decision
    date, window end); "Who we would back instead" block when `our_picks` is non-empty (first pick: name, rationale,
    source link, signal date); the goal's actions as buttons to
    `/goals/<slug>/act/<action>`; partner campaign link when `partner_url`
@@ -149,7 +153,16 @@ there.
   `our_picks` (≤3 rows with name, rationale, source_url and an optional
   `bioguide_id`, which must be a `members.csv` row or the load stops with
   `goal <slug>: our_picks[<i>] bioguide_id <id> is not in members.csv`),
-  `prep_md` (when
+  `topics` (every goal: one or more of `israel`, `lobby_money`, `wars`,
+  `healthcare`, no repeats; the labels are `TOPIC_LABELS` in
+  `worker/src/types.ts`: "US ties with Israel", "Lobby money", "Wars",
+  "Healthcare"), `conditions` (leadership goals only, at least one row
+  `{topic, text, source_url?, source_date?}`; `topic` known, `text`
+  digit-free, `source_url` a URL and `source_date` `YYYY-MM-DD` when
+  set; any other category with `conditions` stops the load), both stored
+  as JSON in the `goals.topics` and `goals.conditions` D1 columns
+  (`worker/scripts/migrate.ts` adds them to production D1), `prep_md`
+  (when
   non-empty: exactly the six `##` headings of `worker/src/prep.ts` in
   order, each non-empty, "Where things stand" carrying an ISO date),
   `sources`

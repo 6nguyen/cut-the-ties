@@ -17,7 +17,7 @@ updates.
    follow the receipt's action `type` (`call`, `letter`,
    `public_comment`); `captain_lists` counts receipts with `kind
    'captain-list'`. Action receipts with `channel 'email'`
-   (`personalised-documents.md` §4 email step) are left out of every
+   (`email-step.md`) are left out of every
    bucket: the counters and the echo line count calls. The `district` buckets cover receipts whose `state`
    and `district` match; the `state` buckets cover every receipt in the
    state, the district included. `district` is optional (a senator's page
