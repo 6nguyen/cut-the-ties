@@ -13,7 +13,7 @@ unread. The receipt itself and the share sheet are in
 1. **Reminder link** (`one-screen-receipt` §2.6). On the receipt
    screen, the first of its three text links (`[data-remind]`): "Remind
    me to call (.ics)" after a letter, a comment or an emailed script
-   (`personalised-documents.md` §4 email step, receipt `channel
+   (`email-step.md`, receipt `channel
    'email'`), "Remind me before the vote (.ics)" after a call. One tap
    downloads the `.ics` of §2 for the default date (10:00 local on the
    next weekday, never later than the goal's decision date; 10:00

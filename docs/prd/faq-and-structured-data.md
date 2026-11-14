@@ -119,12 +119,14 @@ notes are to the owner and are not published.
    have to re-enter the address. The privacy page lists everything that
    is stored. [link `/privacy`]
 9. **Who runs this site, and who pays for it?**
-   Cut the Ties is built and run by one volunteer. It is not a PAC, a
+   Cut the Ties helps you call Congress to cut the ties that work against you: US military ties with Israel, the lobby money behind them, wars without end, healthcare held hostage, and the Democratic leaders who keep all of it in place.
+   It is built and run by one volunteer. It is not a PAC, a
    campaign, a party or an organisation, and it is not affiliated with
    any candidate. Donations pay for hosting and the model that drafts
    your documents; nothing else is funded. [wording from
    `no-owner-ties` §1; link `/about`]
 10. **Is this about US policy or about Israelis?**
+    Cut the Ties helps you call Congress to cut the ties that work against you: US military ties with Israel, the lobby money behind them, wars without end, healthcare held hostage, and the Democratic leaders who keep all of it in place.
     It is about US policy: how the United States spends public money and
     where it sends its military. It is not about Israelis or Jewish
     people, and the site opposes antisemitism and every other bigotry.
@@ -151,7 +153,8 @@ truncates. The section is absent when no row publishes.
 ### 3. Structured data and freshness
 `Base.astro` emits one `<script type="application/ld+json">` holding an
 `@graph` of `Organization` (`name` "Cut the Ties", `url` the site origin,
-`logo` `/icon-512.png`, `description` the §1.9 first sentence) and
+`logo` `/icon-512.png`, `description` the mission line, verbatim: the
+`MISSION` constant in `worker/src/types.ts`, mission-and-topics §1 row 1) and
 `WebSite` (`name`, `url`); no person, no `sameAs`. The landing adds
 `FAQPage` built from the same published rows (`mainEntity` of
 `Question`/`Answer` with the answer as plain text, tokens filled, source
@@ -208,3 +211,5 @@ on the site (no analytics, per `/privacy`).
 ## Changes
 - 2026-11-13 — created (DRAFT, blocking: owner answer sign-off) from the
   owner's homepage copy guide, Part 2 and Part 3.
+- 2026-11-14 — answers 9 and 10 and the `Organization` description open
+  with the mission line (mission-and-topics §5); still DRAFT.

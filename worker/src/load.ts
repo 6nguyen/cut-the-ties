@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fillLeader, leaderName } from './leader';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { CAUCUSES, CONTACT_KINDS, HOLDINGS_STATUSES, type Action, type Caucus, type Chamber, type Goal, type LeadershipPair, type Member, type MemberElect, type Office, type Party, type Position, type StateRow } from './types';
+import { CAUCUSES, CONTACT_KINDS, HOLDINGS_STATUSES, type Action, type Caucus, type Chamber, type Goal, type LeadershipPair, type Member, type MemberElect, type Office, type Party, type Position, type StateRow, type Condition, type Topic, TOPICS } from './types';
 import { parseRule } from './ranking';
 import { checkPrep } from './prep';
 import { HOUSE_SEATS, districtError } from './districts';
@@ -98,6 +98,33 @@ function checkLeaderPoints(goals: readonly Goal[], actions: readonly Action[], m
 }
 
 /** personalised-documents §1: `reasons` is ≤6 angles, each a non-empty `angle` with 1–5 `points` of ≤130 chars, no digits (numbers come from sourced rows, never from a framing). */
+/** mission-and-topics §2: every goal names one or more known topics; the error names the goal. */
+function checkTopics(g: Pick<Goal, 'slug' | 'topics'>): void {
+  const list = JSON.parse(g.topics) as unknown;
+  if (!Array.isArray(list) || list.length < 1) throw new Error(`goal ${g.slug}: topics must list at least one of ${TOPICS.join(', ')}`);
+  for (const t of list) if (!TOPICS.includes(t as Topic)) throw new Error(`goal ${g.slug}: unknown topic ${String(t)} (known: ${TOPICS.join(', ')})`);
+  if (new Set(list).size !== list.length) throw new Error(`goal ${g.slug}: topics repeats an entry`);
+}
+
+/** mission-and-topics §3: a leadership goal lists ≥1 condition {topic, text, source_url?, source_date?}; any other goal carries none. */
+function checkConditions(g: Pick<Goal, 'slug' | 'category' | 'conditions'>): void {
+  const list = JSON.parse(g.conditions) as unknown;
+  if (!Array.isArray(list)) throw new Error(`goal ${g.slug}: conditions must be a list`);
+  if (g.category !== 'leadership') {
+    if (list.length > 0) throw new Error(`goal ${g.slug}: conditions belong to leadership goals only`);
+    return;
+  }
+  if (list.length < 1) throw new Error(`goal ${g.slug}: a leadership goal needs at least one condition`);
+  list.forEach((c, i) => {
+    const e = c as Partial<Condition>;
+    if (!TOPICS.includes(e?.topic as Topic)) throw new Error(`goal ${g.slug}: conditions[${i}] needs a known topic (${TOPICS.join(', ')})`);
+    if (typeof e.text !== 'string' || e.text.trim() === '') throw new Error(`goal ${g.slug}: conditions[${i}] needs text`);
+    if (/\d/.test(e.text)) throw new Error(`goal ${g.slug}: conditions[${i}] holds a number; conditions carry no figures or bill numbers`);
+    if (e.source_url !== undefined && !/^https?:\/\//.test(String(e.source_url))) throw new Error(`goal ${g.slug}: conditions[${i}] source_url must be a URL`);
+    if (e.source_date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(e.source_date))) throw new Error(`goal ${g.slug}: conditions[${i}] source_date must be YYYY-MM-DD`);
+  });
+}
+
 function checkReasons(slug: string, raw: string): void {
   const list = JSON.parse(raw) as unknown;
   if (!Array.isArray(list)) throw new Error(`goal ${slug}: reasons must be a list`);
@@ -314,6 +341,8 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
         our_picks: json(y.our_picks ?? []),
         sources: json(y.sources ?? []),
         reasons: json(y.reasons ?? []),
+        topics: json(y.topics ?? []),
+        conditions: json(y.conditions ?? []),
         decider: str(y.decider),
         successor_slug: str(y.successor_slug),
         this_week: str(y.this_week),
@@ -335,6 +364,8 @@ export function loadRows(dataDir: string, updatedAt = new Date().toISOString()):
       checkPicks(g, () => (rosterIds ??= new Set(parseCsv(readFileSync(join(dataDir, 'members.csv'), 'utf8')).map((r) => r.bioguide_id))));
       checkJsonList(g.slug, 'sources', g.sources, ['title', 'url']);
       checkReasons(g.slug, g.reasons);
+      checkTopics(g);
+      checkConditions(g);
       checkPrep(g.slug, g.prep_md);
       const pair = checkPair(f, g, y.pair);
       if (pair) pairs[g.slug] = pair;

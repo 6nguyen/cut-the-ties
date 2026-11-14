@@ -22,7 +22,7 @@ const padilla = { bioguide_id: 'P000145', name: 'Alex Padilla', party: 'D', role
 const schiff = { ...padilla, bioguide_id: 'S001150', name: 'Adam Schiff' } as TargetCard;
 const ndaa: GoalCard = {
   slug: 'ndaa-1217', title: 'Strip §1217', category: 'federal_vote', summary: 'S', decision_date: '2026-12-10', decision_at: null, decision_date_confirmed: false, ask_text: 'Ask them',
-  action_href: '/goals/ndaa-1217/act/ndaa-1217-call', action: 'ndaa-1217-call', short_label: 'NDAA §219 / §1217', what_we_want: 'Strip it', partner_url: null, targets: [correa, padilla, schiff],
+  action_href: '/goals/ndaa-1217/act/ndaa-1217-call', action: 'ndaa-1217-call', short_label: 'NDAA §219 / §1217', what_we_want: 'Strip it', topics: ['israel', 'wars'], partner_url: null, targets: [correa, padilla, schiff],
 } as GoalCard;
 const bonds: GoalCard = { ...ndaa, slug: 'state-bonds', title: 'Israel bonds', category: 'state', action: 'state-bonds-call', short_label: 'Israel bonds', targets: [] };
 const routeResponse: RouteResponse = { state: 'CA', district: 46, house: { name: 'Lou Correa' }, senators: [{ name: 'Alex Padilla' }, { name: 'Adam Schiff' }], goals: [ndaa, bonds] } as unknown as RouteResponse;

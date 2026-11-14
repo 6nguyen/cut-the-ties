@@ -35,6 +35,8 @@ CREATE TABLE goals (
   our_picks TEXT NOT NULL DEFAULT '[]',
   sources TEXT NOT NULL DEFAULT '[]',
   reasons TEXT NOT NULL DEFAULT '[]',
+  topics TEXT NOT NULL DEFAULT '[]',
+  conditions TEXT NOT NULL DEFAULT '[]',
   decider TEXT,
   successor_slug TEXT,
   this_week TEXT,

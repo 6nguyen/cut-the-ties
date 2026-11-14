@@ -8,7 +8,7 @@ number or a name that is not a row here.
 | File | Table | Notes |
 |---|---|---|
 | `ids.md` | (registry) | `kind \| id \| slug \| status \| since`: every goal and action id ever published. Ids are assigned once, never changed, never reused after a file is removed (its row turns `retired`); the next id is the highest ever used plus one. The loader refuses a YAML id that is missing, duplicated, retired, unregistered or on another slug (stable-data-ids §1-2). |
-| `goals/<slug>.yaml` | `goals` | `id` from `ids.md`. `eligibility` is a JSON rule evaluated by `worker/src/ranking.ts`; grammar below. The seed rejects a rule outside it. `status` lifecycle below. |
+| `goals/<slug>.yaml` | `goals` | `id` from `ids.md`. `eligibility` is a JSON rule evaluated by `worker/src/ranking.ts`; grammar below. The seed rejects a rule outside it. `status` lifecycle below. `topics` (every goal) and `conditions` (leadership goals) below. |
 | `actions/<slug>.yaml` | `actions` | One file per action; `id` from `ids.md`; `goal` names the goal slug. `form_schema`, `prompt_template` and `doc_format` drive the §4 generator; `standard_template` or `script_blocks` the no-model script; shape below. |
 | `members.csv` | `members` | One row per sitting member. Flags (`hasc`, `conferee`, `rc243`, `jrd_april_2026`, `btb_cosponsor`, `target_2028`) stay empty until sourced. `caucus` (`D`/`R`/empty) derives from a `D` or `R` party; an `I` row must say (King, Sanders `D`) or the seed fails naming it. |
 | `members_elect.csv` | `members_elect` | One row per member-elect of a called race replacing a member with `not_returning` or `left_office` (leadership-routing §1.3). `elect_id` is `<STATE>-<district \| S>-<surname-kebab>`; `contact_url` the member-elect's own https site; `phone` optional and only from that site; `source_url`/`source_date` the called race. The seed rejects a duplicate id, a `replaces` that is unknown, in another seat or returning, two rows for one seat, a bad phone/URL/date, and any row after 2027-01-10. |
@@ -122,6 +122,21 @@ different angles (who our government answers to, being dragged into wars, my
 money, Gaza, readiness, speech) so a caller can put the gripe in their own
 words without memorising the case. They carry no figures; numbers come from
 sourced rows.
+`topics` (mission-and-topics §2, required) lists one or more of the site's
+ties, each once: `israel`, `lobby_money`, `wars`, `healthcare`
+(`TOPICS` in `worker/src/types.ts`; labels in `TOPIC_LABELS`). The landing
+and goal cards, the goal page and the member page print the labels under
+the title; the screen prompt tells the model which ties the goal is about.
+Adding a tie is a code change (the constant, its label, this list).
+`conditions` (mission-and-topics §3) is required on a `leadership` goal and
+refused on any other: one or more `{topic, text, source_url?, source_date?}`
+rows, `topic` from the list above, `text` a short imperative with no digits
+(`source_url` must be a URL, `source_date` YYYY-MM-DD; a row without a
+source shows "position unsourced" on the goal page). They are the promises
+the goal's `what_we_want` ends with ("…to every condition below."): the
+goal page lists them under the ask, the standard script carries them as
+one sentence (`{{conditions_line}}`, "That means: …"), and the fact block
+gives the model one `Condition (<label>): <text>` line each.
 
 ## Prep pages (PRD §3)
 `prep_md` is maintainer-written markdown rendered at `/goals/<slug>/prep`;
@@ -203,7 +218,10 @@ eligible goal is paired with the state goal.
     that must render non-empty, e.g. `user_affiliation`).
   - `text` uses the same placeholders as `standard_template`
     (`{{target_name}} {{target_role}} {{ask}} {{mention}}
-    {{position_line}} {{prior_vote_line}} {{pick_line}} {{user_<field>}}`).
+    {{position_line}} {{prior_vote_line}} {{pick_line}} {{leader_line}}
+    {{conditions_line}} {{user_<field>}}`). `{{conditions_line}}` is the
+    goal's conditions as one sentence, so a variant that spells the ask
+    itself still carries them (`{{ask}}` has them appended).
     No digits (the output check rejects numbers outside the fact
     block), no URLs, emails or handles, no blocked terms.
   - The seed check composes every target in scope with the shortest,

@@ -20,7 +20,7 @@ export const ICO_SIZES = [16, 32, 48];
 export const MANIFEST = {
   name: 'Cut the Ties',
   short_name: 'Cut the Ties',
-  description: 'Find the two things you can do this week to cut US military ties with Israel.',
+  description: "Enter your address to find your House member, senators and state treasurer, then get a 60-second script for this week's calls on US ties with Israel, lobby money, wars and healthcare.",
   start_url: '/',
   display: 'standalone',
   background_color: '#FAF7F0',

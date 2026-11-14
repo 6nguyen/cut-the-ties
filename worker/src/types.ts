@@ -59,6 +59,15 @@ export const TAKES_OFFICE = '2027-01-03';
 /** action-router §7, call-the-right-office §1.2: the Capitol switchboard, dialled when the routed DC office has no number on file. */
 export const SWITCHBOARD = '202-224-3121';
 
+/** mission-and-topics §1 row 1: the one mission line (README, /about, the screen prompt). */
+export const MISSION = 'Cut the Ties helps you call Congress to cut the ties that work against you: US military ties with Israel, the lobby money behind them, wars without end, healthcare held hostage, and the Democratic leaders who keep all of it in place.';
+/** mission-and-topics §2: the ties a goal is about. Adding one is one entry here and one in data/README.md. */
+export const TOPICS = ['israel', 'lobby_money', 'wars', 'healthcare'] as const;
+export type Topic = (typeof TOPICS)[number];
+export const TOPIC_LABELS: Record<Topic, string> = { israel: 'US ties with Israel', lobby_money: 'Lobby money', wars: 'Wars', healthcare: 'Healthcare' };
+/** mission-and-topics §3: one condition of a leadership goal's ask; without `source_url` the goal page says "position unsourced". */
+export interface Condition { topic: Topic; text: string; source_url?: string; source_date?: string }
+
 export const CONTACT_KINDS = ['form', 'zip_gate', 'homepage'] as const;
 export type ContactKind = (typeof CONTACT_KINDS)[number];
 
@@ -115,6 +124,8 @@ export interface Goal {
   our_picks: string; // JSON [{name, rationale, source_url, signal, signal_date, bioguide_id?}]; bioguide_id is a members.csv row (site-imagery §4)
   sources: string; // JSON [{title, url}]
   reasons: string; // JSON [{angle, points[]}]: first-person starting points for the act form's "why" field
+  topics: string; // JSON Topic[] (mission-and-topics §2): one or more; the loader rejects a goal without one
+  conditions: string; // JSON Condition[] (§3): leadership goals only, ≥1; '[]' elsewhere
   decider: string | null; // who decides, one line (§2.2)
   successor_slug: string | null;
   this_week: string | null;
@@ -236,6 +247,7 @@ export interface Repo {
   insertGeneration(row: GenerationRow): Promise<void>;
   // generation-cost §1: one query behind the daily cap and the digest's spend block.
   tokensSince(iso: string): Promise<TokenSum[]>;
+  /** Screenings since `since` that count toward the device block: injection and harmful, never off_topic (mission-and-topics §4). */
   screenedOutCount(deviceHash: string, since: Date): Promise<number>;
   insertScreening(deviceHash: string, actionId: number, cls: ScreenClass, at: Date): Promise<void>;
   blockedUntil(deviceHash: string): Promise<Date | null>;

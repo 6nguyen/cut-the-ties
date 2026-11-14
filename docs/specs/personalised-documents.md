@@ -43,7 +43,15 @@ stores identifies them. Address routing, goals and ranking are in
    model-draft count ≥ `dailyCap(...)`) →
    `claude-haiku-5-5` screen (`ok | off_topic | injection | harmful`,
    logged by device hash and class only; a screen that throws falls
-   through to the standard script with `reason: upstream`). The global
+   through to the standard script with `reason: upstream`). The screen's
+   system prompt (`screenSystemPrompt`, `worker/src/generate.ts`) carries
+   the `MISSION` line, every tie's label and the goal's own topics; `ok`
+   is text about this goal, about any of the site's ties, about this
+   official's record (votes, money taken, statements) on any of them, or
+   the writer's own reason to care; `off_topic` is none of those (a
+   complaint about this website, another country's politics with no tie
+   to this official, a request unrelated to Congress). An `off_topic`
+   screening is logged but never counts toward the device block below. The global
    daily cap is `dailyCap(spent, blended, today, budget, ceiling)` =
    `clamp(floor((budget − spent) / daysLeftInMonth / blended), 20,
    ceiling)` (`worker/src/cost.ts`): `spent` is the month's `costUsd`
@@ -56,7 +64,9 @@ stores identifies them. Address routing, goals and ranking are in
    `output_config.effort: 'low'`, `max_tokens` 700, letters and comments
    `'medium'`, 1500) plus a `<facts>` block
    assembled by code from D1 (target, committee role, stated position,
-   prior vote, goal ask, decision date, window, our pick; treasurer
+   prior vote, goal ask, decision date, window, our pick; a leadership
+   goal adds one `Condition (<topic label>): <text>` line per
+   `conditions` row; treasurer
    actions: bonds held, campaign, next comment date) and the user's
    `<user_fields>`, both labelled untrusted. The page shows the body as
    it streams.
@@ -121,24 +131,8 @@ stores identifies them. Address routing, goals and ranking are in
    the reminder (`commitment-funnel.md` §1), `/donate`, "Your other
    action". No share row before a receipt. Reports
    never change a position row.
-   **Email step** (`email-button`): "I can't call right now", the
-   closed-offices button, "Email it instead" and "Put it in writing" all
-   open, in place of the call row, a card "Send it in writing" with the
-   subject (the action's `email_subject`, `{city}` filled from the city
-   field), the message (`Dear <Role> <Surname>,` + blank line + the body
-   exactly as shown, standard script included + blank line +
-   `<first_name>, <city>`; nothing else, no model call), "Copy subject
-   and message", the contact link labelled by `contact_kind` ("Open the
-   contact form ↗" / "Open the contact form (asks for your ZIP first) ↗" /
-   "Open the office website, then Contact ↗"), a field hint by chamber
-   (House: name, address, ZIP, topic, message box, plus the ZIP+4
-   fallback; Senate: name, address, email, topic, message box; no
-   chamber: "Paste the message into the comment box."), "I sent it" and
-   "Back to calling". No `contact_form_url` → "This office lists no
-   contact form; the DC number is the only channel." and no "I sent it".
-   "I sent it" posts the call receipt's body plus `channel: 'email'`; the
-   funnel then runs as for a letter. A refused draft, a letter or a
-   comment action has no email step.
+   **Email step**: the "Send it in writing" card and "I sent it" are
+   `email-step.md`.
 5. **Standard script.** When no model may run, the route streams the
    action's standard script with a `reason` (`budget | unconfigured |
    limit | capacity | upstream`; `limit` is the caller's own per-office
@@ -168,7 +162,8 @@ stores identifies them. Address routing, goals and ranking are in
   with `MAX_GENERATIONS_PER_DAY` (default 500) as the ceiling and 20 as
   the floor while the budget is above zero; `max_tokens` 700
   for call scripts and 1500 otherwise; three screened-out attempts in
-  24 h block the device for 24 h.
+  24 h block the device for 24 h (`injection` and `harmful` rows count;
+  `off_topic` rows do not, `repo.screenedOutCount`).
 - `POST /api/receipt` `{goal, action, target, state?, district?,
   device, channel?}` → `{id}` (`channel` `'call'` (default) or `'email'`,
   stored on the row; any other value, or a `channel` on a captain list,
@@ -197,7 +192,8 @@ stores identifies them. Address routing, goals and ranking are in
   (`name, label, max, required, multiline?, hint?`), `prompt_template`
   (action guidance appended to the system prompt), `doc_format`
   (`kind, min_words, max_words, mentions[], ask`; `max_words` defaults
-  to 160, the call actions set 60–160) and `standard_template`
+  to 160, the call actions set 60–160, the two leadership call actions
+  60–220 for the conditions line) and `standard_template`
   (`standard-scripts.md`; required while the goal is active) and, on call
   actions, `email_subject` (required while the goal is
   active, ≤80 characters, no URL, email or phone, `{city}` the one

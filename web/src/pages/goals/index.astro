@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import SubscribeLine from '../../components/SubscribeLine.astro';
 import Photo from '../../components/Photo.astro';
-import { activeGoals, closedGoals, CATEGORY, fmtDate } from '../../lib/goals';
+import { activeGoals, closedGoals, CATEGORY, fmtDate, topicLabels } from '../../lib/goals';
 import { BAND, imageIdFor } from '../../lib/images';
 const goals = activeGoals();
 const closed = closedGoals();
@@ -11,7 +11,7 @@ const closed = closedGoals();
 const cardSizes = '(min-width: 1360px) 628px, (min-width: 768px) 47vw, 36vw';
 // The first card's band is the page's LCP element on a phone, so it alone loads eagerly; the rest stay lazy.
 ---
-<Base title="All goals — Cut the Ties" description="Everything being decided right now on US military ties with Israel, ordered by how much your call matters, and how past fights ended.">
+<Base title="All goals — Cut the Ties" description="Enter your address to find your House member, senators and state treasurer, then get a 60-second script for this week's calls on US ties with Israel, lobby money, wars and healthcare.">
   <section class="mx-auto max-w-[1360px] px-4 lg:px-10 py-10">
     <p class="label-code">All goals</p>
     <h1 class="display-lg mt-2">Everything being decided right now</h1>
@@ -22,10 +22,11 @@ const cardSizes = '(min-width: 1360px) 628px, (min-width: 768px) 47vw, 36vw';
           <div class="relative hero-gradient text-newsprint p-5 aspect-video overflow-clip flex flex-col justify-end">
             <div class="absolute inset-0 halftone pointer-events-none"></div>
             <Photo id={imageIdFor(g)} widths={[...BAND.widths]} sizes={cardSizes} quality={BAND.quality} eager={i === 0} />
-            <div class="relative flex gap-2 mb-2">
+            <div class="relative flex gap-2 mb-1">
               <span class="chip bg-hazard text-ink border-ink">{CATEGORY[g.category]}</span>
               <span class="chip bg-ink text-newsprint border-newsprint">Impact {i + 1}</span>
             </div>
+            <p class="relative label-code text-xs text-newsprint/80 mb-2">{topicLabels(g).join(' · ')}</p>
             <h2 class="relative headline-lg"><a href={`/goals/${g.slug}`} class="hover:underline">{g.title}</a></h2>
           </div>
           <div class="p-5 flex flex-col gap-3 flex-1">
