@@ -170,6 +170,7 @@ export function goalYaml(id: number, m: Member, e: ElectionRow, rollCallUrl?: st
     `id: ${id}   # from data/ids.md; never changed, never reused (stable-data-ids §1)`,
     `slug: ${slug}`,
     'category: electoral',
+    'topics: [israel]   # mission-and-topics §2: the record this page keeps is the Israel vote',
     `title: ${q(`Rep. ${m.name}'s record before the ${seat} 2028 primary`)}`,
     `summary: ${q(`Rep. ${m.name} voted to keep the integration section (roll call 243: ${m.rc243}). This is the record of that vote and of every position this site tracked, with the 2028 primary date and the candidate filing deadline from the ${m.state} election office.`)}`,
     `what_we_want: ${q(`A sourced record of where Rep. ${m.name} stood, and the dates that decide who is on the ${seat} 2028 primary ballot.`)}`,

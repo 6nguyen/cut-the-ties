@@ -9,26 +9,30 @@ documents, receipts and reports are in `personalised-documents.md`.
 
 ## Behavior
 1. **Landing (`/`).** The hero is the `capitol-dome-dusk` photo, full
-   bleed, under the ink treatment (`site-imagery.md`). One address field
+   bleed, under the ink treatment (`site-imagery.md`). Its strings are the
+   mission-and-topics §1 table: eyebrow "Call Congress · Cut the ties",
+   H1 "Call Congress to cut the ties that work against you", subhead "US
+   military ties with Israel. The lobby money behind them. Wars without
+   end. Healthcare held hostage. Enter your address: we find who
+   represents you, pick the two calls that matter most this week, and
+   give you a 60-second script for each.", `<title>` "Cut the Ties — call
+   Congress on Israel, lobby money, wars and party leaders" and the
+   default description (`Base.astro`, `/goals`, the OG card, the web
+   manifest) "Enter your address to find your House member, senators and
+   state treasurer, then get a 60-second script for this week's calls on
+   US ties with Israel, lobby money, wars and healthcare." One address
+   field
    ("Street address, city, state"), the button "Find my actions", the line
    "Full street address, or use your location: nothing is stored." and a
    link to all goals. Below it, every active goal as a card linking to
-   `/goals/<slug>`; these and the result cards (§5) carry a 16:9 photo
+   `/goals/<slug>`, each showing its topic labels (`goal-pages.md`
+   Behavior 2) under the category chip; these and the result cards (§5)
+   carry a 16:9 photo
    band, there above the CTA. Under the field, only when the browser
    offers `navigator.geolocation`, the control "Use my location instead"
-   (`on-device-districts.md`). When the Pages build sets
-   `PUBLIC_SUGGEST_PROVIDER` (`mapbox` or `geoapify`, with
-   `PUBLIC_SUGGEST_TOKEN`), the field is a combobox (`role="combobox"`,
-   `aria-expanded`, `aria-controls`, `aria-activedescendant`,
-   `autocomplete="off"`, a polite live count): three or more typed
-   characters followed by 250 ms idle request up to five US street
-   addresses, each shown as "street, city, ST ZIP" built from the
-   provider's structured fields; the open list shows the provider's
-   attribution under it; ArrowDown/ArrowUp move the highlight, Enter or a
-   tap picks it (§3), Escape or blur closes. A new keystroke aborts the
-   request in flight; a failure, a 429 or a 2 s timeout closes the list
-   with no message. With `none` (§Data & contracts) the plain field
-   renders unchanged. A return visitor with a stored district and an open
+   (`on-device-districts.md`). With a suggestion provider configured the
+   field is the address combobox of `address-suggest.md`; with `none` the
+   plain field renders unchanged. A return visitor with a stored district and an open
    commitment sees the "Your week" card above the field
    (`commitment-funnel.md` §3) instead of the redirect in §6.
 2. **ZIP or partial input.** A bare ZIP (`\d{5}(-\d{4})?`) is refused
@@ -161,29 +165,8 @@ documents, receipts and reports are in `personalised-documents.md`.
   unknown fields, so both are metric placeholders until one reads them
   (`worker/test/route.test.ts`). No new storage key: both paths save only
   the resolved `{state, district}`.
-- Pages build env: `PUBLIC_SUGGEST_PROVIDER` = `none | mapbox | geoapify`
-  (default `none`), `PUBLIC_SUGGEST_TOKEN` = the provider's public,
-  URL-restricted token. `web/src/lib/suggest.ts`: `configuredProvider()`
-  (read once in `index.astro`, warns and yields `none` on an unknown value
-  or a missing token), `shouldSuggest(q)`, `suggestLoop(suggester,
-  onResult, timings)` (debounce, abort, timeout, failure → `[]`) and
-  `suggest(q, signal): Promise<Suggestion[]>`, `Suggestion = {label, state,
-  lon, lat}`. One adapter per provider maps the response, builds the label
-  from structured fields (`shortLabel`) and drops results without a house
-  number, city, two-letter state, ZIP or point; a non-2xx response (429
-  included) rejects, which the loop turns into a closed list:
-  - Mapbox: `GET https://api.mapbox.com/search/geocode/v6/forward?q=…&autocomplete=true&country=us&types=address&limit=5&proximity=ip&access_token=…`;
-    `state` from `properties.context.region.region_code`, the point from
-    `geometry.coordinates`.
-  - Geoapify: `GET https://api.geoapify.com/v1/geocode/autocomplete?text=…&filter=countrycode:us&limit=5&apiKey=…`;
-    features with `properties.housenumber`, `state` from
-    `properties.state_code`, `lon`/`lat` from properties.
-  `PROVIDER_NAME` gives the name `/privacy` prints. Mapbox's geocoding
-  terms allow responses only "in conjunction with a Mapbox map", which
-  this on-device use is not, so the flag flip uses `geoapify`; the Mapbox
-  adapter stays behind the flag. Picking calls `resolveInState(state,
-  lon, lat)` from `web/src/lib/pip.ts`, then `route({state, district,
-  by_suggestion: true})`; `null` → `route({address: label})`.
+- Address suggestions: provider flags, `web/src/lib/suggest.ts` and the
+  per-provider adapters are `address-suggest.md` §Data & contracts.
 
 - Goal pages, `GET /api/goals`, the goal lifecycle, seed validation of
   goal rows and the donation config are in `goal-pages.md`; a `GoalCard`
@@ -233,11 +216,6 @@ documents, receipts and reports are in `personalised-documents.md`.
       only requests are `GET /districts/<name>.json` (no query string) and
       `POST /api/route {state, district, by_location}`
       (`web/src/lib/pip.test.ts` asserts the loader names).
-- [ ] Suggestion requests never fire for a bare ZIP, text under three
-      characters, or when the provider flag is `none`; a failed suggestion
-      request never shows an error or blocks a submit
-      (`web/src/lib/suggest.test.ts`,
-      `web/src/components/AddressForm.test.tsx`).
 
 
 ## Performance budget

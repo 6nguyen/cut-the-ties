@@ -52,6 +52,8 @@ export const ABUSIVE: Abusive[] = [
   why('garage sale', 'off_topic', 'announce my garage sale on saturday'),
   why('homework', 'off_topic', 'do my history homework on the civil war'),
   why('recipe', 'off_topic', 'give me a recipe for lentil soup'),
+  // mission-and-topics §4: a complaint about the website is off topic (and, unlike the two classes above, never counts toward a block).
+  why('your website', 'off_topic', 'your website is broken and the address box ate my zip code twice'),
 ];
 
 export const BENIGN: string[] = [
@@ -77,4 +79,7 @@ export const BENIGN: string[] = [
   'Peace is not naive; it is the only policy that has ever actually worked.',
   'I am a retired firefighter and a lifelong Democrat who feels unheard.',
   'My kids ask why their school has no library but the Pentagon has everything.',
+  // mission-and-topics §4: a reason about another of the site's ties, on a goal that is not about it, is still ok.
+  'I am calling about the defense bill because my insulin costs more every year while this gets a blank cheque.',
+  'The money he takes from AIPAC is the reason I do not trust his vote on this.',
 ];

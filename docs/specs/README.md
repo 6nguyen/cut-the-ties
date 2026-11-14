@@ -17,8 +17,10 @@ Rules:
 | Spec | Capability | Owner surfaces |
 |---|---|---|
 | [action-router.md](action-router.md) | Address → delegation → two ranked goal cards, return visit, targets per goal | `web/src/pages/index.astro`, `web/src/pages/results/`, `worker/src/route.ts`, `worker/src/ranking.ts` |
+| [address-suggest.md](address-suggest.md) | Address combobox behind `PUBLIC_SUGGEST_PROVIDER`: provider adapters, debounce and abort, on-device pick, no typed text to the Worker | `web/src/lib/suggest.ts`, `web/src/components/AddressForm.tsx` |
 | [goal-pages.md](goal-pages.md) | Goals overview, goal detail and prep pages, goal lifecycle, donate/about/privacy, state goal copy | `web/src/pages/goals/`, `web/src/pages/donate.astro`, `worker/src/prep.ts`, `worker/src/state-copy.ts` |
 | [personalised-documents.md](personalised-documents.md) | Act page → screened, generated document → receipt and report | `web/src/components/ActForm.tsx`, `worker/src/generate.ts`, `worker/src/anthropic.ts` |
+| [email-step.md](email-step.md) | "Send it in writing" card on the act page: subject, message, contact link by `contact_kind`, field hint by chamber, "I sent it" receipt | `web/src/components/ActForm.tsx`, `data/actions/*.yaml` `email_subject` |
 | [standard-scripts.md](standard-scripts.md) | Deterministic fallback document: per-action template or seeded script-block composition, leader line, same output check | `worker/src/standard.ts`, `worker/src/compose.ts`, `data/script_blocks/` |
 | [maintainer-tooling.md](maintainer-tooling.md) | Draft a sourced position row, weekly report digest by email, seed `data/` into D1 | `worker/scripts/draft-position.ts`, `worker/src/digest.ts`, `worker/scripts/seed.ts` |
 | [research-routines.md](research-routines.md) | Scheduled research routines (federal positions, Senate-leader signals, state holdings) with one PR-only output contract; House roll-call import | `.claude/routines/`, `worker/scripts/import-rollcall.ts`, `worker/src/import-rollcall.ts` |

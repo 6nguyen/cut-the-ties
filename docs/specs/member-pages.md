@@ -75,7 +75,8 @@ the public roster so every page, the router and the whip counts cover all
    district office listed yet" when the member has none. Below,
    one block per active goal whose targets include the member (same
    first-action scope rule as the result cards): goal title linking to
-   `/goals/<slug>`, the newest sourced position as a chip (`for`,
+   `/goals/<slug>` with its topic labels under it, the newest sourced
+   position as a chip (`for`,
    `uncommitted`, `against`, `unknown`) with its source link and date, or
    "No sourced statement yet"; the member's prior-vote and role flags
    spelled out ("NDAA conferee", "Roll call 243 …", …) or "No recorded

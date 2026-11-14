@@ -4,9 +4,10 @@ import { join } from 'node:path';
 import { marked } from 'marked';
 import { loadRows } from '@worker/load';
 import { leaderName } from '@worker/leader';
-import type { Action, Goal, LeadershipPair, Member } from '@worker/types';
+import { TOPIC_LABELS, type Action, type Condition, type Goal, type LeadershipPair, type Member, type Topic } from '@worker/types';
 
-export type { Action, Goal };
+export type { Action, Condition, Goal, Topic };
+export { TOPIC_LABELS };
 export interface Pick { name: string; rationale: string; source_url: string; signal?: string; signal_date?: string; /** site-imagery §4: a `members.csv` id (the loader checks it); the pick then shows that member's portrait and party colour. */ bioguide_id?: string }
 export interface Source { title: string; url: string }
 /** personalised-documents §1: one angle of the act form's reasons panel. */
@@ -37,6 +38,10 @@ export function actionsFor(goal: Goal): Action[] { return rows().actions.filter(
 export function picks(goal: Goal): Pick[] { return JSON.parse(goal.our_picks) as Pick[]; }
 export function sources(goal: Goal): Source[] { return JSON.parse(goal.sources) as Source[]; }
 export function reasons(goal: Goal): Reason[] { return JSON.parse(goal.reasons) as Reason[]; }
+/** mission-and-topics §2: the goal's topics as their row-2 labels, in YAML order. */
+export function topicLabels(goal: Goal): string[] { return (JSON.parse(goal.topics) as Topic[]).map((t) => TOPIC_LABELS[t]); }
+/** mission-and-topics §3: a leadership goal's conditions ([] elsewhere). */
+export function conditions(goal: Goal): Condition[] { return JSON.parse(goal.conditions) as Condition[]; }
 /** tap-receipts-everywhere §9.3: the name the act page fills `{{leader}}` with (the first action's incumbent of its chamber), or null. */
 export function leaderOf(goal: Goal): string | null { return leaderName(goal, rows().actions, rows().members); }
 export function markdown(md: string | null): string { return md ? (marked.parse(md, { async: false }) as string) : ''; }

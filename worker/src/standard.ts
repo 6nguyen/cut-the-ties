@@ -2,12 +2,12 @@
 // and the same facts the model would see, when no model may run (cap, budget 0, no key, upstream down).
 // No LLM touches it; it passes the same output check as a generated draft, and the seed proves it can.
 import type { Action, Chamber, Goal, Member, MemberElect, Position, StateRow } from './types';
-import { BLOCKLIST, checkOutput, digitRuns, factBlock, firstPick, incumbentIds, leaderLine, parseFormat, parseSchema, pickLeader, targetContact, targetName, wordCount, type Check, type DocFormat, type FormField, type Target } from './generate';
+import { BLOCKLIST, checkOutput, conditionsLine, digitRuns, factBlock, firstPick, incumbentIds, leaderLine, parseFormat, parseSchema, pickLeader, targetContact, targetName, wordCount, type Check, type DocFormat, type FormField, type Target } from './generate';
 import { combinations, compose, eligibleVariants, parseBlocks, type ComposeTarget, type ScriptBlocks } from './compose';
 import { priorVote } from './route';
 import { fillAsk } from './state-copy';
 
-export const FIXED_PLACEHOLDERS = ['target_name', 'target_role', 'ask', 'mention', 'position_line', 'prior_vote_line', 'pick_line', 'leader_line'] as const;
+export const FIXED_PLACEHOLDERS = ['target_name', 'target_role', 'ask', 'mention', 'position_line', 'prior_vote_line', 'pick_line', 'leader_line', 'conditions_line'] as const;
 export type StandardFacts = Record<(typeof FIXED_PLACEHOLDERS)[number], string>;
 const PLACEHOLDER_RE = /\{\{\s*([a-z0-9_]+)\s*\}\}/g;
 const NO_VOTE = 'No recorded vote yet';
@@ -37,13 +37,16 @@ export function standardFacts(goal: Goal, action: Action, fmt: DocFormat, t: Tar
   return {
     target_name: targetName(t),
     target_role: contact.role,
-    ask: fillAsk(action.ask_text, t.kind === 'state' ? t.row : null),
+    // mission-and-topics §3: a leadership ask carries its conditions as "That means: …"; `{{ask}}` templates get it
+    // appended, block variants that spell the ask themselves place `{{conditions_line}}`.
+    ask: [fillAsk(action.ask_text, t.kind === 'state' ? t.row : null), conditionsLine(goal)].filter(Boolean).join(' '),
     mention: fmt.mentions[0] ?? '',
     position_line: t.kind === 'member' && t.position ? POSITION_LINE[t.position.position] : '',
     prior_vote_line: t.kind === 'member' && t.prior_vote && t.prior_vote !== NO_VOTE ? `You are on the record (${t.prior_vote}).` : '',
     pick_line: pick ? `Our pick for that job is ${pick.name}.` : '',
     // leadership-routing §3.3: empty for the leader themself, for non-leadership goals and for state targets.
     leader_line: t.kind !== 'state' && t.leader ? leaderLine(t.leader) : '',
+    conditions_line: conditionsLine(goal),
   };
 }
 

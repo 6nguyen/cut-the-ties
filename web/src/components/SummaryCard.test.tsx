@@ -13,7 +13,7 @@ const schiff = { ...padilla, bioguide_id: 'S001150', name: 'Adam Schiff Jr.' } a
 const wiener = { bioguide_id: 'CA-11-wiener', name: 'Scott Wiener', party: 'D', role: 'Representative-elect', phone: null, position: 'unknown', position_source_url: null, prior_vote: 'No recorded vote yet', elect: { replaces_name: 'Nancy Pelosi', takes_office: '2027-01-03', contact_url: 'https://scottwiener.com/' } } as TargetCard;
 const goal = (o: Partial<GoalCard>): GoalCard => ({
   slug: 'ndaa-1217', title: 'Strip §1217', category: 'federal_vote', summary: 'S', decision_date: '2026-11-18', decision_at: null, decision_date_confirmed: false, ask_text: 'Ask',
-  action_href: '/goals/ndaa-1217/act/ndaa-1217-call', action: 'ndaa-1217-call', short_label: 'NDAA §219 / §1217', what_we_want: 'Strip it', partner_url: null, targets: [correa, padilla, schiff], ...o,
+  action_href: '/goals/ndaa-1217/act/ndaa-1217-call', action: 'ndaa-1217-call', short_label: 'NDAA §219 / §1217', what_we_want: 'Strip it', topics: ['israel', 'wars'], partner_url: null, targets: [correa, padilla, schiff], ...o,
 } as GoalCard);
 beforeAll(() => vi.useFakeTimers({ now: Date.parse('2026-11-06T12:00:00Z'), toFake: ['Date'] }));
 afterAll(() => vi.useRealTimers());

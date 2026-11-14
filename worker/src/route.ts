@@ -1,5 +1,5 @@
 // POST /api/route — §1.2–§1.4 + §5. Builds the response the results page renders.
-import { SWITCHBOARD, TAKES_OFFICE, type Action, type Chamber, type Delegation, type ElectSeat, type Goal, type IncomingSeat, type Member, type Office, type Position, type Repo } from './types';
+import { SWITCHBOARD, TAKES_OFFICE, type Action, type Chamber, type Delegation, type ElectSeat, type Goal, type IncomingSeat, type Member, type Office, type Position, type Repo, type Condition, type Topic } from './types';
 import { electoralSeat, topSlots } from './ranking';
 import { fillAsk, holdingsLine } from './state-copy';
 import { ELECTION_SOURCE_TITLE, recordFor, type RecordLine } from './electoral';
@@ -51,6 +51,8 @@ export interface GoalCard {
   action: string | null;
   short_label: string | null;
   what_we_want: string; // the poster's second line (social-sharing §2)
+  topics: Topic[]; // mission-and-topics §2: the ties the goal is about, shown as labels under the category chip
+  conditions?: Condition[]; // leadership goals only (§3): what the leader must promise in public
   targets: TargetCard[];
   partner_url: string | null; // office-visits: the "Organise one" line offers the partner when there is one
   // Electoral goals only (primary-2028 §1.2): the elections.csv row the loader folded into the goal.
@@ -230,6 +232,8 @@ export async function buildRoute(repo: Repo, state: string, district: number, to
       action: action?.slug ?? null,
       short_label: action?.short_label ?? null,
       what_we_want: g.what_we_want,
+      topics: JSON.parse(g.topics) as Topic[],
+      ...(g.category === 'leadership' ? { conditions: JSON.parse(g.conditions) as Condition[] } : {}),
       targets: targetsFor(g, action, d, positions, offices).map((t) => (g.category === 'electoral' && record ? { ...t, record } : t)),
       election: electionDates(g),
       partner_url: g.partner_url || null,

@@ -6,8 +6,10 @@ PRD-first, verification cadence and the quality bar are global
 here; every line in this file is re-read on every request.
 
 ## Repo map
-A civic-action tool to end US aid, ties and military partnership with
-Israel (`README.md`). Monorepo, npm workspaces, Node ≥22.
+Cut the Ties helps you call Congress to cut the ties that work against
+you: US military ties with Israel, the lobby money behind them, wars
+without end, healthcare held hostage, and the Democratic leaders who keep
+all of it in place (`README.md`). Monorepo, npm workspaces, Node ≥22.
 - `web/` — Astro 5 static site, Tailwind v4 tokens in
   `src/styles/global.css`, Preact islands in `src/components/`. Dev proxies
   `/api` to the Worker (`API_ORIGIN`, default `http://localhost:8787`).
@@ -64,9 +66,11 @@ From `docs/prd/archive/2026-11-action-router.md` acceptance criteria:
   the `Sections:` markers give.
 
 ## Don'ts
-- Don't aim a feature at "cut aid" alone. The live decision points are the
-  NDAA integration sections (219/224), the 2028 MOU replacement, named
-  appropriations votes and primaries. A PRD names the vote it targets.
+- Don't aim a feature at a tie in the abstract. Every goal names the vote,
+  leadership ballot, treasurer decision or primary it targets and the
+  topics it is about; the live Israel decision points are the NDAA
+  integration sections (219/1217), the 2028 MOU replacement, named
+  appropriations votes and primaries.
 - Don't make a public act the first step. The evidence says public badges
   and petitions suppress follow-through; the funnel is the private hard
   act (a call or a letter), then the public receipt, with an optional
