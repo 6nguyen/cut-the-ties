@@ -1,5 +1,5 @@
 # Mission and topics — PRD
-Status: READY 2026-11-13 (owner sign-off) · Owner: George Nguyen · Last updated: 2026-11-14
+Status: SHIPPED 2026-11-14 (PR #111) · Owner: George Nguyen · Last updated: 2026-11-14
 
 ## Problem
 The site is built as a general "call your representatives about the
@@ -171,16 +171,16 @@ merge records).
 
 ## State (updated 2026-11-14)
 - Sections: (build order; `[ ]` todo · `[~]` in progress · `[x]` merged · `[!]` blocked: reason)
-  - [~] 1. Mission strings · feat/mission-and-topics
-  - [~] 2. Topics on goals · feat/mission-and-topics
-  - [~] 3. Conditions on leadership asks · feat/mission-and-topics
-  - [~] 4. The screen accepts the mission · feat/mission-and-topics
-  - [~] 5. Docs and FAQ follow · feat/mission-and-topics
-- Completed: all five built on one branch (owner asked for the whole PRD at once); none merged yet.
-- Branch / open PRs: `feat/mission-and-topics` (one PR for §1–§5, base `docs/mission-and-topics`).
+  - [x] 1. Mission strings · PR #111
+  - [x] 2. Topics on goals · PR #111
+  - [x] 3. Conditions on leadership asks · PR #111
+  - [x] 4. The screen accepts the mission · PR #111
+  - [x] 5. Docs and FAQ follow · PR #111
+- Completed: §1–§5 (PR #111, one branch).
+- Branch / open PRs: `feat/mission-and-topics` · PR #111 (base `docs/mission-and-topics`, PR #108).
 - Folded: §1–§5 into action-router, goal-pages, standard-scripts, personalised-documents, member-pages.
 - Remaining: none.
-- Next action: owner merges the PR; the archive commit on the same branch records its number.
+- Next action: merge PR #108 then PR #111; add `source_url` to the five conditions (follow-up).
 ## Open questions
 0. Owner sign-off on every §1 string, including the condition list
    (row 10). Answered 2026-11-13: accepted as written, with the
